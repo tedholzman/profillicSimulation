@@ -127,16 +127,17 @@ static bool isTrue(seqan::True const & tag) {
 }
 
 /**
- * \brief The next several lines create a driver for the test harness.
+ * \brief The next several lines are required for the test harness
  *
  */
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE galosh_profuse tests
 #include <boost/test/included/unit_test.hpp>
-
+#include <boost/test/output_test_stream.hpp>
+using boost::test_tools::output_test_stream;
 /**
- * \internal To maintain modularity, we're doing some atypical (i.e. different
+ * To maintain modularity, we're doing some atypical (i.e. different
  * from the simplest examples in the BOOST documentation) here.  For one thing,
  * both the \a TEST module and the \a PROGRAM_OPTIONS module are parsing the
  * command line.  This way we can use command line options to modify the behavior
@@ -165,7 +166,7 @@ int main(int argc, char* argv[]) {
 	parsed = &p;
 	po::store(p, cmdline_opt_map, true);
 	po::notify(cmdline_opt_map);
-	// prototype for user's unit test init function
+	// load prototype for user's unit test init function
 	extern ::boost::unit_test::test_suite* init_unit_test_suite(int argc,
 			char* argv[]);
 	boost::unit_test::init_unit_test_func init_func = &init_unit_test_suite;
@@ -173,7 +174,8 @@ int main(int argc, char* argv[]) {
 }
 /**
  * \brief this is a kludge, to be repaired when I fully understand the program_options boost module
- *
+ * \todo this is not good code.  It's got to be repaired when there's time to
+ * understand the nature of the \a allow_unregistered option of the \a basic_command_line_parser
  * \param optName string value of the option name
  */
 std::string getOptVal(const std::string optName) {
@@ -186,16 +188,18 @@ std::string getOptVal(const std::string optName) {
 	return retVal;
 }
 /**
- \brief This is a canonical example of a unit test.
-
- This test succeeds if \f$ 1 = 1\f$.
- It also defines commandline option value.
- */BOOST_AUTO_TEST_CASE( sanity_check ) {
+ * \brief This is a canonical example of a unit test.
+ *
+ * This test succeeds if \f$ 1 = 1\f$.
+ * It also defines commandline option value.
+ */
+BOOST_AUTO_TEST_CASE( sanity_check ) {
 	std::cout << "Sanity check: should always be TRUE" << std::endl;
 	BOOST_CHECK_MESSAGE( 1 == 1, "Test failed: 1 doesn't equal 1");
 } //sanity_check
 
-/** \fn void BOOST_AUTO_TEST_SUITE( string test_non_dp ) 
+/**
+ * \fn void BOOST_AUTO_TEST_SUITE( string test_non_dp )
  * \brief suite marker, really a macro call
  * \param test_non_dp name of suite, also defines commandline option
  */
@@ -278,6 +282,7 @@ BOOST_AUTO_TEST_CASE( test_ambiguous )
 			"ambiguousAssign missed some nucleotides: " + nucleotides
 	);
 } //end of test_ambiguous
+
 /**
  * \brief Test of basic seqan and galosh sequence manipulation operations
  */
@@ -337,6 +342,7 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 			"but ended up being " << length(dna_seq) << " characters long"
 	);
 } //end of test_sequences
+
 /**
  *  \def definitions for \a default fasta files.
  */
@@ -344,8 +350,11 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 #define DEFAULT_GAPPED_FASTA_FILE "fasta/21U.fa.muscle.first10"
 /**
  * \brief Tests of basic fasta file read and conversions.
- * Also, first (currently bad) example of defining and using
- * program options other than those defined in the test interface
+ *
+ * Also, first (currently mediocre) example of defining and using
+ * program options other than those defined in the test interface.  We also use
+ * the boost \a output_test_stream to determine if a fasta data structure
+ * correctly represents the file it was read from.
  */
 BOOST_AUTO_TEST_CASE( test_fasta )
 {
@@ -362,7 +371,6 @@ BOOST_AUTO_TEST_CASE( test_fasta )
 	("ungapped_fasta",po::value<std::string>(),"Path of ungapped fasta file to use in test-fasta")
 	("gapped_fasta",po::value<std::string>(),"Path of gapped fasta file to use in test-fasta");
 	po::notify(cmdline_opt_map);
-	//po::variable_value blort = cmdline_opt_map["gapped_fasta"];
 
 	std::cout << "test_fasta:     Testing ungapped and gapped fasta file reads and conversions" << std::endl;
 
@@ -370,17 +378,26 @@ BOOST_AUTO_TEST_CASE( test_fasta )
 	//// Fasta with no gaps
 	galosh::Fasta<Dna> fasta;
 	fasta.fromFile(ungapped_fasta_file);
-	std::cout << fasta << std::endl;
-
+	{
+   	   output_test_stream output( ungapped_fasta_file, true );
+	   output << fasta;
+	   BOOST_CHECK( output.match_pattern() ); /// Ungapped file correctly scanned?
+	}
 	///////
 	//// Fasta: with gaps.  Use "char" since basic seqan alphabets don't support gap chars.
+
 	galosh::Fasta<char> aligned_fasta;
 	aligned_fasta.fromFile(gapped_fasta_file);
 	/**
 	 * \todo use boost unit test module output_test_stream to check the validity
 	 * of the fasta files; don't just print them out.
 	 */
-	std::cout << aligned_fasta << std::endl;
+	{
+	   output_test_stream output( gapped_fasta_file, true );
+	   output << aligned_fasta;
+	   BOOST_CHECK( output.match_pattern() ); /// Gapped file correctly scanned?
+	}
+
 	///
 	/// \todo  I'm thinking of just scrapping Fasta altogether, using
 	/// StringSet instead, with _loadSequences from
@@ -402,23 +419,26 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	Dna c_2( 1 );
 	BOOST_CHECK_MESSAGE(/// Test conversion of Dna (created from int) to char
 			(char) c_2 == 'C',
-			"Dna to string yielded "<<c_2<< " instead of C"
+			"Dna to string yielded "<< c_2 << " instead of C"
 	);
 
-	const galosh::MultinomialDistribution<Dna, realspace> dna_dist;
+	galosh::MultinomialDistribution<Dna, realspace> dna_dist;
 	dna_dist[ c_2 ] = .4;
 	/**
 	 * \note This value is illegal:  doesn't sum to 1
 	 */
 
-	double bubble = std::toDouble(&dna_dist[0]);
 	BOOST_CHECK_MESSAGE( /// Test modification of a Multinomial distribution object
 			dna_dist.m_elementCount == 4 && dna_dist.m_probs[0] == 0.25 &&
 			dna_dist.m_probs[1].prob() == 0.4 &&
 			dna_dist.m_probs[2].prob() == 0.25 && dna_dist.m_probs[3].prob() == 0.25,
 			"dist should be A=T=G=0.25, C=0.4; but instead it is " << dna_dist
 	);
-
+    /**
+     * \todo it would be nice if all the constants in this module (e.g. 12,0.25)
+     * were #DEFINEd and some reasonable subset of them modifiable via command
+     * line options
+     */
 	galosh::MultinomialDistribution<galosh::StateLabel, float> state_dist;
 	bool elValOK = true;
     int n_elements = (sizeof state_dist.m_probs/sizeof state_dist.m_probs[0]);
@@ -435,14 +455,16 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	if( ambiguity_tested ) {
 		Dna5 a = 'a';
 		Dna5 n = 'n';
-		std::cout << "The dna_dist, accessed using Dna5 'a', returns " << dna_dist.ambiguousSum( a ) << endl;
-		//std::cout << "The dna_dist, accessed using Dna5 'n', returns " << dna_dist.ambiguousSum( n ) << endl;
-		std::cout << "The dna_dist, accessed using Dna5 'n', returns " << dna_dist[ n ] << endl;
-
-		// Uncomment this, and it should fail to compile, since AminoAcid is
-		// not ambiguous over Dna.
-		//AminoAcid aminoacid_n = 'n';
-		//std::cout << "The dna_dist, accessed using AminoAcid 'n', returns " << dna_dist[ aminoacid_n ] << endl;
+		BOOST_CHECK_MESSAGE( /// Check initial distributions of single Dna5 ambiguous and unambiguous elements
+	       dna_dist.ambiguousSum( a ) == 0.25 && dna_dist.ambiguousSum( n ) == 1.15,
+           "Initial 'A' distribution should be 0.25 and it's " << dna_dist.ambiguousSum( a ) <<
+           "initial 'N' distribution should be 1.15 and it's " << dna_dist[ n ]
+		);
+        /// \internal
+		/// Uncomment this, and it should fail to compile, since AminoAcid is
+		/// not ambiguous over Dna.
+		/// AminoAcid aminoacid_n = 'n';
+		/// std::cout << "The dna_dist, accessed using AminoAcid 'n', returns " << dna_dist[ aminoacid_n ] << endl;
 
 		dna_dist.ambiguousIncrement( n, 1.0 );
 		std::cout << "After performing an ambiguousIncrement( n, 1.0 ), the dna_dist is " << dna_dist << endl;

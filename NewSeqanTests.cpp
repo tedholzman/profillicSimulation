@@ -188,6 +188,11 @@ std::string getOptVal(const std::string optName) {
 	return retVal;
 }
 /**
+ * \def When we test if two floating point numbers are equal, they must
+ * really fall within FLOAT_POINT_EQUALITY_TOL_PCT % of each other
+ */
+#define FLOAT_POINT_EQUALITY_TOL_PCT 0.00000001
+/**
  * \brief This is a canonical example of a unit test.
  *
  * This test succeeds if \f$ 1 = 1\f$.
@@ -389,8 +394,12 @@ BOOST_AUTO_TEST_CASE( test_fasta )
 	galosh::Fasta<char> aligned_fasta;
 	aligned_fasta.fromFile(gapped_fasta_file);
 	/**
-	 * \todo use boost unit test module output_test_stream to check the validity
-	 * of the fasta files; don't just print them out.
+	 * \todo currently using unit test module output_test_stream to check the validity
+	 * of the fasta files; not just printing them out.  output_test_stream.match_pattern()
+	 * kindof sucks:  the output must match the "pattern file" exactly, character
+	 * for character.  In the case of fasta files, it might be better
+	 * to use a checksum.  In any case, it would be nice if pattern_match used regular
+	 * expressions or at least wildcards.
 	 */
 	{
 	   output_test_stream output( gapped_fasta_file, true );
@@ -452,7 +461,9 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	   "Bad structure for StateLabel distribution " << state_dist
 	);
 
-	if( ambiguity_tested ) {
+	if( ambiguity_tested )
+	{
+		std::cout << "test_multinomials:       Testing multinomial distribution with ambiguities (for DNA)" << std::endl;
 		Dna5 a = 'a';
 		Dna5 n = 'n';
 		BOOST_CHECK_MESSAGE( /// Check initial distributions of single Dna5 ambiguous and unambiguous elements
@@ -465,16 +476,34 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		/// not ambiguous over Dna.
 		/// AminoAcid aminoacid_n = 'n';
 		/// std::cout << "The dna_dist, accessed using AminoAcid 'n', returns " << dna_dist[ aminoacid_n ] << endl;
-
+		output_test_stream output;
 		dna_dist.ambiguousIncrement( n, 1.0 );
-		std::cout << "After performing an ambiguousIncrement( n, 1.0 ), the dna_dist is " << dna_dist << endl;
+		output << dna_dist;
+		BOOST_CHECK_MESSAGE( /// Test ambiguousIncrement of 1.0 to dna dist
+		    output.is_equal("(A=0.5,C=0.65,G=0.5,T=0.5)"),
+		    "Distribution should equal (A=0.5,C=0.65,G=0.5,T=0.5), but instead equals " << dna_dist
+		);
 		galosh::MultinomialDistribution<Dna, realspace>::AmbiguousValue<Dna5> ambiguous_value = dna_dist[ n ];
 		ambiguous_value += 1.0;
-		std::cout << "After performing an ( ambiguous_value = dna_dist[ n ] ) += 1.0, the dna_dist is " << dna_dist << ", and the ambiguous_value is " << ambiguous_value << endl;
+		output << dna_dist;
+		BOOST_CHECK_MESSAGE( /// Test autoincrement (+=)  of ambiguous DNA value (n), effect on distribution
+		   output.is_equal("(A=0.75,C=0.9,G=0.75,T=0.75)"),
+		   "Distribution should equal (A=0.75,C=0.9,G=0.75,T=0.75), but instead equals " << dna_dist
+		);
+        BOOST_CHECK_CLOSE(ambiguous_value.prob(),3.15,FLOAT_POINT_EQUALITY_TOL_PCT);  /// Test probability of autoincremented ambiguous element
 		ambiguous_value = 1.0;
-		std::cout << "After performing an ambiguous_value = 1.0, the dna_dist is " << dna_dist << ", and the ambiguous_value is " << ambiguous_value << endl;
+        output << dna_dist;
+		BOOST_CHECK_MESSAGE( /// Test direct assignment of ambiguous DNA value (n), effect on distribution
+		   output.is_equal("(A=0.25,C=0.25,G=0.25,T=0.25)"),
+		   "Distribution should equal (A=0.25,C=0.25,G=0.25,T=0.25), but instead equals " << dna_dist
+		);
+        BOOST_CHECK_CLOSE(ambiguous_value.prob(),1.00,FLOAT_POINT_EQUALITY_TOL_PCT);  /// Test probability of autoincremented ambiguous element
 		dna_dist[ n ] += 1.0;
-		std::cout << "After performing a dna_dist[ n ] += 1.0, the dna_dist is " << dna_dist << endl;
+		output << dna_dist;
+		BOOST_CHECK_MESSAGE( /// Test direct autoincrement,  distrib[n] += 1
+		   output.is_equal("(A=0.5,C=0.5,G=0.5,T=0.5)"),
+		   "Distribution should equal (A=0.5,C=0.5,G=0.5,T=0.5), but instead equals " << dna_dist
+		);
 	} // End if test_ambiguous (and test_multinomials)
 
 	/// \todo Use seqan::FrequencyDistribution?
@@ -492,10 +521,95 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	//// Note also their "profile" is a StringSet of FrequencyDistributions.
 
 } //end of test_multinomials
+
 /**
- *
+ * \brief Test properties of profile HMM states.
  */
 BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 {
-} //end of test_profile_hmm_states
+	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
+
+    // Start state
+    std::cout << "StateLabelId<StartStateLabel> is " << galosh::StateLabelId<galosh::StartStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::StartStateLabel, galosh::Plan7>::Type, float> Start_state_dist;
+    std::cout << Start_state_dist << std::endl;
+
+    // PreAlign state
+    std::cout << "StateLabelId<PreAlignStateLabel> is " << galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::PreAlignStateLabel, galosh::Plan7>::Type, float> PreAlign_state_dist;
+    std::cout << PreAlign_state_dist << std::endl;
+
+    // Begin state
+    std::cout << "StateLabelId<BeginStateLabel> is " << galosh::StateLabelId<galosh::BeginStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::BeginStateLabel, galosh::Plan7>::Type, float> Begin_state_dist;
+    std::cout << Begin_state_dist << std::endl;
+
+    // Match state
+    std::cout << "StateLabelId<MatchStateLabel> is " << galosh::StateLabelId<galosh::MatchStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::MatchStateLabel, galosh::Plan7>::Type, float> Match_state_dist;
+    std::cout << Match_state_dist << std::endl;
+
+    // Insertion state (both Plan 7 and Plan 9)
+    std::cout << "StateLabelId<InsertionStateLabel> is " << galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::InsertionStateLabel, galosh::Plan9>::Type, float> Plan9_Insertion_state_dist;
+    std::cout << Plan9_Insertion_state_dist << std::endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::InsertionStateLabel, galosh::Plan7>::Type, float> Plan7_Insertion_state_dist;
+    std::cout << Plan7_Insertion_state_dist << std::endl;
+
+    // Deletion state (both Plan 7 and Plan 9)
+    std::cout << "StateLabelId<DeletionStateLabel> is " << galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::DeletionStateLabel, galosh::Plan9>::Type, float> Plan9_Deletion_state_dist;
+    std::cout << Plan9_Deletion_state_dist << std::endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::DeletionStateLabel, galosh::Plan7>::Type, float> Plan7_Deletion_state_dist;
+    std::cout << Plan7_Deletion_state_dist << std::endl;
+
+    // End state
+    std::cout << "StateLabelId<EndStateLabel> is " << galosh::StateLabelId<galosh::EndStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::EndStateLabel, galosh::Plan7>::Type, float> End_state_dist;
+    std::cout << End_state_dist << std::endl;
+
+    // Loop state
+    std::cout << "StateLabelId<LoopStateLabel> is " << galosh::StateLabelId<galosh::LoopStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::LoopStateLabel, galosh::Plan7>::Type, float> Loop_state_dist;
+    std::cout << Loop_state_dist << std::endl;
+
+    // PostAlign state
+    std::cout << "StateLabelId<PostAlignStateLabel> is " << galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::PostAlignStateLabel, galosh::Plan7>::Type, float> PostAlign_state_dist;
+    std::cout << PostAlign_state_dist << std::endl;
+
+    // Terminal state
+    std::cout << "StateLabelId<TerminalStateLabel> is " << galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+  } // End test_profile_hmm_states
+
 BOOST_AUTO_TEST_SUITE_END()//end of test_non_db

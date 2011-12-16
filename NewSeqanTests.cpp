@@ -125,6 +125,84 @@ static bool isTrue(T const & tag) {
 static bool isTrue(seqan::True const & tag) {
 	return true;
 }
+#include <boost/variant.hpp>
+typedef boost::variant<
+		   galosh::StartStateLabel,
+		   galosh::PreAlignStateLabel,
+		   galosh::BeginStateLabel,
+		   galosh::MatchStateLabel,
+		   galosh::InsertionStateLabel,
+		   galosh::DeletionStateLabel,
+		   galosh::EndStateLabel,
+		   galosh::LoopStateLabel,
+		   galosh::PostAlignStateLabel,
+		   galosh::TerminalStateLabel
+		> AnyStateLabel;
+/**
+ * \class state_VALUE_generic
+ * \brief utility for iterating through state types
+ *
+ * This is a \a visitor subclass of the \a boost::variant system.  We're using it to
+ * iterate through states.
+ */
+class
+state_VALUE_generic: public boost::static_visitor<int>
+{
+public:
+   template <typename T>
+   int operator()( T & state ) const
+    {
+	   return galosh::StateLabelId<T>::VALUE;
+    }
+};
+
+class
+state_SIMPLE_generic: public boost::static_visitor<bool>
+{
+public:
+	template <typename T>
+	bool operator()( T & state) const
+	{
+		return isTrue(typename IsSimple<T>::Type());
+	}
+};
+
+template <typename T>
+string numberToString ( T Number )
+{
+	stringstream ss;
+	ss << Number;
+	return ss.str();
+}
+
+/**
+ * \fn std::string stateInfo(AnyStateLabel sl)
+ * \param sl  State label about which to return summary info
+ * \return String with state label information
+ * \brief This is a helper function for the test_profile_hmm_states unit test
+ *
+ */
+std::string stateInfo(AnyStateLabel & sl)
+{
+   std::string retVal = "";
+   int slNumeric = apply_visitor(state_VALUE_generic(),sl);
+   retVal += "label: ";
+   retVal += numberToString(slNumeric);
+   char code = galosh::StateLabel(slNumeric);
+   retVal += "; code: ";
+   retVal += code;
+   bool simple = apply_visitor(state_SIMPLE_generic(),sl);
+   retVal += "; ";
+   if(!simple) retVal += "not ";
+   retVal += "simple";
+
+   //std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
+   //std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+   //galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::StartStateLabel, galosh::Plan7>::Type, float> Start_state_dist;
+   //std::cout << Start_state_dist << std::endl;
+
+   return retVal;
+}
 
 /**
  * \brief The next several lines are required for the test harness
@@ -137,6 +215,7 @@ static bool isTrue(seqan::True const & tag) {
 #include <boost/test/output_test_stream.hpp>
 using boost::test_tools::output_test_stream;
 /**
+ * \section DESCRIPTION
  * To maintain modularity, we're doing some atypical (i.e. different
  * from the simplest examples in the BOOST documentation) here.  For one thing,
  * both the \a TEST module and the \a PROGRAM_OPTIONS module are parsing the
@@ -151,8 +230,14 @@ using boost::test_tools::output_test_stream;
  */
 int g_argc;
 char **g_argv = 0;
+using namespace galosh;
 
 #include <boost/program_options.hpp>
+/**
+ * \note boost variants are used to iterate through sets of types, such as
+ * HMM states
+ */
+
 namespace po = boost::program_options;
 po::options_description utest_opts("Additional unit test options");
 po::variables_map cmdline_opt_map;
@@ -522,12 +607,29 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 
 } //end of test_multinomials
 
+
 /**
  * \brief Test properties of profile HMM states.
  */
 BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 {
+	using namespace galosh;
+	std::map<std::string,AnyStateLabel> stateLabels;
+#define ADD_MAP(x) stateLabels.insert(pair<std::string,AnyStateLabel>(#x,x()))
+    ADD_MAP(StartStateLabel);
+	ADD_MAP(PreAlignStateLabel);
+	ADD_MAP(BeginStateLabel);
+	ADD_MAP(MatchStateLabel);
+	ADD_MAP(InsertionStateLabel);
+	ADD_MAP(EndStateLabel);
+	ADD_MAP(LoopStateLabel);
+	ADD_MAP(PostAlignStateLabel);
+	ADD_MAP(TerminalStateLabel);
+
 	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
+    for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++)
+	   std::cout << asl->first << ":  " << stateInfo(asl->second) << endl;
+
 
     // Start state
     std::cout << "StateLabelId<StartStateLabel> is " << galosh::StateLabelId<galosh::StartStateLabel>::VALUE << endl;

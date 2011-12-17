@@ -36,6 +36,15 @@
  *   newseqantest --run_test=test_non_dp 
  *      or
  *   newseqantest --run_test=test_alphabets</pre>
+ *
+ * To maintain modularity, we're doing some atypical (i.e. different
+ * from the simplest examples in the BOOST documentation) here.  For one thing,
+ * both the \a TEST module and the \a PROGRAM_OPTIONS module are parsing the
+ * command line.  This way we can use command line options to modify the behavior
+ * of the unit tests.  The \a TEST module doesn't give hooks into its own parser.
+ * For the same reason, we've DEFINEd NO_MAIN above:  it allows us to do our own
+ * initializations along with the \a TEST initializations.
+ *
  */
 #include "Ambiguous.hpp"
 #include "Algebra.hpp"
@@ -48,7 +57,7 @@
 #include "DynamicProgramming.hpp"
 #include "ProfileTrainer.hpp"
 #include "ProfileTreeTrainer.hpp"
-//#include "ProfileGibbs.hpp" // \todo Add tests for gibbs...
+///\#include "ProfileGibbs.hpp" // \todo Add tests for gibbs...
 #include "ProfuseTest.hpp"
 #include "AminoAcid20.hpp"
 
@@ -102,7 +111,7 @@ inline std::string toString(TSource & source) {
 } //end of toString()
 
 /**
- *
+ * \fn static bool isTrue(T const & tag)
  * \brief Function for determining seqan True values
  * \param tag
  *    reference to any type
@@ -115,7 +124,7 @@ static bool isTrue(T const & tag) {
 }
 
 /**
- *
+ * \fn static bool isTrue(seqan::True const & tag)
  * \brief Function for determining seqan True values
  * \param tag
  *    reference to any type
@@ -125,25 +134,39 @@ static bool isTrue(T const & tag) {
 static bool isTrue(seqan::True const & tag) {
 	return true;
 }
+/**
+ * \typedef AnyStateLabel
+ * \brief a boost variant that allows iterating through HMM states
+ * \see state_VALUE_generic,state_SIMPLE_generic
+ */
 #include <boost/variant.hpp>
-typedef boost::variant<
-		   galosh::StartStateLabel,
-		   galosh::PreAlignStateLabel,
-		   galosh::BeginStateLabel,
-		   galosh::MatchStateLabel,
-		   galosh::InsertionStateLabel,
-		   galosh::DeletionStateLabel,
-		   galosh::EndStateLabel,
-		   galosh::LoopStateLabel,
-		   galosh::PostAlignStateLabel,
-		   galosh::TerminalStateLabel
-		> AnyStateLabel;
+typedef
+boost::variant<
+	galosh::StartStateLabel,
+	galosh::PreAlignStateLabel,
+	galosh::BeginStateLabel,
+	galosh::MatchStateLabel,
+	galosh::InsertionStateLabel,
+	galosh::DeletionStateLabel,
+	galosh::EndStateLabel,
+	galosh::LoopStateLabel,
+	galosh::PostAlignStateLabel,
+	galosh::TerminalStateLabel
+> AnyStateLabel;
+
 /**
  * \class state_VALUE_generic
  * \brief utility for iterating through state types
  *
  * This is a \a visitor subclass of the \a boost::variant system.  We're using it to
- * iterate through states.
+ * iterate through states.  When used with \a boost::apply_visitor it is basically a
+ * get-type generic accessor for the state label numeric VALUE field.  This treats
+ * objects of the different classes subsumed within the AnyClassLabel type '
+ * (a boost::variant) as if they were objects of the same class.
+ *
+ * \todo The \ref AnyStateLabel typedef and these accessor classes should probably
+ * be moved to the Galosh.hpp (or someplace similar).  They are probably useful
+ * in other programs.
  */
 class
 state_VALUE_generic: public boost::static_visitor<int>
@@ -155,7 +178,10 @@ public:
 	   return galosh::StateLabelId<T>::VALUE;
     }
 };
-
+/**
+ * \class state_SIMPLE_generic
+ * \brief generic accessor for isSimple "field" of state labels
+ */
 class
 state_SIMPLE_generic: public boost::static_visitor<bool>
 {
@@ -163,12 +189,73 @@ public:
 	template <typename T>
 	bool operator()( T & state) const
 	{
-		return isTrue(typename IsSimple<T>::Type());
+		return isTrue(typename IsSimple<T>::Type() );
 	}
 };
+/**
+ * \class state_EMITTING_generic
+ * \brief generic accessor for isSimple "field" of state labels
+ */
+class
+state_EMITTING_generic: public boost::static_visitor<bool>
+{
+public:
+	template <typename T>
+	bool operator()( T & state) const
+	{
+		return isTrue(typename galosh::IsEmitting<T>::Type() );
+	}
+};
+/**
+ * \class state_ASSOCIATED_generic
+ * \brief generic accessor for IsAssociatedWithPosition "field" of state labels
+ */
+class
+state_ASSOCIATED_generic: public boost::static_visitor<bool>
+{
+public:
+	template <typename T>
+	bool operator()( T & state) const
+	{
+		return isTrue(typename galosh::IsAssociatedWithPosition<T>::Type() );
+	}
+};
+/**
+ * \class state_DIST7
+ * \brief generic accessor for plan9 multinomial distribution associated with state labels
+ *
+ * It would be marginally better to have this class return a distribution object.
+ * Unfortunately the distribution objects are all different classes, and that means
+ * this would have to return a \a boost::variant.  I am not certain that will
+ * work.  So for the time being I'm taking the easy way out.
+ *
+ */
+using namespace galosh;
 
+class
+state_DIST7: public boost::static_visitor<std::string>
+{
+public:
+
+	std::stringstream ss;
+	inline std::string operator()(TerminalStateLabel & state)  const {return "";}
+	inline std::string operator()(StartStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(PreAlignStateLabel & state)  const {MultinomialDistribution<StateLabelTransitionTargets<PreAlignStateLabel,  Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(BeginStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<BeginStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(MatchStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<MatchStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(InsertionStateLabel & state) const {MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(DeletionStateLabel & state)  const {MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(EndStateLabel & state)       const {MultinomialDistribution<StateLabelTransitionTargets<EndStateLabel,       Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(LoopStateLabel & state)      const {MultinomialDistribution<StateLabelTransitionTargets<LoopStateLabel,      Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(PostAlignStateLabel & state) const {MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+}; // end of state_DIST7
+/**
+ * \fn std::string numberToString( T Number )
+ * \brief Tiny helper function to turn any number into a string.
+ */
 template <typename T>
-string numberToString ( T Number )
+inline
+std::string numberToString ( T Number )
 {
 	stringstream ss;
 	ss << Number;
@@ -176,7 +263,7 @@ string numberToString ( T Number )
 }
 
 /**
- * \fn std::string stateInfo(AnyStateLabel sl)
+ * \fn std::string stateInfo(AnyStateLabel & sl)
  * \param sl  State label about which to return summary info
  * \return String with state label information
  * \brief This is a helper function for the test_profile_hmm_states unit test
@@ -195,9 +282,16 @@ std::string stateInfo(AnyStateLabel & sl)
    retVal += "; ";
    if(!simple) retVal += "not ";
    retVal += "simple";
-
-   //std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-   //std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
+   bool emitting = apply_visitor(state_EMITTING_generic(),sl);
+   retVal += "; ";
+   if(!emitting) retVal += "not ";
+   retVal += "emitting";
+   bool associated = apply_visitor(state_ASSOCIATED_generic(),sl);
+   retVal += "; ";
+   if(!associated) retVal += "not ";
+   retVal += "associated";
+   std::string dist7 = apply_visitor(state_DIST7(),sl);
+   if(dist7.compare("") != 0) retVal += "; Plan7 dist=" + dist7;
    //galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::StartStateLabel, galosh::Plan7>::Type, float> Start_state_dist;
    //std::cout << Start_state_dist << std::endl;
 
@@ -214,21 +308,16 @@ std::string stateInfo(AnyStateLabel & sl)
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/output_test_stream.hpp>
 using boost::test_tools::output_test_stream;
-/**
- * \section DESCRIPTION
- * To maintain modularity, we're doing some atypical (i.e. different
- * from the simplest examples in the BOOST documentation) here.  For one thing,
- * both the \a TEST module and the \a PROGRAM_OPTIONS module are parsing the
- * command line.  This way we can use command line options to modify the behavior
- * of the unit tests.  The \a TEST module doesn't give hooks into its own parser.
- * For the same reason, we've DEFINEd NO_MAIN above:  it allows us to do our own
- * initializations along with the \a TEST initializations.
- */
 
 /**
- * \var keep a global copy of argc and argv around for subsequent modules to use
+ * \var g_argc
+ * keep a global copy of argc  around for subsequent modules to use
  */
 int g_argc;
+/**
+ * \var g_argv
+ * keep a global copy of argv around for subsequent modules to use
+ */
 char **g_argv = 0;
 using namespace galosh;
 
@@ -258,10 +347,15 @@ int main(int argc, char* argv[]) {
 	return ::boost::unit_test::unit_test_main(init_func, argc, argv);
 }
 /**
- * \brief this is a kludge, to be repaired when I fully understand the program_options boost module
+ * \fn std::string getOptVal(const std::string optName)
+ * \brief fetches the value of program option optName
+ * \param optName
+ *    The string value of command line parameter you want to fetch
+ * \brief This is a kludge, to be repaired when I fully understand the program_options boost module
  * \todo this is not good code.  It's got to be repaired when there's time to
- * understand the nature of the \a allow_unregistered option of the \a basic_command_line_parser
- * \param optName string value of the option name
+ * understand the nature of the \a allow_unregistered option of the \a basic_command_line_parser.
+ * \note Accesses a global variable, \a parsed.  (Shame!)
+ * \return Returns the string value of option optName
  */
 std::string getOptVal(const std::string optName) {
 	std::string retVal = "";
@@ -273,8 +367,9 @@ std::string getOptVal(const std::string optName) {
 	return retVal;
 }
 /**
- * \def When we test if two floating point numbers are equal, they must
- * really fall within FLOAT_POINT_EQUALITY_TOL_PCT % of each other
+ * \def FLOAT_POINT_EQUALITY_TOL_PCT
+ * When we test if two floating point numbers are equal, they must
+ * really fall within FLOAT_POINT_EQUALITY_TOL_PCT \% of each other
  */
 #define FLOAT_POINT_EQUALITY_TOL_PCT 0.00000001
 /**
@@ -289,9 +384,12 @@ BOOST_AUTO_TEST_CASE( sanity_check ) {
 } //sanity_check
 
 /**
- * \fn void BOOST_AUTO_TEST_SUITE( string test_non_dp )
- * \brief suite marker, really a macro call
- * \param test_non_dp name of suite, also defines commandline option
+ * \namespace test_non_dp
+ * \brief suite marker, really a macro call, marking the beginning of
+ * a set of tests.
+ *
+ * The macro parameter, \a test_non_dp is name of suite, and also defines
+ * a commandline option to select the/a test_non_dp test(s)
  */
 BOOST_AUTO_TEST_SUITE( test_non_dp )
 
@@ -530,7 +628,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	);
     /**
      * \todo it would be nice if all the constants in this module (e.g. 12,0.25)
-     * were #DEFINEd and some reasonable subset of them modifiable via command
+     * were \#DEFINEd and some reasonable subset of them modifiable via command
      * line options
      */
 	galosh::MultinomialDistribution<galosh::StateLabel, float> state_dist;
@@ -614,7 +712,21 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 {
 	using namespace galosh;
+	/**
+	 *  \var stateLabels
+	 *  \brief a useful map that contains the full text name of the state label,
+	 *  as the key, and a variant containing a reference to the appropriate state
+	 *  label object.
+	 *  \see state_VALUE_generic, state_SIMPLE_generic
+	 */
 	std::map<std::string,AnyStateLabel> stateLabels;
+	/**
+	 * \def ADD_MAP(x)
+	 * \brief Tiny macro to insert values into stateLabels.
+     *
+	 * \todo Move this, stateLabels, AnyStateLabel typedef, and accessor classes
+	 * elsewhere
+	 */
 #define ADD_MAP(x) stateLabels.insert(pair<std::string,AnyStateLabel>(#x,x()))
     ADD_MAP(StartStateLabel);
 	ADD_MAP(PreAlignStateLabel);
@@ -625,10 +737,12 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 	ADD_MAP(LoopStateLabel);
 	ADD_MAP(PostAlignStateLabel);
 	ADD_MAP(TerminalStateLabel);
-
+    /**
+     * Iterate through all states, check each one against a known model.
+     */
 	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
     for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++)
-	   std::cout << asl->first << ":  " << stateInfo(asl->second) << endl;
+	   std::cout << asl->first << ": " << stateInfo(asl->second) << endl;
 
 
     // Start state

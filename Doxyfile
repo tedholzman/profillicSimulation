@@ -204,8 +204,22 @@ TAB_SIZE               = 8
 # will result in a user-defined paragraph with heading "Side Effects:". 
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                =
-
+# Several of the comments in seqan and galosh contain \symbols that generate
+# errors or warnings in doxygen.  I'm using this section castrate them
+ALIASES                = \
+ Tag="" \
+ Class="" \
+ Metafunction="" \
+ Adaption="" \
+ Concept="" \
+ Function="" \
+ Internal="" \
+ Memfunc="" \
+ Shortcut="" \
+ Spec="" \
+ geq="" \
+ glos=""\
+ s=""
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C 
 # sources only. Doxygen will then generate output that is more tailored for C. 
 # For instance, some of the names that are used will be different. The list 

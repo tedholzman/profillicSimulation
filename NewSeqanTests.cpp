@@ -231,24 +231,40 @@ public:
  *
  */
 using namespace galosh;
-
+#define UNDEFINED_DIST_STRING ""
 class
 state_DIST7: public boost::static_visitor<std::string>
 {
 public:
-
-	std::stringstream ss;
-	inline std::string operator()(TerminalStateLabel & state)  const {return "";}
-	inline std::string operator()(StartStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(PreAlignStateLabel & state)  const {MultinomialDistribution<StateLabelTransitionTargets<PreAlignStateLabel,  Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(BeginStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<BeginStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(MatchStateLabel & state)     const {MultinomialDistribution<StateLabelTransitionTargets<MatchStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(InsertionStateLabel & state) const {MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(DeletionStateLabel & state)  const {MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(EndStateLabel & state)       const {MultinomialDistribution<StateLabelTransitionTargets<EndStateLabel,       Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(LoopStateLabel & state)      const {MultinomialDistribution<StateLabelTransitionTargets<LoopStateLabel,      Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
-	inline std::string operator()(PostAlignStateLabel & state) const {MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float> tmp; ss << tmp; return ss.str();}
+	inline std::string operator()(TerminalStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(StartStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float>().toString();}
+	inline std::string operator()(PreAlignStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<PreAlignStateLabel,  Plan7>::Type, float>().toString();}
+	inline std::string operator()(BeginStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<BeginStateLabel,     Plan7>::Type, float>().toString();}
+	inline std::string operator()(MatchStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<MatchStateLabel,     Plan7>::Type, float>().toString();}
+	inline std::string operator()(InsertionStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan7>::Type, float>().toString();}
+	inline std::string operator()(DeletionStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan7>::Type, float>().toString();}
+	inline std::string operator()(EndStateLabel & state)       const {return MultinomialDistribution<StateLabelTransitionTargets<EndStateLabel,       Plan7>::Type, float>().toString();}
+	inline std::string operator()(LoopStateLabel & state)      const {return MultinomialDistribution<StateLabelTransitionTargets<LoopStateLabel,      Plan7>::Type, float>().toString();}
+	inline std::string operator()(PostAlignStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<PostAlignStateLabel, Plan7>::Type, float>().toString();}
 }; // end of state_DIST7
+
+class
+state_DIST9: public boost::static_visitor<std::string>
+{
+public:
+	inline std::string operator()(TerminalStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(StartStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(PreAlignStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(BeginStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(MatchStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(InsertionStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan9>::Type, float>().toString();}
+	inline std::string operator()(DeletionStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan9>::Type, float>().toString();}
+	inline std::string operator()(EndStateLabel & state)       const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(LoopStateLabel & state)      const {return UNDEFINED_DIST_STRING;}
+	inline std::string operator()(PostAlignStateLabel & state) const {return UNDEFINED_DIST_STRING;}
+}; // end of state_DIST9
+
+
 /**
  * \fn std::string numberToString( T Number )
  * \brief Tiny helper function to turn any number into a string.
@@ -292,9 +308,8 @@ std::string stateInfo(AnyStateLabel & sl)
    retVal += "associated";
    std::string dist7 = apply_visitor(state_DIST7(),sl);
    if(dist7.compare("") != 0) retVal += "; Plan7 dist=" + dist7;
-   //galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::StartStateLabel, galosh::Plan7>::Type, float> Start_state_dist;
-   //std::cout << Start_state_dist << std::endl;
-
+   std::string dist9 = apply_visitor(state_DIST9(),sl);
+   if(dist9.compare("") != 0) retVal += "; Plan9 dist=" + dist9;
    return retVal;
 }
 
@@ -662,7 +677,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		output_test_stream output;
 		dna_dist.ambiguousIncrement( n, 1.0 );
 		output << dna_dist;
-		BOOST_CHECK_MESSAGE( /// Test ambiguousIncrement of 1.0 to dna dist
+		BOOST_CHECK_MESSAGE( /// Test ambiguousIncrement of 1.0 to dna distribution
 		    output.is_equal("(A=0.5,C=0.65,G=0.5,T=0.5)"),
 		    "Distribution should equal (A=0.5,C=0.65,G=0.5,T=0.5), but instead equals " << dna_dist
 		);
@@ -733,6 +748,7 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 	ADD_MAP(BeginStateLabel);
 	ADD_MAP(MatchStateLabel);
 	ADD_MAP(InsertionStateLabel);
+	ADD_MAP(DeletionStateLabel);
 	ADD_MAP(EndStateLabel);
 	ADD_MAP(LoopStateLabel);
 	ADD_MAP(PostAlignStateLabel);
@@ -744,88 +760,6 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
     for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++)
 	   std::cout << asl->first << ": " << stateInfo(asl->second) << endl;
 
-
-    // Start state
-    std::cout << "StateLabelId<StartStateLabel> is " << galosh::StateLabelId<galosh::StartStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::StartStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::StartStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::StartStateLabel, galosh::Plan7>::Type, float> Start_state_dist;
-    std::cout << Start_state_dist << std::endl;
-
-    // PreAlign state
-    std::cout << "StateLabelId<PreAlignStateLabel> is " << galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PreAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::PreAlignStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::PreAlignStateLabel, galosh::Plan7>::Type, float> PreAlign_state_dist;
-    std::cout << PreAlign_state_dist << std::endl;
-
-    // Begin state
-    std::cout << "StateLabelId<BeginStateLabel> is " << galosh::StateLabelId<galosh::BeginStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::BeginStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::BeginStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::BeginStateLabel, galosh::Plan7>::Type, float> Begin_state_dist;
-    std::cout << Begin_state_dist << std::endl;
-
-    // Match state
-    std::cout << "StateLabelId<MatchStateLabel> is " << galosh::StateLabelId<galosh::MatchStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::MatchStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::MatchStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::MatchStateLabel, galosh::Plan7>::Type, float> Match_state_dist;
-    std::cout << Match_state_dist << std::endl;
-
-    // Insertion state (both Plan 7 and Plan 9)
-    std::cout << "StateLabelId<InsertionStateLabel> is " << galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::InsertionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::InsertionStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::InsertionStateLabel, galosh::Plan9>::Type, float> Plan9_Insertion_state_dist;
-    std::cout << Plan9_Insertion_state_dist << std::endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::InsertionStateLabel, galosh::Plan7>::Type, float> Plan7_Insertion_state_dist;
-    std::cout << Plan7_Insertion_state_dist << std::endl;
-
-    // Deletion state (both Plan 7 and Plan 9)
-    std::cout << "StateLabelId<DeletionStateLabel> is " << galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::DeletionStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::DeletionStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::DeletionStateLabel, galosh::Plan9>::Type, float> Plan9_Deletion_state_dist;
-    std::cout << Plan9_Deletion_state_dist << std::endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::DeletionStateLabel, galosh::Plan7>::Type, float> Plan7_Deletion_state_dist;
-    std::cout << Plan7_Deletion_state_dist << std::endl;
-
-    // End state
-    std::cout << "StateLabelId<EndStateLabel> is " << galosh::StateLabelId<galosh::EndStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::EndStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::EndStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::EndStateLabel, galosh::Plan7>::Type, float> End_state_dist;
-    std::cout << End_state_dist << std::endl;
-
-    // Loop state
-    std::cout << "StateLabelId<LoopStateLabel> is " << galosh::StateLabelId<galosh::LoopStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::LoopStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::LoopStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::LoopStateLabel, galosh::Plan7>::Type, float> Loop_state_dist;
-    std::cout << Loop_state_dist << std::endl;
-
-    // PostAlign state
-    std::cout << "StateLabelId<PostAlignStateLabel> is " << galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::PostAlignStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::PostAlignStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
-    galosh::MultinomialDistribution<galosh::StateLabelTransitionTargets<galosh::PostAlignStateLabel, galosh::Plan7>::Type, float> PostAlign_state_dist;
-    std::cout << PostAlign_state_dist << std::endl;
-
-    // Terminal state
-    std::cout << "StateLabelId<TerminalStateLabel> is " << galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( IsSimple<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "simple." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsEmitting<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "emitting." << endl;
-    std::cout << galosh::StateLabel( (int)galosh::StateLabelId<galosh::TerminalStateLabel>::VALUE ) << " is " << ( isTrue( galosh::IsAssociatedWithPosition<galosh::TerminalStateLabel>::Type() ) ? "" : "not " ) << "associated with an ancestral sequence position." << endl;
   } // End test_profile_hmm_states
 
 BOOST_AUTO_TEST_SUITE_END()//end of test_non_db

@@ -753,12 +753,38 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 	ADD_MAP(LoopStateLabel);
 	ADD_MAP(PostAlignStateLabel);
 	ADD_MAP(TerminalStateLabel);
+
+	/**
+	 * \var curCorrect
+	 * store correct info about each state.
+	 * \todo This concept is a little fragile.  When the algebra or methodology changes, the "correct answers" will
+	 * change.  Re-think this later on.
+	 */
+	std::map<std::string,std::string> curCorrect;
+#define ADD_MAP_CURCORRECT(x,y) curCorrect.insert(pair<std::string,std::string>(x,y))
+    ADD_MAP_CURCORRECT("StartStateLabel","label: 0; code: S; simple; not emitting; not associated; Plan7 dist=(N=1)");
+	ADD_MAP_CURCORRECT("PreAlignStateLabel","label: 1; code: N; simple; emitting; not associated; Plan7 dist=(N=0.5,B=0.5)");
+	ADD_MAP_CURCORRECT("BeginStateLabel","label: 2; code: B; simple; not emitting; not associated; Plan7 dist=(M=0.5,D=0.5)");
+	ADD_MAP_CURCORRECT("MatchStateLabel","label: 3; code: M; simple; emitting; associated; Plan7 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	ADD_MAP_CURCORRECT("InsertionStateLabel","label: 4; code: I; simple; emitting; not associated; Plan7 dist=(M=0.5,I=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	ADD_MAP_CURCORRECT("DeletionStateLabel","label: 5; code: D; simple; not emitting; associated; Plan7 dist=(M=0.5,D=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	ADD_MAP_CURCORRECT("EndStateLabel","label: 6; code: E; simple; not emitting; not associated; Plan7 dist=(C=0.5,J=0.5)");
+	ADD_MAP_CURCORRECT("LoopStateLabel","label: 7; code: J; simple; emitting; not associated; Plan7 dist=(J=0.5,B=0.5)");
+	ADD_MAP_CURCORRECT("PostAlignStateLabel","label: 8; code: C; simple; emitting; not associated; Plan7 dist=(C=0.5,T=0.5)");
+	ADD_MAP_CURCORRECT("TerminalStateLabel","label: 9; code: T; simple; not emitting; not associated");
+
     /**
      * Iterate through all states, check each one against a known model.
      */
 	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
     for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++)
-	   std::cout << asl->first << ": " << stateInfo(asl->second) << endl;
+       BOOST_CHECK_MESSAGE(
+    	      ((std::string)curCorrect(asl->first)).compare(stateInfo(asl->second)) == 0,
+    	      asl->first << "should be " << curCorrect(asl->first) << "and instead it's" <<
+    	         stateInfo(asl->second)
+    	   );
+
+    	std::cout << asl->first << ": " << stateInfo(asl->second) << std::endl;
 
   } // End test_profile_hmm_states
 

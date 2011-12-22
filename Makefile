@@ -334,7 +334,7 @@ seqantest: $(SEQANTEST_SOURCES) $(SEQANTEST_INCS) $(SEQANTEST_OBJS) $(MUSCLE_CPP
 
 newseqantest: $(NEWSEQANTEST_SOURCES) $(SEQANTEST_INCS) $(NEWSEQANTEST_OBJS) $(MUSCLE_CPPOBJ) 	   
 	   $(CXX_LINK) -o newseqantest $(NEWSEQANTEST_OBJS) $(MUSCLE_CPPOBJ)
-	   ##$(DOXY_CMD)        ## don't do this with recursive doxygen options turned on, at least until you become immortal and very patient  TAH
+	   $(DOXY_CMD)        ## don't do this with recursive doxygen options turned on, at least until you become immortal and very patient  TAH
 
 musclehmmertest: $(MUSCLEHMMERTEST_SOURCES) $(MUSCLEHMMERTEST_INCS) $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o musclehmmertest $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)

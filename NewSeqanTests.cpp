@@ -531,13 +531,13 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	/// the way a seqan::Peptide can, into a std::string.  Currently I've written
 	/// a "toString" routine, which does the job along with the ridiculous dynamic
 	/// cast.
-	seqan::String<Dna,seqan::Alloc<> > *sp = dynamic_cast<seqan::String<Dna,seqan::Alloc<> > *>(&dna_seq);
+	seqan::String<Dna,seqan::Alloc<> > *sp = static_cast<seqan::String<Dna,seqan::Alloc<> > *>(&dna_seq);
 	string dna_seq_str = toString(*sp);
 	string anyDNA_s = (boost::to_upper_copy(anyDNA));
 	BOOST_CHECK_MESSAGE(///Test creation of galosh Sequence from string
 			anyDNA_s.compare(dna_seq_str) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anyDNA) <<
-			" but ended up being = " << *toCString(dna_seq)
+			" but ended up being = " << dna_seq_str
 	);
 	BOOST_CHECK_MESSAGE(///Test length of created galosh::Sequence
 			length(dna_seq) == anyDNA.length(),
@@ -777,14 +777,14 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
      * Iterate through all states, check each one against a known model.
      */
 	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
-    for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++)
-       BOOST_CHECK_MESSAGE(
-    	      ((std::string)curCorrect(asl->first)).compare(stateInfo(asl->second)) == 0,
-    	      asl->first << "should be " << curCorrect(asl->first) << "and instead it's" <<
-    	         stateInfo(asl->second)
-    	   );
-
-    	std::cout << asl->first << ": " << stateInfo(asl->second) << std::endl;
+    for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++) {
+    	   BOOST_CHECK_MESSAGE(
+    	         curCorrect[asl->first].compare(stateInfo(asl->second)) == 0,
+    	         asl->first << "should be " << curCorrect[asl->first] << "and instead it's" <<
+    	            stateInfo(asl->second)
+   	   );
+    }
+//    	std::cout << asl->first << ": " << stateInfo(asl->second) << std::endl;
 
   } // End test_profile_hmm_states
 

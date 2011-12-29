@@ -46,272 +46,7 @@
  * initializations along with the \a TEST initializations.
  *
  */
-#include "Ambiguous.hpp"
-#include "Algebra.hpp"
-#include "Sequence.hpp"
-#include "MultinomialDistribution.hpp"
-#include "ProfileHMM.hpp"
-#include "Profile.hpp"
-#include "Fasta.hpp"
-#include "Random.hpp"
-#include "DynamicProgramming.hpp"
-#include "ProfileTrainer.hpp"
-#include "ProfileTreeTrainer.hpp"
-///\#include "ProfileGibbs.hpp" // \todo Add tests for gibbs...
-#include "ProfuseTest.hpp"
-#include "AminoAcid20.hpp"
-
-#include <iostream>
-#include <string>
-
-#include <seqan/basic.h>
-#include <seqan/sequence.h>
-#include <seqan/file.h>
-#include <seqan/find_motif.h>
-
-#ifdef __HAVE_MUSCLE
-#include "muscle/distfunc.h"
-#include "muscle/clustsetdf.h"
-#include "muscle/clust.h"
-#include "muscle/tree.h"
-#include "muscle/textfile.h"
-#endif // __HAVE_MUSCLE
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-
-#ifdef __HAVE_MUSCLE
-int g_argc;
-char **g_argv;
-#endif // __HAVE_MUSCLE
-using namespace seqan;
-
-/**
- * \brief This function converts a Sequence, or a String to a std::string
- *
- * This is basically a hack, and shouldn't be necessary.  Probably a better solution
- * would be to invent the correct "assign" routine.  If we keep it, it should
- * probably go into the Galosh.hpp file.  --TAH
- *
- * \param source  a reference to a seqan::String
- * \return a std::string, translated from the compressed bits of the seqan::String in the appropriate alphabet
- *
- */
-template<typename TSource>
-inline std::string toString(TSource & source) {
-	typename seqan::Iterator<TSource, seqan::Standard>::Type it = seqan::begin(
-			source, seqan::Standard());
-	typename seqan::Iterator<TSource, seqan::Standard>::Type it_end =
-			seqan::end(source, seqan::Standard());
-	std::string retVal = "";
-	for (; it < it_end; ++it) {
-		typename GetValue<TSource const>::Type val_ = getValue(it);
-		retVal += val_;
-	}
-	return retVal;
-} //end of toString()
-
-/**
- * \fn static bool isTrue(T const & tag)
- * \brief Function for determining seqan True values
- * \param tag
- *    reference to any type
- * \return
- *    boolean false if type refers to anything but a seqan True object
- */
-template<typename T>
-static bool isTrue(T const & tag) {
-	return false;
-}
-
-/**
- * \fn static bool isTrue(seqan::True const & tag)
- * \brief Function for determining seqan True values
- * \param tag
- *    reference to any type
- * \return 
- *    boolean true if type refers to seqan True object
- */
-static bool isTrue(seqan::True const & tag) {
-	return true;
-}
-/**
- * \typedef AnyStateLabel
- * \brief a boost variant that allows iterating through HMM states
- * \see state_VALUE_generic,state_SIMPLE_generic
- */
-#include <boost/variant.hpp>
-typedef
-boost::variant<
-	galosh::StartStateLabel,
-	galosh::PreAlignStateLabel,
-	galosh::BeginStateLabel,
-	galosh::MatchStateLabel,
-	galosh::InsertionStateLabel,
-	galosh::DeletionStateLabel,
-	galosh::EndStateLabel,
-	galosh::LoopStateLabel,
-	galosh::PostAlignStateLabel,
-	galosh::TerminalStateLabel
-> AnyStateLabel;
-
-/**
- * \class state_VALUE_generic
- * \brief utility for iterating through state types
- *
- * This is a \a visitor subclass of the \a boost::variant system.  We're using it to
- * iterate through states.  When used with \a boost::apply_visitor it is basically a
- * get-type generic accessor for the state label numeric VALUE field.  This treats
- * objects of the different classes subsumed within the AnyClassLabel type '
- * (a boost::variant) as if they were objects of the same class.
- *
- * \todo The \ref AnyStateLabel typedef and these accessor classes should probably
- * be moved to the Galosh.hpp (or someplace similar).  They are probably useful
- * in other programs.
- */
-class
-state_VALUE_generic: public boost::static_visitor<int>
-{
-public:
-   template <typename T>
-   int operator()( T & state ) const
-    {
-	   return galosh::StateLabelId<T>::VALUE;
-    }
-};
-/**
- * \class state_SIMPLE_generic
- * \brief generic accessor for isSimple "field" of state labels
- */
-class
-state_SIMPLE_generic: public boost::static_visitor<bool>
-{
-public:
-	template <typename T>
-	bool operator()( T & state) const
-	{
-		return isTrue(typename IsSimple<T>::Type() );
-	}
-};
-/**
- * \class state_EMITTING_generic
- * \brief generic accessor for isSimple "field" of state labels
- */
-class
-state_EMITTING_generic: public boost::static_visitor<bool>
-{
-public:
-	template <typename T>
-	bool operator()( T & state) const
-	{
-		return isTrue(typename galosh::IsEmitting<T>::Type() );
-	}
-};
-/**
- * \class state_ASSOCIATED_generic
- * \brief generic accessor for IsAssociatedWithPosition "field" of state labels
- */
-class
-state_ASSOCIATED_generic: public boost::static_visitor<bool>
-{
-public:
-	template <typename T>
-	bool operator()( T & state) const
-	{
-		return isTrue(typename galosh::IsAssociatedWithPosition<T>::Type() );
-	}
-};
-/**
- * \class state_DIST7
- * \brief generic accessor for plan9 multinomial distribution associated with state labels
- *
- * It would be marginally better to have this class return a distribution object.
- * Unfortunately the distribution objects are all different classes, and that means
- * this would have to return a \a boost::variant.  I am not certain that will
- * work.  So for the time being I'm taking the easy way out.
- *
- */
-using namespace galosh;
-#define UNDEFINED_DIST_STRING ""
-class
-state_DIST7: public boost::static_visitor<std::string>
-{
-public:
-	inline std::string operator()(TerminalStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(StartStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float>().toString();}
-	inline std::string operator()(PreAlignStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<PreAlignStateLabel,  Plan7>::Type, float>().toString();}
-	inline std::string operator()(BeginStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<BeginStateLabel,     Plan7>::Type, float>().toString();}
-	inline std::string operator()(MatchStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<MatchStateLabel,     Plan7>::Type, float>().toString();}
-	inline std::string operator()(InsertionStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan7>::Type, float>().toString();}
-	inline std::string operator()(DeletionStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan7>::Type, float>().toString();}
-	inline std::string operator()(EndStateLabel & state)       const {return MultinomialDistribution<StateLabelTransitionTargets<EndStateLabel,       Plan7>::Type, float>().toString();}
-	inline std::string operator()(LoopStateLabel & state)      const {return MultinomialDistribution<StateLabelTransitionTargets<LoopStateLabel,      Plan7>::Type, float>().toString();}
-	inline std::string operator()(PostAlignStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<PostAlignStateLabel, Plan7>::Type, float>().toString();}
-}; // end of state_DIST7
-
-class
-state_DIST9: public boost::static_visitor<std::string>
-{
-public:
-	inline std::string operator()(TerminalStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(StartStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(PreAlignStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(BeginStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(MatchStateLabel & state)     const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(InsertionStateLabel & state) const {return MultinomialDistribution<StateLabelTransitionTargets<InsertionStateLabel, Plan9>::Type, float>().toString();}
-	inline std::string operator()(DeletionStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<DeletionStateLabel,  Plan9>::Type, float>().toString();}
-	inline std::string operator()(EndStateLabel & state)       const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(LoopStateLabel & state)      const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(PostAlignStateLabel & state) const {return UNDEFINED_DIST_STRING;}
-}; // end of state_DIST9
-
-
-/**
- * \fn std::string numberToString( T Number )
- * \brief Tiny helper function to turn any number into a string.
- */
-template <typename T>
-inline
-std::string numberToString ( T Number )
-{
-	stringstream ss;
-	ss << Number;
-	return ss.str();
-}
-
-/**
- * \fn std::string stateInfo(AnyStateLabel & sl)
- * \param sl  State label about which to return summary info
- * \return String with state label information
- * \brief This is a helper function for the test_profile_hmm_states unit test
- *
- */
-std::string stateInfo(AnyStateLabel & sl)
-{
-   std::string retVal = "";
-   int slNumeric = apply_visitor(state_VALUE_generic(),sl);
-   retVal += "label: ";
-   retVal += numberToString(slNumeric);
-   char code = galosh::StateLabel(slNumeric);
-   retVal += "; code: ";
-   retVal += code;
-   bool simple = apply_visitor(state_SIMPLE_generic(),sl);
-   retVal += "; ";
-   if(!simple) retVal += "not ";
-   retVal += "simple";
-   bool emitting = apply_visitor(state_EMITTING_generic(),sl);
-   retVal += "; ";
-   if(!emitting) retVal += "not ";
-   retVal += "emitting";
-   bool associated = apply_visitor(state_ASSOCIATED_generic(),sl);
-   retVal += "; ";
-   if(!associated) retVal += "not ";
-   retVal += "associated";
-   std::string dist7 = apply_visitor(state_DIST7(),sl);
-   if(dist7.compare("") != 0) retVal += "; Plan7 dist=" + dist7;
-   std::string dist9 = apply_visitor(state_DIST9(),sl);
-   if(dist9.compare("") != 0) retVal += "; Plan9 dist=" + dist9;
-   return retVal;
-}
+#include "NewSeqanTests.hpp"
 
 /**
  * \brief The next several lines are required for the test harness
@@ -337,15 +72,12 @@ char **g_argv = 0;
 using namespace galosh;
 
 #include <boost/program_options.hpp>
-/**
- * \note boost variants are used to iterate through sets of types, such as
- * HMM states
- */
 
 namespace po = boost::program_options;
 po::options_description utest_opts("Additional unit test options");
 po::variables_map cmdline_opt_map;
 po::basic_parsed_options<char> *parsed;
+
 int main(int argc, char* argv[]) {
 	g_argc = argc;
 	g_argv = (char **) argv;
@@ -355,7 +87,7 @@ int main(int argc, char* argv[]) {
 	parsed = &p;
 	po::store(p, cmdline_opt_map, true);
 	po::notify(cmdline_opt_map);
-	// load prototype for user's unit test init function
+	initialize_globals();
 	extern ::boost::unit_test::test_suite* init_unit_test_suite(int argc,
 			char* argv[]);
 	boost::unit_test::init_unit_test_func init_func = &init_unit_test_suite;
@@ -506,7 +238,7 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	);
 	prot += "anewend"; anypeptide += "anewend";
 	string protStr;
-	assign(protStr,prot);
+	seqan::assign(protStr,prot);
 	BOOST_CHECK_MESSAGE(///Test concatenation of string to seqan peptide sequence
 			boost::to_upper_copy(anypeptide).compare(protStr) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anypeptide) <<
@@ -624,17 +356,13 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	std::cout << "test_multinomials: Testing multinomial distribution generation and manipulation for DNA" << std::endl;
 
 	Dna c_2( 1 );
-	BOOST_CHECK_MESSAGE(/// Test conversion of Dna (created from int) to char
+    BOOST_CHECK_MESSAGE(/// Test conversion of Dna (created from int) to char
 			(char) c_2 == 'C',
 			"Dna to string yielded "<< c_2 << " instead of C"
 	);
 
 	galosh::MultinomialDistribution<Dna, realspace> dna_dist;
 	dna_dist[ c_2 ] = .4;
-	/**
-	 * \note This value is illegal:  doesn't sum to 1
-	 */
-
 	BOOST_CHECK_MESSAGE( /// Test modification of a Multinomial distribution object
 			dna_dist.m_elementCount == 4 && dna_dist.m_probs[0] == 0.25 &&
 			dna_dist.m_probs[1].prob() == 0.4 &&
@@ -664,10 +392,12 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		std::cout << "test_multinomials:       Testing multinomial distribution with ambiguities (for DNA)" << std::endl;
 		Dna5 a = 'a';
 		Dna5 n = 'n';
+
+		double ambigN = dna_dist.ambiguousSum( n ).prob();
 		BOOST_CHECK_MESSAGE( /// Check initial distributions of single Dna5 ambiguous and unambiguous elements
-	       dna_dist.ambiguousSum( a ) == 0.25 && dna_dist.ambiguousSum( n ) == 1.15,
+	       dna_dist.ambiguousSum( a ) == 0.25 && ambigN == 1.15,
            "Initial 'A' distribution should be 0.25 and it's " << dna_dist.ambiguousSum( a ) <<
-           "initial 'N' distribution should be 1.15 and it's " << dna_dist[ n ]
+           "; initial 'N' distribution should be 1.15 and it's " << dna_dist[ n ]
 		);
         /// \internal
 		/// Uncomment this, and it should fail to compile, since AminoAcid is
@@ -688,6 +418,10 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		   output.is_equal("(A=0.75,C=0.9,G=0.75,T=0.75)"),
 		   "Distribution should equal (A=0.75,C=0.9,G=0.75,T=0.75), but instead equals " << dna_dist
 		);
+		/**
+		 * \todo See if BOOST_CHECK_CLOSE works with non-float arithmetic.  It almost certainly won't.
+		 * See how easy it is make it work.
+		 */
         BOOST_CHECK_CLOSE(ambiguous_value.prob(),3.15,FLOAT_POINT_EQUALITY_TOL_PCT);  /// Test probability of autoincremented ambiguous element
 		ambiguous_value = 1.0;
         output << dna_dist;
@@ -724,36 +458,9 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 /**
  * \brief Test properties of profile HMM states.
  */
-BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
+BOOST_AUTO_TEST_CASE(test_profile_hmm_states)
 {
 	using namespace galosh;
-	/**
-	 *  \var stateLabels
-	 *  \brief a useful map that contains the full text name of the state label,
-	 *  as the key, and a variant containing a reference to the appropriate state
-	 *  label object.
-	 *  \see state_VALUE_generic, state_SIMPLE_generic
-	 */
-	std::map<std::string,AnyStateLabel> stateLabels;
-	/**
-	 * \def ADD_MAP(x)
-	 * \brief Tiny macro to insert values into stateLabels.
-     *
-	 * \todo Move this, stateLabels, AnyStateLabel typedef, and accessor classes
-	 * elsewhere
-	 */
-#define ADD_MAP(x) stateLabels.insert(pair<std::string,AnyStateLabel>(#x,x()))
-    ADD_MAP(StartStateLabel);
-	ADD_MAP(PreAlignStateLabel);
-	ADD_MAP(BeginStateLabel);
-	ADD_MAP(MatchStateLabel);
-	ADD_MAP(InsertionStateLabel);
-	ADD_MAP(DeletionStateLabel);
-	ADD_MAP(EndStateLabel);
-	ADD_MAP(LoopStateLabel);
-	ADD_MAP(PostAlignStateLabel);
-	ADD_MAP(TerminalStateLabel);
-
 	/**
 	 * \var curCorrect
 	 * store correct info about each state.
@@ -788,4 +495,8 @@ BOOST_AUTO_TEST_CASE( test_profile_hmm_states )
 
   } // End test_profile_hmm_states
 
-BOOST_AUTO_TEST_SUITE_END()//end of test_non_db
+BOOST_AUTO_TEST_SUITE_END()//end of test_non_dp
+
+BOOST_AUTO_TEST_SUITE(dynamic_programming_1)
+
+BOOST_AUTO_TEST_SUITE_END()//end of dynamic_programming_1

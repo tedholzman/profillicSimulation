@@ -48,13 +48,15 @@
  */
 #include "NewSeqanTests.hpp"
 
+
 /**
  * \brief The next several lines are required for the test harness
  *
  */
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE galosh_profuse tests
+#define BOOST_TEST_MODULE galosh_profuse_tests
+#define BOOST_RT_PARAM_DEBUG
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/output_test_stream.hpp>
 using boost::test_tools::output_test_stream;
@@ -81,7 +83,10 @@ po::basic_parsed_options<char> *parsed;
 int main(int argc, char* argv[]) {
 	g_argc = argc;
 	g_argv = (char **) argv;
-
+	/**
+	 * make sure booleans are displayed as True and False
+	 */
+    cout << std::boolalpha;
 	po::parsed_options p = po::command_line_parser(argc, argv).options(
 			utest_opts).allow_unregistered().run();
 	parsed = &p;
@@ -91,7 +96,27 @@ int main(int argc, char* argv[]) {
 	extern ::boost::unit_test::test_suite* init_unit_test_suite(int argc,
 			char* argv[]);
 	boost::unit_test::init_unit_test_func init_func = &init_unit_test_suite;
-	return ::boost::unit_test::unit_test_main(init_func, argc, argv);
+
+    ::Max_Unit_Name_Width = 0;
+	for(std::_Rb_tree_iterator<
+			std::pair<const long unsigned int,
+			          boost::unit_test::test_unit*
+			>
+		> val = s_frk_impl().m_test_units.begin();
+	    val != (s_frk_impl().m_test_units.end());
+	    val++
+	) {
+#ifdef DEBUG
+		std::cerr << val->second->p_name.value << " " <<
+	    val->first << " " << val->second->p_type_name<< std::endl;
+#endif
+		if(strcmp(((const_string)(val->second->p_type_name)).begin(),"case") == 0){
+           if(val->second->p_name.value.length() > ::Max_Unit_Name_Width)
+        	      ::Max_Unit_Name_Width = val->second->p_name.value.length();
+        }
+	}
+	::boost::unit_test::unit_test_main(init_func, argc, argv);
+	return 1;
 }
 /**
  * \fn std::string getOptVal(const std::string optName)
@@ -114,11 +139,13 @@ std::string getOptVal(const std::string optName) {
 	return retVal;
 }
 /**
- * \def FLOAT_POINT_EQUALITY_TOL_PCT
- * When we test if two floating point numbers are equal, they must
- * really fall within FLOAT_POINT_EQUALITY_TOL_PCT \% of each other
+ * \def TEST_DESC(name,description)
+ *
+ * Macro for formatting minimal output from each test case.
  */
-#define FLOAT_POINT_EQUALITY_TOL_PCT 0.00000001
+#define TEST_DESC(name,description) (string(name) + string(":") +\
+string(::Max_Unit_Name_Width - (string(name)).length() + 1, ' ') +\
+string(description))
 /**
  * \brief This is a canonical example of a unit test.
  *
@@ -126,8 +153,8 @@ std::string getOptVal(const std::string optName) {
  * It also defines commandline option value.
  */
 BOOST_AUTO_TEST_CASE( sanity_check ) {
-	std::cout << "Sanity check: should always be TRUE" << std::endl;
-	BOOST_CHECK_MESSAGE( 1 == 1, "Test failed: 1 doesn't equal 1");
+	std::cout << TEST_DESC("Sanity check","should always be TRUE") << std::endl;
+	BOOST_CHECK_MESSAGE( 1 == 1, "Expected TRUE, saw " << (1 == 1));
 } //sanity_check
 
 /**
@@ -145,27 +172,27 @@ BOOST_AUTO_TEST_SUITE( test_non_dp )
  */
 BOOST_AUTO_TEST_CASE( test_alphabets )
 {
-	std::cout << "test_alphabets: Testing alphabet conversions" << std::endl;
+	std::cout << TEST_DESC("test_alphabets","Testing alphabet conversions") << std::endl;
 	Dna a = 'a';
 	BOOST_CHECK_MESSAGE( /// Test conversion of Dna to char
 			(char) a == 'A',
-			"Dna to string yielded "<<a<< " instead of A"
+			"Dna to string yielded "<<a<< ", expected A"
 	);
 	Dna5 b = 'f';//'f' is unknown character
 	BOOST_CHECK_MESSAGE(///Test conversion of Dna5 to char (and converting unknowns to N's)
 			(char) b == 'N',
-			"Dna5 yielded " << b << " instead of N"
+			"Dna5 yielded " << b << ", expected N"
 	);
 	//Many SeqAn alphabet classes can be converted into each other.
 	b = a;
 	BOOST_CHECK_MESSAGE(///Test conversion of Dna5 to Dna to char
 			(char) b == 'A',
-			"Conversion from Dna to Dna5 yielded " << b << " instead of A"
+			"Conversion from Dna to Dna5 yielded " << b << ", expected A"
 	);
 	Iupac c = a;
 	BOOST_CHECK_MESSAGE(///Test conversion of Iupac to Dna to char
 			(char) c == 'A',
-			"Conversion from Dna to Iupac yielded " << c << " instead of A"
+			"Conversion from Dna to Iupac yielded " << c << ", expected A"
 	);
 } // end of test_alphabets
 bool ambiguity_tested = false;
@@ -174,32 +201,32 @@ bool ambiguity_tested = false;
  */
 BOOST_AUTO_TEST_CASE( test_ambiguous )
 {
-	std::cout << "test_ambiguity: Testing inter-alphabet ambiguities" << std::endl;
+	std::cout << TEST_DESC("test_ambiguity","Testing inter-alphabet ambiguities") << std::endl;
 	ambiguity_tested=true;
 	BOOST_CHECK_MESSAGE( //Test if Dna is ambiguous over Dna5
 			!isTrue( galosh::IsAmbiguous<seqan::Dna, seqan::Dna5>::Type() ),
-			"Dna appears to have ambiguities with respect to Dna5.  It shouldn't."
+			"Dna should not have ambiguities with respect to Dna5."
 	);
 	BOOST_CHECK_MESSAGE(//Test if Dna5 is ambiguous over Dna
 			isTrue( galosh::IsAmbiguous<seqan::Dna5, seqan::Dna>::Type() ),
-			"Dna5 doesn't appear to have ambiguities with respect to Dna.  It should"
+			"Dna5 should have ambiguities with respect to Dna."
 	);
 	Dna dna_residue;
 	Dna5 a = 'a';
 	BOOST_CHECK_MESSAGE(//Test how many elements in Dna5 a match an element in Dna
 			galosh::ambiguousCount( a, Dna() ) == 1,
-			"'A' in Dna5 matches " << (galosh::ambiguousCount( a, Dna() ) == 1) << " letters in Dna, should only match 1"
+			"'A' in Dna5 matches " << (galosh::ambiguousCount( a, Dna() ) == 1) << " letters in Dna, should match 1"
 	);
 	galosh::ambiguousAssign( dna_residue, a, 0 );
 	BOOST_CHECK_MESSAGE(//Find a Dna letter matching a Dna5 letter
 			(char) dna_residue == 'A',
-			"ambiguousAssign error: Dna5 'A' matches Dna " << dna_residue
+			"ambiguousAssign - Dna5 'A' matches Dna " << dna_residue << ", expected 'A'"
 	);
 	Dna5 n = 'n';
 	size_t num_elements = galosh::ambiguousCount( n, Dna() );
 	BOOST_CHECK_MESSAGE(//Test how many Dna elements match Dna5's letter n
 			num_elements == 4,
-			"Dna5's N element matches " << num_elements << " Dna elements, when it should match 4"
+			"Dna5's N element matches " << num_elements << " Dna elements, expected 4"
 	);
 	string nucleotides ("ATGC");
 	// Test that ambiguousAssign matches all four nucleotides against N
@@ -207,14 +234,14 @@ BOOST_AUTO_TEST_CASE( test_ambiguous )
 		galosh::ambiguousAssign( dna_residue, n, i );
 		size_t pos = nucleotides.find((char)dna_residue);
 		BOOST_CHECK_MESSAGE(
-				pos < nucleotides.length(),
-				"ambiguousAssign returned " << (char)dna_residue << " which doesn't appear to be a nucleotide!"
+				pos != string::npos,
+				"ambiguousAssign returned " << (char)dna_residue << ", expected a unique nucleotide."
 		);
 		if(pos<nucleotides.length()) nucleotides.erase(pos,1);
 	}
 	BOOST_CHECK_MESSAGE(
 			nucleotides.length() == 0,
-			"ambiguousAssign missed some nucleotides: " + nucleotides
+			"ambiguousAssign should match all possible nucleotides; missed these: " + nucleotides
 	);
 } //end of test_ambiguous
 
@@ -223,18 +250,18 @@ BOOST_AUTO_TEST_CASE( test_ambiguous )
  */
 BOOST_AUTO_TEST_CASE( test_sequences )
 {
-	std::cout << "test_sequences: Testing basic seqan and galosh biosequence operations" << std::endl;
+	std::cout << TEST_DESC("test_sequences","Testing basic seqan and galosh biosequence operations") << std::endl;
 	string anypeptide = "anypeptide";
 	seqan::Peptide prot = anypeptide;
 	BOOST_CHECK_MESSAGE( ///Test if seqan peptide sequence length is correct
 			length(prot) == anypeptide.length(),
-			"Length of " << toCString(prot) << " should be " << anypeptide.length() <<
-			"but ended up being " << length(prot)
+			"Length of '" << (*toCString(&prot)) << "' should be " << anypeptide.length() <<
+			"; ended up being " << length(prot)
 	);
 	BOOST_CHECK_MESSAGE(///Test array-like indexing of seqan peptide sequence
 			(char)prot[ 9 ] == toupper(anypeptide[9]),
-			"The 9th character of " << toCString(prot) << " should be " << anypeptide[9] <<
-			"but ended up being " << (char)prot[9]
+			"The 9th character of " << (*toCString(&prot)) << " should be " << anypeptide[9] <<
+			"; ended up being " << (char)prot[9]
 	);
 	prot += "anewend"; anypeptide += "anewend";
 	string protStr;
@@ -242,12 +269,12 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	BOOST_CHECK_MESSAGE(///Test concatenation of string to seqan peptide sequence
 			boost::to_upper_copy(anypeptide).compare(protStr) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anypeptide) <<
-			"but ended up = " << toCString(prot)
+			"; ended up = " << (*toCString(&prot))
 	);
 	BOOST_CHECK_MESSAGE(///Test length of concatenated seqan peptide sequence
 			length(prot) == anypeptide.length(),
 			"Test sequence should be " << anypeptide.length() << " characters long, " <<
-			"but ended up being " << length(prot) << " characters long"
+			"; ended up being " << length(prot) << " characters long"
 	);
 
 	/// \todo Figure out what is going on with galosh::Sequence<>.<br>
@@ -269,12 +296,12 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	BOOST_CHECK_MESSAGE(///Test creation of galosh Sequence from string
 			anyDNA_s.compare(dna_seq_str) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anyDNA) <<
-			" but ended up being = " << dna_seq_str
+			"; ended up being = " << dna_seq_str
 	);
 	BOOST_CHECK_MESSAGE(///Test length of created galosh::Sequence
 			length(dna_seq) == anyDNA.length(),
 			"Test sequence should be " << anyDNA.length() << " characters long, " <<
-			"but ended up being " << length(dna_seq) << " characters long"
+			"; ended up being " << length(dna_seq) << " characters long"
 	);
 } //end of test_sequences
 
@@ -291,7 +318,21 @@ BOOST_AUTO_TEST_CASE( test_sequences )
  * the boost \a output_test_stream to determine if a fasta data structure
  * correctly represents the file it was read from.
  */
-BOOST_AUTO_TEST_CASE( test_fasta )
+struct test_fasta_options {
+	test_fasta_options() {
+		utest_opts.add_options()
+		("ungapped_fasta",po::value<std::string>(),"Path of ungapped fasta file to use in test-fasta")
+		("gapped_fasta",po::value<std::string>(),"Path of gapped fasta file to use in test-fasta");
+		po::store(*parsed, cmdline_opt_map, true);
+		po::notify(cmdline_opt_map);
+		std::cout << "ungapped: " << cmdline_opt_map.count("ungapped_fasta") << std::endl;
+		std::cout << "gapped: " << cmdline_opt_map.count("ungapped_fasta") << std::endl;
+
+		cmdline_opt_map["gapped_fasta"];
+	}
+};
+
+BOOST_FIXTURE_TEST_CASE( test_fasta, test_fasta_options )
 {
 	std::string ungapped_fasta_file = DEFAULT_UNGAPPED_FASTA_FILE;
 	std::string gapped_fasta_file = DEFAULT_GAPPED_FASTA_FILE;
@@ -302,12 +343,8 @@ BOOST_AUTO_TEST_CASE( test_fasta )
 	if(tmp.compare("") != 0) ungapped_fasta_file = tmp;
 	tmp = getOptVal("gapped_fasta");
 	if(tmp.compare("") != 0) gapped_fasta_file = tmp;
-	utest_opts.add_options()
-	("ungapped_fasta",po::value<std::string>(),"Path of ungapped fasta file to use in test-fasta")
-	("gapped_fasta",po::value<std::string>(),"Path of gapped fasta file to use in test-fasta");
-	po::notify(cmdline_opt_map);
 
-	std::cout << "test_fasta:     Testing ungapped and gapped fasta file reads and conversions" << std::endl;
+	std::cout << TEST_DESC("test_fasta","Testing ungapped and gapped fasta file reads and conversions") << std::endl;
 
 	//
 	//// Fasta with no gaps
@@ -353,12 +390,12 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	///can that be done within this model?  Can we tell if a test (e.g.
 	///ambiguous) is going to be executed? Currently using kludge.
 
-	std::cout << "test_multinomials: Testing multinomial distribution generation and manipulation for DNA" << std::endl;
+	std::cout << TEST_DESC("test_multinomials","Testing multinomial distribution generation and manipulation for DNA") << std::endl;
 
 	Dna c_2( 1 );
     BOOST_CHECK_MESSAGE(/// Test conversion of Dna (created from int) to char
 			(char) c_2 == 'C',
-			"Dna to string yielded "<< c_2 << " instead of C"
+			"Dna to string yielded '"<< c_2 << "'; expecting 'C'"
 	);
 
 	galosh::MultinomialDistribution<Dna, realspace> dna_dist;
@@ -367,7 +404,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 			dna_dist.m_elementCount == 4 && dna_dist.m_probs[0] == 0.25 &&
 			dna_dist.m_probs[1].prob() == 0.4 &&
 			dna_dist.m_probs[2].prob() == 0.25 && dna_dist.m_probs[3].prob() == 0.25,
-			"dist should be A=T=G=0.25, C=0.4; but instead it is " << dna_dist
+			"dist should be A=T=G=0.25, C=0.4; yielded " << dna_dist
 	);
     /**
      * \todo it would be nice if all the constants in this module (e.g. 12,0.25)
@@ -384,20 +421,20 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	}
 	BOOST_CHECK_MESSAGE( /// Test structure of a StateLabel distribution
 	   n_elements == 12 && elValOK,
-	   "Bad structure for StateLabel distribution " << state_dist
+	   "Expected " << evenDist << " for each of 12 states, saw " << state_dist
 	);
 
 	if( ambiguity_tested )
 	{
-		std::cout << "test_multinomials:       Testing multinomial distribution with ambiguities (for DNA)" << std::endl;
+		std::cout << TEST_DESC("test_multinomials","Testing multinomial distribution with ambiguities (for DNA)") << std::endl;
 		Dna5 a = 'a';
 		Dna5 n = 'n';
 
 		double ambigN = dna_dist.ambiguousSum( n ).prob();
 		BOOST_CHECK_MESSAGE( /// Check initial distributions of single Dna5 ambiguous and unambiguous elements
 	       dna_dist.ambiguousSum( a ) == 0.25 && ambigN == 1.15,
-           "Initial 'A' distribution should be 0.25 and it's " << dna_dist.ambiguousSum( a ) <<
-           "; initial 'N' distribution should be 1.15 and it's " << dna_dist[ n ]
+           "Initial 'A' distribution should be 0.25; yielded " << dna_dist.ambiguousSum( a ) <<
+           "; initial 'N' distribution should be 1.15 and it yielded " << dna_dist[ n ]
 		);
         /// \internal
 		/// Uncomment this, and it should fail to compile, since AminoAcid is
@@ -416,7 +453,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		output << dna_dist;
 		BOOST_CHECK_MESSAGE( /// Test autoincrement (+=)  of ambiguous DNA value (n), effect on distribution
 		   output.is_equal("(A=0.75,C=0.9,G=0.75,T=0.75)"),
-		   "Distribution should equal (A=0.75,C=0.9,G=0.75,T=0.75), but instead equals " << dna_dist
+		   "Distribution should equal (A=0.75,C=0.9,G=0.75,T=0.75); turns out to equal " << dna_dist
 		);
 		/**
 		 * \todo See if BOOST_CHECK_CLOSE works with non-float arithmetic.  It almost certainly won't.
@@ -427,14 +464,14 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
         output << dna_dist;
 		BOOST_CHECK_MESSAGE( /// Test direct assignment of ambiguous DNA value (n), effect on distribution
 		   output.is_equal("(A=0.25,C=0.25,G=0.25,T=0.25)"),
-		   "Distribution should equal (A=0.25,C=0.25,G=0.25,T=0.25), but instead equals " << dna_dist
+		   "Distribution should equal (A=0.25,C=0.25,G=0.25,T=0.25); yielded " << dna_dist
 		);
         BOOST_CHECK_CLOSE(ambiguous_value.prob(),1.00,FLOAT_POINT_EQUALITY_TOL_PCT);  /// Test probability of autoincremented ambiguous element
 		dna_dist[ n ] += 1.0;
 		output << dna_dist;
 		BOOST_CHECK_MESSAGE( /// Test direct autoincrement,  distrib[n] += 1
 		   output.is_equal("(A=0.5,C=0.5,G=0.5,T=0.5)"),
-		   "Distribution should equal (A=0.5,C=0.5,G=0.5,T=0.5), but instead equals " << dna_dist
+		   "Distribution should equal (A=0.5,C=0.5,G=0.5,T=0.5); yielded " << dna_dist
 		);
 	} // End if test_ambiguous (and test_multinomials)
 
@@ -465,7 +502,7 @@ BOOST_AUTO_TEST_CASE(test_profile_hmm_states)
 	 * \var curCorrect
 	 * store correct info about each state.
 	 * \todo This concept is a little fragile.  When the algebra or methodology changes, the "correct answers" will
-	 * change.  Re-think this later on.
+	 * change.  Re-think this later on.  Probably put the right answers into a file.
 	 */
 	std::map<std::string,std::string> curCorrect;
 #define ADD_MAP_CURCORRECT(x,y) curCorrect.insert(pair<std::string,std::string>(x,y))
@@ -483,20 +520,83 @@ BOOST_AUTO_TEST_CASE(test_profile_hmm_states)
     /**
      * Iterate through all states, check each one against a known model.
      */
-	std::cout << "test_profile_hmm_states: Testing properties and access methods of HMM states" << std::endl;
+	std::cout << TEST_DESC("test_profile_hmm_states","Testing properties and access methods of HMM states") << std::endl;
     for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++) {
     	   BOOST_CHECK_MESSAGE(
     	         curCorrect[asl->first].compare(stateInfo(asl->second)) == 0,
-    	         asl->first << "should be " << curCorrect[asl->first] << "and instead it's" <<
+    	         asl->first << "should be " << curCorrect[asl->first] << ";\nturns out to be " <<
     	            stateInfo(asl->second)
    	   );
     }
-//    	std::cout << asl->first << ": " << stateInfo(asl->second) << std::endl;
-
   } // End test_profile_hmm_states
 
 BOOST_AUTO_TEST_SUITE_END()//end of test_non_dp
 
 BOOST_AUTO_TEST_SUITE(dynamic_programming_1)
+    BOOST_AUTO_TEST_CASE(test_profiles)
+    {
+  	cout<<TEST_DESC("Test Profiles","Basic operations on profiles") << std::endl;
 
+    typedef realspace ProbabilityType;
+    typedef realspace ScoreType;
+    typedef realspace MatrixValueType;
+    typedef ProfileTreeRoot<Dna, ProbabilityType> ProfileType;
+
+    Dna residue;
+    galosh::Sequence<Dna5> dna_seq_a = "a";
+    galosh::Sequence<Dna5> dna_seq_b = "ag";
+    galosh::Sequence<Dna5> dna_seq_c = "aga";
+    vector<galosh::Sequence<Dna5> > dna_seqs( 3 );
+    dna_seqs[ 0 ] = dna_seq_a;
+    dna_seqs[ 1 ] = dna_seq_b;
+    dna_seqs[ 2 ] = dna_seq_c;
+    int num_sequences_to_use = dna_seqs.size();
+
+#ifdef USE_DEL_IN_DEL_OUT
+    // We need at least 3 positions to be able to test extensions of del-ins and del-outs
+    galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile( 3 );
+#else
+    galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile( 2 );
+#endif // USE_DEL_IN_DEL_OUT .. else ..
+/*
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer forward_matrices(
+      dna_profile,
+      dna_seqs,
+      num_sequences_to_use
+    );
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::iterator forward_matrices_iterator =
+      forward_matrices.begin();
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer backward_matrices(
+      dna_profile,
+      dna_seqs,
+      num_sequences_to_use
+    );
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::reverse_iterator backward_matrices_iterator =
+      backward_matrices.rbegin();
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionSpecificSequenceScoreCoefficientsVector coefficients_vector( 3 );
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente;
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_unscaled;
+    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_backup;
+
+    ///////
+    /// Profile
+*/
+      std::cout << "The dna profile is:" << std::endl;
+      std::cout << dna_profile;
+      std::cout << endl;
+
+      std::cout << "A default Iupac profile is:" << std::endl;
+      galosh::ProfileTreeRoot<Iupac, ProbabilityType> iupac_profile;
+      std::cout << iupac_profile;
+      std::cout << endl;
+
+      std::cout << "Reading profile from file 'seqantest.DATA.profile'" << std::endl;
+      galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile_from_file;
+      dna_profile_from_file.fromFile( "seqantest.DATA.profile" );
+      std::cout << "\tgot:" << std::endl;
+      std::cout << dna_profile_from_file;
+      std::cout << endl;
+
+
+   }
 BOOST_AUTO_TEST_SUITE_END()//end of dynamic_programming_1

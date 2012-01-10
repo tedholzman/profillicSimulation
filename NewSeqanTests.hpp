@@ -25,6 +25,9 @@
 
 #include <iostream>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #include <seqan/basic.h>
 #include <seqan/sequence.h>
@@ -44,6 +47,14 @@
 int g_argc;
 char **g_argv;
 #endif // __HAVE_MUSCLE
+
+/**
+ * \def FLOAT_POINT_EQUALITY_TOL_PCT
+ * When we test if two floating point numbers are equal, they must
+ * really fall within FLOAT_POINT_EQUALITY_TOL_PCT \% of each other
+ */
+#define FLOAT_POINT_EQUALITY_TOL_PCT 0.00000001
+
 using namespace seqan;
 
 /**
@@ -311,5 +322,7 @@ void initialize_globals() {
    ADD_MAP(PostAlignStateLabel);
    ADD_MAP(TerminalStateLabel);
 } // of initialize_globals
+
+int Max_Unit_Name_Width;
 
 #endif /* NEWSEQANTESTS_HPP_ */

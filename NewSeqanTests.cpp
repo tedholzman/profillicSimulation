@@ -48,7 +48,6 @@
  */
 #include "NewSeqanTests.hpp"
 
-
 /**
  * \brief The next several lines are required for the test harness
  *
@@ -56,7 +55,9 @@
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE galosh_profuse_tests
+#ifdef DEBUG
 #define BOOST_RT_PARAM_DEBUG
+#endif
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/output_test_stream.hpp>
 using boost::test_tools::output_test_stream;
@@ -76,68 +77,103 @@ using namespace galosh;
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
-po::options_description utest_opts("Additional unit test options");
-po::variables_map cmdline_opt_map;
-po::basic_parsed_options<char> *parsed;
+po::options_description galosh_opt_desc("Galosh-specific unit test options");
+po::variables_map galosh_opt_map;
+po::parsed_options parsed(new po::options_description());
 
-int main(int argc, char* argv[]) {
-	g_argc = argc;
-	g_argv = (char **) argv;
-	/**
-	 * make sure booleans are displayed as True and False
-	 */
-    cout << std::boolalpha;
-	po::parsed_options p = po::command_line_parser(argc, argv).options(
-			utest_opts).allow_unregistered().run();
-	parsed = &p;
-	po::store(p, cmdline_opt_map, true);
-	po::notify(cmdline_opt_map);
-	initialize_globals();
-	extern ::boost::unit_test::test_suite* init_unit_test_suite(int argc,
-			char* argv[]);
-	boost::unit_test::init_unit_test_func init_func = &init_unit_test_suite;
+int main(int argc, char* argv[])
+{
+   g_argc = argc;
+   g_argv = (char **) argv;
+   /**
+    * make sure booleans are displayed as True and False
+    */
+   cout << std::boolalpha;
 
-    ::Max_Unit_Name_Width = 0;
-	for(std::_Rb_tree_iterator<
-			std::pair<const long unsigned int,
-			          boost::unit_test::test_unit*
-			>
-		> val = s_frk_impl().m_test_units.begin();
-	    val != (s_frk_impl().m_test_units.end());
-	    val++
-	) {
+   /**
+    * All about program option processing
+    */
+   galosh_opt_desc.add_options()
+      ("ghelp","Galosh specific help messages")
+   ;
+   parsed =
+      po::command_line_parser(argc, argv).options(galosh_opt_desc).allow_unregistered().run();
+   po::store(parsed, galosh_opt_map);
+   po::notify(galosh_opt_map);
+
+   initialize_globals();
+   extern ::boost::unit_test::test_suite* init_unit_test_suite(int argc,char* argv[]);
+   boost::unit_test::init_unit_test_func init_func = &init_unit_test_suite;
+
+   /**
+    * \var Max_Unit_Name_Width
+    *
+    * This is one of several collections of information about the current set of
+    * of tests to be run
+    */
+   Max_Unit_Name_Width = 0;
+   for(
+      std::_Rb_tree_iterator<
+	     std::pair<const long unsigned int,boost::unit_test::test_unit*>
+	     > val = s_frk_impl().m_test_units.begin();
+	  val != (s_frk_impl().m_test_units.end());
+	  val++
+   ) {
 #ifdef DEBUG
 		std::cerr << val->second->p_name.value << " " <<
 	    val->first << " " << val->second->p_type_name<< std::endl;
 #endif
-		if(strcmp(((const_string)(val->second->p_type_name)).begin(),"case") == 0){
+		if(strcmp(((const_string)(val->second->p_type_name)).begin(),"case") == 0)
+		{
            if(val->second->p_name.value.length() > ::Max_Unit_Name_Width)
-        	      ::Max_Unit_Name_Width = val->second->p_name.value.length();
+        	      Max_Unit_Name_Width = val->second->p_name.value.length();
         }
 	}
 	::boost::unit_test::unit_test_main(init_func, argc, argv);
 	return 1;
 }
 /**
- * \fn std::string getOptVal(const std::string optName)
+ * \fn std::string getOptVal(po::parsed_options *p,const std::string optName)
  * \brief fetches the value of program option optName
  * \param optName
  *    The string value of command line parameter you want to fetch
+ * \param p
+ *    A pointer to the boost program option (po::) class that contains the parsed options
  * \brief This is a kludge, to be repaired when I fully understand the program_options boost module
  * \todo this is not good code.  It's got to be repaired when there's time to
  * understand the nature of the \a allow_unregistered option of the \a basic_command_line_parser.
- * \note Accesses a global variable, \a parsed.  (Shame!)
+ *
  * \return Returns the string value of option optName
  */
-std::string getOptVal(const std::string optName) {
+std::string getOptVal(po::parsed_options *p,const std::string optName) {
 	std::string retVal = "";
-	vector<po::basic_option<char> >::iterator it;
-	for (it = parsed->options.begin(); it < parsed->options.end(); it++) {
+	for (vector<po::basic_option<char> >::iterator it = (*p).options.begin(); it != (*p).options.end(); it++) {
 		if (it->string_key.compare(optName) == 0)
 			return it->value[0];
 	}
 	return retVal;
 }
+/**
+ * \fn std::string getOpt(po::parsed_options *p,const std::string optName)
+ * \brief tells whether the option, optName has been specified
+ * \param optName
+ *    The string value of command line parameter you want to fetch
+ * \param p
+ *    A pointer to the boost program option (po::) class that contains the parsed options
+ *
+ * \return Returns True if the option is specified (explicitly), False otherwise
+ *
+ * \todo See if this code works with implicit, default, and options specified
+ * other than on the command line.
+ */
+bool getOpt(po::parsed_options *p, const std::string optName)
+{
+	for (vector<po::basic_option<char> >::iterator it = p->options.begin(); it != p->options.end(); it++) {
+		if (it->string_key.compare(optName) == 0) return true;
+	}
+	return false;
+}
+
 /**
  * \def TEST_DESC(name,description)
  *
@@ -320,47 +356,19 @@ BOOST_AUTO_TEST_CASE( test_sequences )
  */
 struct test_fasta_options {
 	test_fasta_options() {
-		utest_opts.add_options()
-		("ungapped_fasta",po::value<std::string>(),"Path of ungapped fasta file to use in test-fasta")
-		("gapped_fasta",po::value<std::string>(),"Path of gapped fasta file to use in test-fasta");
-		po::store(*parsed, cmdline_opt_map, true);
-		po::notify(cmdline_opt_map);
-		std::cout << "ungapped: " << cmdline_opt_map.count("ungapped_fasta") << std::endl;
-		std::cout << "gapped: " << cmdline_opt_map.count("ungapped_fasta") << std::endl;
-
-		cmdline_opt_map["gapped_fasta"];
+		std::string tmp = getOptVal(&(::parsed),"ungapped_fasta");
+		ungapped_fasta_file = (tmp.compare("") != 0) ? tmp : DEFAULT_UNGAPPED_FASTA_FILE;
+		tmp = getOptVal(&(::parsed),"gapped_fasta");
+		gapped_fasta_file   = (tmp.compare("") != 0) ? tmp : DEFAULT_GAPPED_FASTA_FILE;
 	}
+ 	std::string ungapped_fasta_file;
+	std::string gapped_fasta_file;
 };
 
 BOOST_FIXTURE_TEST_CASE( test_fasta, test_fasta_options )
 {
-	std::string ungapped_fasta_file = DEFAULT_UNGAPPED_FASTA_FILE;
-	std::string gapped_fasta_file = DEFAULT_GAPPED_FASTA_FILE;
 	/**
 	 * \todo Try to use the boost program options API "correctly".
-	 */
-	std::string tmp = getOptVal("ungapped_fasta");
-	if(tmp.compare("") != 0) ungapped_fasta_file = tmp;
-	tmp = getOptVal("gapped_fasta");
-	if(tmp.compare("") != 0) gapped_fasta_file = tmp;
-
-	std::cout << TEST_DESC("test_fasta","Testing ungapped and gapped fasta file reads and conversions") << std::endl;
-
-	//
-	//// Fasta with no gaps
-	galosh::Fasta<Dna> fasta;
-	fasta.fromFile(ungapped_fasta_file);
-	{
-   	   output_test_stream output( ungapped_fasta_file, true );
-	   output << fasta;
-	   BOOST_CHECK( output.match_pattern() ); /// Ungapped file correctly scanned?
-	}
-	///////
-	//// Fasta: with gaps.  Use "char" since basic seqan alphabets don't support gap chars.
-
-	galosh::Fasta<char> aligned_fasta;
-	aligned_fasta.fromFile(gapped_fasta_file);
-	/**
 	 * \todo currently using unit test module output_test_stream to check the validity
 	 * of the fasta files; not just printing them out.  output_test_stream.match_pattern()
 	 * kindof sucks:  the output must match the "pattern file" exactly, character
@@ -368,21 +376,36 @@ BOOST_FIXTURE_TEST_CASE( test_fasta, test_fasta_options )
 	 * to use a checksum.  In any case, it would be nice if pattern_match used regular
 	 * expressions or at least wildcards.
 	 */
-	{
-	   output_test_stream output( gapped_fasta_file, true );
-	   output << aligned_fasta;
-	   BOOST_CHECK( output.match_pattern() ); /// Gapped file correctly scanned?
-	}
 
-	///
+	std::cout << TEST_DESC("test_fasta","Testing ungapped and gapped fasta file reads and conversions") << std::endl;
+	//// Fasta with no gaps
+	galosh::Fasta<Dna> fasta;
+	fasta.fromFile(ungapped_fasta_file);
+   	output_test_stream output(ungapped_fasta_file, true );
+	output << fasta;
+	BOOST_CHECK( output.match_pattern() ); /// Ungapped file correctly scanned?
+
+	//// Fasta: with gaps.  Use "char" since basic seqan alphabets don't support gap chars.
+
+	galosh::Fasta<char> aligned_fasta;
+	aligned_fasta.fromFile(gapped_fasta_file);
+    output_test_stream goutput(gapped_fasta_file, true );
+    goutput << aligned_fasta;
+	BOOST_CHECK( goutput.match_pattern() ); /// Gapped file correctly scanned?
+
 	/// \todo  I'm thinking of just scrapping Fasta altogether, using
 	/// StringSet instead, with _loadSequences from
 	/// seqan/graph_utils/utility_parsing.h, as in seqan_tcoffee.
-	/// Eventually.
+	/// Eventually.  --Paul
 
 } //end of test_fasta
+
 /**
+ * \brief Test basic operations with multinomial distributions of DNA
  *
+ * Tests initial distributions and ambiguity codes.  Tests various ways of setting
+ * distribution elements.  Also demonstrates, in the code proper, various ways
+ * of accessing and displaying the elements.
  */
 BOOST_AUTO_TEST_CASE( test_multinomials )
 {
@@ -446,7 +469,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		output << dna_dist;
 		BOOST_CHECK_MESSAGE( /// Test ambiguousIncrement of 1.0 to dna distribution
 		    output.is_equal("(A=0.5,C=0.65,G=0.5,T=0.5)"),
-		    "Distribution should equal (A=0.5,C=0.65,G=0.5,T=0.5), but instead equals " << dna_dist
+		    "Distribution should equal (A=0.5,C=0.65,G=0.5,T=0.5); turns out to equal " << dna_dist
 		);
 		galosh::MultinomialDistribution<Dna, realspace>::AmbiguousValue<Dna5> ambiguous_value = dna_dist[ n ];
 		ambiguous_value += 1.0;
@@ -495,9 +518,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 /**
  * \brief Test properties of profile HMM states.
  */
-BOOST_AUTO_TEST_CASE(test_profile_hmm_states)
-{
-	using namespace galosh;
+struct test_profile_hmm_states_init {
 	/**
 	 * \var curCorrect
 	 * store correct info about each state.
@@ -505,98 +526,127 @@ BOOST_AUTO_TEST_CASE(test_profile_hmm_states)
 	 * change.  Re-think this later on.  Probably put the right answers into a file.
 	 */
 	std::map<std::string,std::string> curCorrect;
+	test_profile_hmm_states_init ()
+	{
 #define ADD_MAP_CURCORRECT(x,y) curCorrect.insert(pair<std::string,std::string>(x,y))
-    ADD_MAP_CURCORRECT("StartStateLabel","label: 0; code: S; simple; not emitting; not associated; Plan7 dist=(N=1)");
-	ADD_MAP_CURCORRECT("PreAlignStateLabel","label: 1; code: N; simple; emitting; not associated; Plan7 dist=(N=0.5,B=0.5)");
-	ADD_MAP_CURCORRECT("BeginStateLabel","label: 2; code: B; simple; not emitting; not associated; Plan7 dist=(M=0.5,D=0.5)");
-	ADD_MAP_CURCORRECT("MatchStateLabel","label: 3; code: M; simple; emitting; associated; Plan7 dist=(M=0.333333,I=0.333333,D=0.333333)");
-	ADD_MAP_CURCORRECT("InsertionStateLabel","label: 4; code: I; simple; emitting; not associated; Plan7 dist=(M=0.5,I=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
-	ADD_MAP_CURCORRECT("DeletionStateLabel","label: 5; code: D; simple; not emitting; associated; Plan7 dist=(M=0.5,D=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
-	ADD_MAP_CURCORRECT("EndStateLabel","label: 6; code: E; simple; not emitting; not associated; Plan7 dist=(C=0.5,J=0.5)");
-	ADD_MAP_CURCORRECT("LoopStateLabel","label: 7; code: J; simple; emitting; not associated; Plan7 dist=(J=0.5,B=0.5)");
-	ADD_MAP_CURCORRECT("PostAlignStateLabel","label: 8; code: C; simple; emitting; not associated; Plan7 dist=(C=0.5,T=0.5)");
-	ADD_MAP_CURCORRECT("TerminalStateLabel","label: 9; code: T; simple; not emitting; not associated");
+       ADD_MAP_CURCORRECT("StartStateLabel","label: 0; code: S; simple; not emitting; not associated; Plan7 dist=(N=1)");
+	   ADD_MAP_CURCORRECT("PreAlignStateLabel","label: 1; code: N; simple; emitting; not associated; Plan7 dist=(N=0.5,B=0.5)");
+	   ADD_MAP_CURCORRECT("BeginStateLabel","label: 2; code: B; simple; not emitting; not associated; Plan7 dist=(M=0.5,D=0.5)");
+	   ADD_MAP_CURCORRECT("MatchStateLabel","label: 3; code: M; simple; emitting; associated; Plan7 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	   ADD_MAP_CURCORRECT("InsertionStateLabel","label: 4; code: I; simple; emitting; not associated; Plan7 dist=(M=0.5,I=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	   ADD_MAP_CURCORRECT("DeletionStateLabel","label: 5; code: D; simple; not emitting; associated; Plan7 dist=(M=0.5,D=0.5); Plan9 dist=(M=0.333333,I=0.333333,D=0.333333)");
+	   ADD_MAP_CURCORRECT("EndStateLabel","label: 6; code: E; simple; not emitting; not associated; Plan7 dist=(C=0.5,J=0.5)");
+	   ADD_MAP_CURCORRECT("LoopStateLabel","label: 7; code: J; simple; emitting; not associated; Plan7 dist=(J=0.5,B=0.5)");
+	   ADD_MAP_CURCORRECT("PostAlignStateLabel","label: 8; code: C; simple; emitting; not associated; Plan7 dist=(C=0.5,T=0.5)");
+	   ADD_MAP_CURCORRECT("TerminalStateLabel","label: 9; code: T; simple; not emitting; not associated");
+	}
+	~test_profile_hmm_states_init()
+	{
+	   curCorrect.clear();
+	}
+   }; // of fixture struct test_profile_hmm_states
 
-    /**
+   BOOST_FIXTURE_TEST_CASE(test_profile_hmm_states,test_profile_hmm_states_init)
+   {
+	/**
      * Iterate through all states, check each one against a known model.
      */
-	std::cout << TEST_DESC("test_profile_hmm_states","Testing properties and access methods of HMM states") << std::endl;
-    for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++) {
-    	   BOOST_CHECK_MESSAGE(
+	   std::cout << TEST_DESC("test_profile_hmm_states","Testing properties and access methods of HMM states") << std::endl;
+       for(std::map<std::string,AnyStateLabel>::iterator asl=stateLabels.begin(); asl!=stateLabels.end(); asl++) {
+    	      BOOST_CHECK_MESSAGE(
     	         curCorrect[asl->first].compare(stateInfo(asl->second)) == 0,
     	         asl->first << "should be " << curCorrect[asl->first] << ";\nturns out to be " <<
     	            stateInfo(asl->second)
-   	   );
-    }
-  } // End test_profile_hmm_states
+   	      );
+       } //for
+   } // End test_profile_hmm_states
 
 BOOST_AUTO_TEST_SUITE_END()//end of test_non_dp
 
 BOOST_AUTO_TEST_SUITE(dynamic_programming_1)
-    BOOST_AUTO_TEST_CASE(test_profiles)
+
+   struct test_profiles_options {
+      /**
+       * \todo  Can the following typedefs be parameterized?  Moreover, can they
+       * be controlled by command-line options instead of being compiled in?
+       */
+	  typedef realspace ProbabilityType;
+      typedef realspace ScoreType;
+      typedef realspace MatrixValueType;
+      typedef ProfileTreeRoot<Dna, ProbabilityType> ProfileType;
+
+	  bool use_del_in_del_out;
+	  output_test_stream output;
+
+	  //constructor
+	  test_profiles_options()
+	  {
+         use_del_in_del_out = getOpt(&(::parsed),"use_del_in_del_out");
+	  }
+    }; // of fixture struct test_profiles_options
+
+#define GALOSH_SINGLE_VAR_TEST(variable,teststream,answer,label) teststream << variable;\
+BOOST_CHECK_MESSAGE(teststream.is_equal(answer),label answer "; equals " << variable);
+    BOOST_FIXTURE_TEST_CASE(test_profiles,test_profiles_options)
     {
-  	cout<<TEST_DESC("Test Profiles","Basic operations on profiles") << std::endl;
+       cout<<TEST_DESC("Test Profiles","Basic operations on profiles") << std::endl;
+  	   using namespace galosh;
 
-    typedef realspace ProbabilityType;
-    typedef realspace ScoreType;
-    typedef realspace MatrixValueType;
-    typedef ProfileTreeRoot<Dna, ProbabilityType> ProfileType;
+       // We need at least 3 positions to be able to test extensions of del-ins and del-outs
+       galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile(use_del_in_del_out ? 3 : 2 );
+       ///////
+       /// Profile
+       GALOSH_SINGLE_VAR_TEST( ///Check default DNA profile
+          dna_profile,output,
+       	  "[ M->(M=0.3333333,I=0.3333333,D=0.3333333), I->(M=0.5,I=0.5), D->(M=0.5,D=0.5), I:(A=0.25,C=0.25,G=0.25,T=0.25), N->(N=0.5,B=0.5), B->(M=0.5,D=0.5), C->(C=0.5,T=0.5) ]\n[ M:(A=0.25,C=0.25,G=0.25,T=0.25) ]\n[ M:(A=0.25,C=0.25,G=0.25,T=0.25) ]\n",
+     	  "Default DNA profile: Should equal:\n"
+       );
 
-    Dna residue;
-    galosh::Sequence<Dna5> dna_seq_a = "a";
-    galosh::Sequence<Dna5> dna_seq_b = "ag";
-    galosh::Sequence<Dna5> dna_seq_c = "aga";
-    vector<galosh::Sequence<Dna5> > dna_seqs( 3 );
-    dna_seqs[ 0 ] = dna_seq_a;
-    dna_seqs[ 1 ] = dna_seq_b;
-    dna_seqs[ 2 ] = dna_seq_c;
-    int num_sequences_to_use = dna_seqs.size();
+       galosh::ProfileTreeRoot<Iupac, ProbabilityType> iupac_profile;
+       GALOSH_SINGLE_VAR_TEST(///Check default IUPAC profile
+          iupac_profile,output,
+          "[ M->(M=0.3333333,I=0.3333333,D=0.3333333), I->(M=0.5,I=0.5), D->(M=0.5,D=0.5), I:(U=0.0625,T=0.0625,A=0.0625,W=0.0625,C=0.0625,Y=0.0625,M=0.0625,H=0.0625,G=0.0625,K=0.0625,R=0.0625,D=0.0625,S=0.0625,B=0.0625,V=0.0625,N=0.0625), N->(N=0.5,B=0.5), B->(M=0.5,D=0.5), C->(C=0.5,T=0.5) ]",
+          "Default IUPAC DNA profile: Should equal:\n"
+       );
 
-#ifdef USE_DEL_IN_DEL_OUT
-    // We need at least 3 positions to be able to test extensions of del-ins and del-outs
-    galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile( 3 );
-#else
-    galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile( 2 );
-#endif // USE_DEL_IN_DEL_OUT .. else ..
-/*
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer forward_matrices(
-      dna_profile,
-      dna_seqs,
-      num_sequences_to_use
-    );
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::iterator forward_matrices_iterator =
-      forward_matrices.begin();
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer backward_matrices(
-      dna_profile,
-      dna_seqs,
-      num_sequences_to_use
-    );
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::reverse_iterator backward_matrices_iterator =
-      backward_matrices.rbegin();
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionSpecificSequenceScoreCoefficientsVector coefficients_vector( 3 );
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente;
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_unscaled;
-    galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_backup;
-
-    ///////
-    /// Profile
-*/
-      std::cout << "The dna profile is:" << std::endl;
-      std::cout << dna_profile;
-      std::cout << endl;
-
-      std::cout << "A default Iupac profile is:" << std::endl;
-      galosh::ProfileTreeRoot<Iupac, ProbabilityType> iupac_profile;
-      std::cout << iupac_profile;
-      std::cout << endl;
-
-      std::cout << "Reading profile from file 'seqantest.DATA.profile'" << std::endl;
-      galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile_from_file;
-      dna_profile_from_file.fromFile( "seqantest.DATA.profile" );
-      std::cout << "\tgot:" << std::endl;
-      std::cout << dna_profile_from_file;
-      std::cout << endl;
+       std::cout << "Reading profile from file 'seqantest.DATA.profile'" << std::endl;
+       galosh::ProfileTreeRoot<Dna, ProbabilityType> dna_profile_from_file;
+       dna_profile_from_file.fromFile( "seqantest.DATA.profile" );
+       std::cout << "\tgot:" << std::endl;
+       std::cout << dna_profile_from_file;
+       std::cout << endl;
 
 
+       Dna residue;
+       galosh::Sequence<Dna5> dna_seq_a = "a";
+       galosh::Sequence<Dna5> dna_seq_b = "ag";
+       galosh::Sequence<Dna5> dna_seq_c = "aga";
+       vector<galosh::Sequence<Dna5> > dna_seqs( 3 );
+       dna_seqs[ 0 ] = dna_seq_a;
+       dna_seqs[ 1 ] = dna_seq_b;
+       dna_seqs[ 2 ] = dna_seq_c;
+       int num_sequences_to_use = dna_seqs.size();
+       /*
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer
+          forward_matrices(
+             dna_profile,
+             dna_seqs,
+             num_sequences_to_use
+          );
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::iterator forward_matrices_iterator =
+          forward_matrices.begin();
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer backward_matrices(
+          dna_profile,
+          dna_seqs,
+          num_sequences_to_use
+       );
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::Matrix::SequentialAccessContainer::reverse_iterator backward_matrices_iterator =
+          backward_matrices.rbegin();
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionSpecificSequenceScoreCoefficientsVector coefficients_vector( 3 );
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente;
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_unscaled;
+       galosh::DynamicProgramming<Dna, ProbabilityType, ScoreType, MatrixValueType>::PositionEntente position_entente_backup;
+       */
    }
+       
 BOOST_AUTO_TEST_SUITE_END()//end of dynamic_programming_1

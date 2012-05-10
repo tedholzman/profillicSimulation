@@ -25,9 +25,9 @@
 
 #include <iostream>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include </usr/include/stdio.h>
+#include </usr/include/stdlib.h>
+#include </usr/include/string.h>
 
 #include <seqan/basic.h>
 #include <seqan/sequence.h>
@@ -214,7 +214,7 @@ state_DIST7: public boost::static_visitor<std::string>
 {
 public:
 	inline std::string operator()(TerminalStateLabel & state)  const {return UNDEFINED_DIST_STRING;}
-	inline std::string operator()(StartStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<StartStateLabel,     Plan7>::Type, float>().toString();}
+	inline std::string operator()(StartStateLabel & state)     const {return MultinomialDistribution< StateLabelTransitionTargets< StartStateLabel,     Plan7 >::Type, float >().toString();}
 	inline std::string operator()(PreAlignStateLabel & state)  const {return MultinomialDistribution<StateLabelTransitionTargets<PreAlignStateLabel,  Plan7>::Type, float>().toString();}
 	inline std::string operator()(BeginStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<BeginStateLabel,     Plan7>::Type, float>().toString();}
 	inline std::string operator()(MatchStateLabel & state)     const {return MultinomialDistribution<StateLabelTransitionTargets<MatchStateLabel,     Plan7>::Type, float>().toString();}

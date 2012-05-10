@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
    /**
     * make sure booleans are displayed as True and False
     */
-   cout << std::boolalpha;
+   std::cout << std::boolalpha;
 
    /**
     * All about program option processing
@@ -215,18 +215,18 @@ BOOST_AUTO_TEST_CASE( test_alphabets )
 			"Dna to string yielded "<<a<< ", expected A"
 	);
 	Dna5 b = 'f';//'f' is unknown character
-	BOOST_CHECK_MESSAGE(///Test conversion of Dna5 to char (and converting unknowns to N's)
+	BOOST_CHECK_MESSAGE( ///Test conversion of Dna5 to char (and converting unknowns to N's)
 			(char) b == 'N',
 			"Dna5 yielded " << b << ", expected N"
 	);
 	//Many SeqAn alphabet classes can be converted into each other.
 	b = a;
-	BOOST_CHECK_MESSAGE(///Test conversion of Dna5 to Dna to char
+	BOOST_CHECK_MESSAGE( ///Test conversion of Dna5 to Dna to char
 			(char) b == 'A',
 			"Conversion from Dna to Dna5 yielded " << b << ", expected A"
 	);
 	Iupac c = a;
-	BOOST_CHECK_MESSAGE(///Test conversion of Iupac to Dna to char
+	BOOST_CHECK_MESSAGE( ///Test conversion of Iupac to Dna to char
 			(char) c == 'A',
 			"Conversion from Dna to Iupac yielded " << c << ", expected A"
 	);
@@ -239,33 +239,33 @@ BOOST_AUTO_TEST_CASE( test_ambiguous )
 {
 	std::cout << TEST_DESC("test_ambiguity","Testing inter-alphabet ambiguities") << std::endl;
 	ambiguity_tested=true;
-	BOOST_CHECK_MESSAGE( //Test if Dna is ambiguous over Dna5
+	BOOST_CHECK_MESSAGE( ///Test if Dna is ambiguous over Dna5
 			!isTrue( galosh::IsAmbiguous<seqan::Dna, seqan::Dna5>::Type() ),
 			"Dna should not have ambiguities with respect to Dna5."
 	);
-	BOOST_CHECK_MESSAGE(//Test if Dna5 is ambiguous over Dna
+	BOOST_CHECK_MESSAGE( ///Test if Dna5 is ambiguous over Dna
 			isTrue( galosh::IsAmbiguous<seqan::Dna5, seqan::Dna>::Type() ),
 			"Dna5 should have ambiguities with respect to Dna."
 	);
 	Dna dna_residue;
 	Dna5 a = 'a';
-	BOOST_CHECK_MESSAGE(//Test how many elements in Dna5 a match an element in Dna
+	BOOST_CHECK_MESSAGE( ///Test how many elements in Dna5 a match an element in Dna
 			galosh::ambiguousCount( a, Dna() ) == 1,
 			"'A' in Dna5 matches " << (galosh::ambiguousCount( a, Dna() ) == 1) << " letters in Dna, should match 1"
 	);
 	galosh::ambiguousAssign( dna_residue, a, 0 );
-	BOOST_CHECK_MESSAGE(//Find a Dna letter matching a Dna5 letter
+	BOOST_CHECK_MESSAGE( ///Find a Dna letter matching a Dna5 letter
 			(char) dna_residue == 'A',
 			"ambiguousAssign - Dna5 'A' matches Dna " << dna_residue << ", expected 'A'"
 	);
 	Dna5 n = 'n';
 	size_t num_elements = galosh::ambiguousCount( n, Dna() );
-	BOOST_CHECK_MESSAGE(//Test how many Dna elements match Dna5's letter n
+	BOOST_CHECK_MESSAGE( /// Test how many Dna elements match Dna5's letter n
 			num_elements == 4,
 			"Dna5's N element matches " << num_elements << " Dna elements, expected 4"
 	);
 	string nucleotides ("ATGC");
-	// Test that ambiguousAssign matches all four nucleotides against N
+	/// Test that ambiguousAssign matches all four nucleotides against N
 	for( int i = 0; i < num_elements; i++ ) {
 		galosh::ambiguousAssign( dna_residue, n, i );
 		size_t pos = nucleotides.find((char)dna_residue);
@@ -290,11 +290,11 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	string anypeptide = "anypeptide";
 	seqan::Peptide prot = anypeptide;
 	BOOST_CHECK_MESSAGE( ///Test if seqan peptide sequence length is correct
-			length(prot) == anypeptide.length(),
+			seqan::length(prot) == anypeptide.length(),
 			"Length of '" << (*toCString(&prot)) << "' should be " << anypeptide.length() <<
-			"; ended up being " << length(prot)
+			"; ended up being " << seqan::length(prot)
 	);
-	BOOST_CHECK_MESSAGE(///Test array-like indexing of seqan peptide sequence
+	BOOST_CHECK_MESSAGE( ///Test array-like indexing of seqan peptide sequence
 			(char)prot[ 9 ] == toupper(anypeptide[9]),
 			"The 9th character of " << (*toCString(&prot)) << " should be " << anypeptide[9] <<
 			"; ended up being " << (char)prot[9]
@@ -302,15 +302,15 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	prot += "anewend"; anypeptide += "anewend";
 	string protStr;
 	seqan::assign(protStr,prot);
-	BOOST_CHECK_MESSAGE(///Test concatenation of string to seqan peptide sequence
+	BOOST_CHECK_MESSAGE( ///Test concatenation of string to seqan peptide sequence
 			boost::to_upper_copy(anypeptide).compare(protStr) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anypeptide) <<
 			"; ended up = " << (*toCString(&prot))
 	);
-	BOOST_CHECK_MESSAGE(///Test length of concatenated seqan peptide sequence
-			length(prot) == anypeptide.length(),
+	BOOST_CHECK_MESSAGE( ///Test length of concatenated seqan peptide sequence
+			seqan::length(prot) == anypeptide.length(),
 			"Test sequence should be " << anypeptide.length() << " characters long, " <<
-			"; ended up being " << length(prot) << " characters long"
+			"; ended up being " << seqan::length(prot) << " characters long"
 	);
 
 	/// \todo Figure out what is going on with galosh::Sequence<>.<br>
@@ -329,15 +329,15 @@ BOOST_AUTO_TEST_CASE( test_sequences )
 	seqan::String<Dna,seqan::Alloc<> > *sp = static_cast<seqan::String<Dna,seqan::Alloc<> > *>(&dna_seq);
 	string dna_seq_str = toString(*sp);
 	string anyDNA_s = (boost::to_upper_copy(anyDNA));
-	BOOST_CHECK_MESSAGE(///Test creation of galosh Sequence from string
+	BOOST_CHECK_MESSAGE( ///Test creation of galosh Sequence from string
 			anyDNA_s.compare(dna_seq_str) == 0,
 			"Test sequence should = " << boost::to_upper_copy(anyDNA) <<
 			"; ended up being = " << dna_seq_str
 	);
-	BOOST_CHECK_MESSAGE(///Test length of created galosh::Sequence
-			length(dna_seq) == anyDNA.length(),
+	BOOST_CHECK_MESSAGE( ///Test length of created galosh::Sequence
+			seqan::length(dna_seq) == anyDNA.length(),
 			"Test sequence should be " << anyDNA.length() << " characters long, " <<
-			"; ended up being " << length(dna_seq) << " characters long"
+			"; ended up being " << seqan::length(dna_seq) << " characters long"
 	);
 } //end of test_sequences
 
@@ -383,7 +383,7 @@ BOOST_FIXTURE_TEST_CASE( test_fasta, test_fasta_options )
 	fasta.fromFile(ungapped_fasta_file);
    	output_test_stream output(ungapped_fasta_file, true );
 	output << fasta;
-	BOOST_CHECK( output.match_pattern() ); /// Ungapped file correctly scanned?
+	BOOST_CHECK( output.match_pattern() ); /// Test that the ungapped fasta file is correctly scanned?
 
 	//// Fasta: with gaps.  Use "char" since basic seqan alphabets don't support gap chars.
 
@@ -391,7 +391,7 @@ BOOST_FIXTURE_TEST_CASE( test_fasta, test_fasta_options )
 	aligned_fasta.fromFile(gapped_fasta_file);
     output_test_stream goutput(gapped_fasta_file, true );
     goutput << aligned_fasta;
-	BOOST_CHECK( goutput.match_pattern() ); /// Gapped file correctly scanned?
+	BOOST_CHECK( goutput.match_pattern() ); ///Test that Gapped fasta is file correctly scanned?
 
 	/// \todo  I'm thinking of just scrapping Fasta altogether, using
 	/// StringSet instead, with _loadSequences from
@@ -416,14 +416,14 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	std::cout << TEST_DESC("test_multinomials","Testing multinomial distribution generation and manipulation for DNA") << std::endl;
 
 	Dna c_2( 1 );
-    BOOST_CHECK_MESSAGE(/// Test conversion of Dna (created from int) to char
+    BOOST_CHECK_MESSAGE( ///Test conversion of Dna (created from int) to char
 			(char) c_2 == 'C',
 			"Dna to string yielded '"<< c_2 << "'; expecting 'C'"
 	);
 
 	galosh::MultinomialDistribution<Dna, realspace> dna_dist;
 	dna_dist[ c_2 ] = .4;
-	BOOST_CHECK_MESSAGE( /// Test modification of a Multinomial distribution object
+	BOOST_CHECK_MESSAGE( ///Test modification of a Multinomial distribution object
 			dna_dist.m_elementCount == 4 && dna_dist.m_probs[0] == 0.25 &&
 			dna_dist.m_probs[1].prob() == 0.4 &&
 			dna_dist.m_probs[2].prob() == 0.25 && dna_dist.m_probs[3].prob() == 0.25,
@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 	   elValOK = state_dist.m_probs[i] == evenDist;
 	   if(!elValOK) break;
 	}
-	BOOST_CHECK_MESSAGE( /// Test structure of a StateLabel distribution
+	BOOST_CHECK_MESSAGE( ///Test structure of a StateLabel distribution
 	   n_elements == 12 && elValOK,
 	   "Expected " << evenDist << " for each of 12 states, saw " << state_dist
 	);
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		Dna5 n = 'n';
 
 		double ambigN = dna_dist.ambiguousSum( n ).prob();
-		BOOST_CHECK_MESSAGE( /// Check initial distributions of single Dna5 ambiguous and unambiguous elements
+		BOOST_CHECK_MESSAGE( ///Check initial distributions of single Dna5 ambiguous and unambiguous elements
 	       dna_dist.ambiguousSum( a ) == 0.25 && ambigN == 1.15,
            "Initial 'A' distribution should be 0.25; yielded " << dna_dist.ambiguousSum( a ) <<
            "; initial 'N' distribution should be 1.15 and it yielded " << dna_dist[ n ]
@@ -467,14 +467,14 @@ BOOST_AUTO_TEST_CASE( test_multinomials )
 		output_test_stream output;
 		dna_dist.ambiguousIncrement( n, 1.0 );
 		output << dna_dist;
-		BOOST_CHECK_MESSAGE( /// Test ambiguousIncrement of 1.0 to dna distribution
+		BOOST_CHECK_MESSAGE( ///Test ambiguousIncrement of 1.0 to dna distribution
 		    output.is_equal("(A=0.5,C=0.65,G=0.5,T=0.5)"),
 		    "Distribution should equal (A=0.5,C=0.65,G=0.5,T=0.5); turns out to equal " << dna_dist
 		);
 		galosh::MultinomialDistribution<Dna, realspace>::AmbiguousValue<Dna5> ambiguous_value = dna_dist[ n ];
 		ambiguous_value += 1.0;
 		output << dna_dist;
-		BOOST_CHECK_MESSAGE( /// Test autoincrement (+=)  of ambiguous DNA value (n), effect on distribution
+		BOOST_CHECK_MESSAGE( ///Test autoincrement (+=)  of ambiguous DNA value (n), effect on distribution
 		   output.is_equal("(A=0.75,C=0.9,G=0.75,T=0.75)"),
 		   "Distribution should equal (A=0.75,C=0.9,G=0.75,T=0.75); turns out to equal " << dna_dist
 		);
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_SUITE(dynamic_programming_1)
 BOOST_CHECK_MESSAGE(teststream.is_equal(answer),label answer "; equals " << variable);
     BOOST_FIXTURE_TEST_CASE(test_profiles,test_profiles_options)
     {
-       cout<<TEST_DESC("Test Profiles","Basic operations on profiles") << std::endl;
+       std::cout << TEST_DESC("Test Profiles","Basic operations on profiles") << std::endl;
   	   using namespace galosh;
 
        // We need at least 3 positions to be able to test extensions of del-ins and del-outs

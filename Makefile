@@ -77,8 +77,8 @@ SEQAN_LIBS	=
 BOOST_CFLAGS 	= -I./boost-include
 BOOST_LDFLAGS 	= -L./boost-lib
 BOOST_LIBS	= -lboost_serialization -lboost_graph -lboost_filesystem -lboost_system -lboost_regex \
-                   -lboost_program_options
-#                  -lboost_unit_test_framework -lboost_test_exec_monitor
+                   -lboost_program_options \
+#                   -lboost_unit_test_framework -lboost_test_exec_monitor
 
 ###==============================================
 ### TAH 11/3/2011
@@ -339,7 +339,7 @@ newseqantest: $(NEWSEQANTEST_SOURCES) $(SEQANTEST_INCS) $(NEWSEQANTEST_OBJS) $(M
 musclehmmertest: $(MUSCLEHMMERTEST_SOURCES) $(MUSCLEHMMERTEST_INCS) $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o musclehmmertest $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)
 
-tests: quicktest seqantest profusetest
+tests: quicktest seqantest profusetest newseqantest
 
 tests-with-hmmer: tests musclehmmertest
 

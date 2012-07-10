@@ -66,12 +66,12 @@ namespace galosh {
   };
 
   enum VerbosityLevel {
-    VERBOSITY_None = 0,
-    VERBOSITY_Meta = 5, // lower than low: show only info exterior to training
-    VERBOSITY_Low = 10,
-    VERBOSITY_Medium = 50,
-    VERBOSITY_High = 100,
-    VERBOSITY_All = 1000
+    VERBOSITY_None =     0,
+    VERBOSITY_Meta =     5, // lower than low: show only info exterior to training
+    VERBOSITY_Low =     10,
+    VERBOSITY_Medium =  50,
+    VERBOSITY_High =   100,
+    VERBOSITY_All =   1000
   };
   
   class Parameters {

@@ -6,9 +6,9 @@
 #CFLAGS		= -Wall -pg
 #CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
 #                 --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
-CFLAGS	        = -g3 -gdwarf-2
+CFLAGS	        = -g3 -gdwarf-2 -pg
 #JFLAGS		=
-#LDFLAGS	= -pg
+LDFLAGS	= -pg
 
 # OPTIMIZE with the -O option.  Override from the command line for
 # building debug versions.
@@ -116,7 +116,10 @@ $(PROFILLIC_LIB)/ProfileTrainer.hpp \
 ProfileTreeTrainer.hpp \
 ProfileGibbs.hpp \
 ProfuseTest.hpp \
+ProfuseTest2.hpp \
 Parameters.hpp \
+CommandlineParameters.hpp \
+ProfuseTestOptions.hpp \
 $(PROFUSE_LIB)/Profuse.hpp \
 $(PROLIFIC_LIB)/AminoAcid20.hpp
 
@@ -183,7 +186,7 @@ Parameters.hpp
 SEQANTEST_INCS =  $(INCS)
 
 PROFUSETEST_INCS = $(INCS) \
-ProfuseTest.hpp
+ProfuseTest.hpp ProfuseTest2.hpp
 
 MUSCLEHMMERTEST_INCS = $(INCS)
 
@@ -225,6 +228,9 @@ XML2Profile.o
 PROFUSETEST_OBJS = $(OBJS) \
 ProfuseTest.o
 
+PROFUSETEST2_OBJS = $(OBJS) \
+ProfuseTest2.o
+
 MUSCLEHMMERTEST_OBJS = $(OBJS) \
 MuscleHMMerTests.o
 
@@ -250,6 +256,9 @@ $(PROFUSE_LIB)/Score.cpp
 
 PROFUSETEST_SOURCES = $(SOURCES) \
 ProfuseTest.cpp
+
+PROFUSETEST2_SOURCES = $(SOURCES) \
+ProfuseTest2.cpp
 
 PROFILE2HMMER_SOURCES = $(SOURCES) \
 Profile2HMMer.cpp
@@ -329,6 +338,9 @@ quicktest: $(QUICKTEST_SOURCES) $(QUICKTEST_INCS) $(QUICKTEST_OBJS)
 profusetest: $(PROFUSETEST_SOURCES) $(PROFUSETEST_INCS) $(PROFUSETEST_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o profusetest $(PROFUSETEST_OBJS) $(MUSCLE_CPPOBJ)
 
+profusetest2: $(PROFUSETEST2_SOURCES) $(PROFUSETEST_INCS) $(PROFUSETEST2_OBJS) $(MUSCLE_CPPOBJ)
+	     $(CXX_LINK) -o profusetest2 $(PROFUSETEST2_OBJS) $(MUSCLE_CPPOBJ)
+
 seqantest: $(SEQANTEST_SOURCES) $(SEQANTEST_INCS) $(SEQANTEST_OBJS) $(MUSCLE_CPPOBJ)
 	   $(CXX_LINK) -o seqantest $(SEQANTEST_OBJS) $(MUSCLE_CPPOBJ)
 
@@ -339,7 +351,7 @@ newseqantest: $(NEWSEQANTEST_SOURCES) $(SEQANTEST_INCS) $(NEWSEQANTEST_OBJS) $(M
 musclehmmertest: $(MUSCLEHMMERTEST_SOURCES) $(MUSCLEHMMERTEST_INCS) $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o musclehmmertest $(MUSCLEHMMERTEST_OBJS) $(MUSCLE_CPPOBJ)
 
-tests: quicktest seqantest profusetest newseqantest
+tests: quicktest seqantest profusetest newseqantest profusetest2
 
 tests-with-hmmer: tests musclehmmertest
 
@@ -351,6 +363,7 @@ progs:  train align score createRandomSequence drawSequences evaluateEntentes
 
 ## Recompile if the includes are modified ...
 $(PROFUSETEST_OBJS): $(PROFUSETEST_SOURCES) $(PROFUSETEST_INCS)
+$(PROFUSETEST2_OBJS): $(PROFUSETEST2_SOURCES) $(PROFUSETEST_INCS)
 $(PROFILE2HMMER_OBJS): $(PROFILE2HMMER_SOURCES) $(PROFILE2HMMER_INCS)
 $(CREATERANDOMSEQUENCE_OBJS): $(CREATERANDOMSEQUENCE_SOURCES) $(CREATERANDOMSEQUENCE_INCS)
 $(DRAWSEQUENCES_OBJS): $(DRAWSEQUENCES_SOURCES) $(DRAWSEQUENCES_INCS)
@@ -368,7 +381,7 @@ $(SEQANTEST_OBJS): $(SEQANTEST_SOURCES) $(SEQANTEST_INCS)
 $(NEWSEQANTEST_OBJS): $(NEWSEQANTEST_SOURCES) $(NEWSEQANTEST_INCS)
 .PHONY: clean
 clean:
-	rm -f $(notdir train align score createRandomSequence drawSequences evaluateEntentes profile2hmmer profile2fasta sequence2profile alignedFasta2profile xml2profile quicktest seqantest profusetest musclehmmertest newseqantest $(TRAIN_OBJS) $(ALIGN_OBJS) $(SCORE_OBJS) $(PROFILE2HMMER_OBJS) $(CREATERANDOMSEQUENCE_OBJS) $(DRAWSEQUENCES_OBJS) $(EVALUATEENTENTES_OBJS) $(PROFILE2HMMER_OBJS) $(PROFILE2FASTA_OBJS) $(SEQUENCE2PROFILE_OBJS) $(XML2PROFILE_OBJS) $(ALIGNEDFASTA2PROFILE_OBJS) $(QUICKTEST_OBJS) $(SEQANTEST_OBJS) $(NEWSEQANTEST_OBJS) $(PROFUSETEST_OBJS) $(MUSCLEHMMERTEST_OBJS))
+	rm -f $(notdir train align score createRandomSequence drawSequences evaluateEntentes profile2hmmer profile2fasta sequence2profile alignedFasta2profile xml2profile quicktest seqantest profusetest musclehmmertest newseqantest profusetest2 $(TRAIN_OBJS) $(ALIGN_OBJS) $(SCORE_OBJS) $(PROFILE2HMMER_OBJS) $(CREATERANDOMSEQUENCE_OBJS) $(DRAWSEQUENCES_OBJS) $(EVALUATEENTENTES_OBJS) $(PROFILE2HMMER_OBJS) $(PROFILE2FASTA_OBJS) $(SEQUENCE2PROFILE_OBJS) $(XML2PROFILE_OBJS) $(ALIGNEDFASTA2PROFILE_OBJS) $(QUICKTEST_OBJS) $(SEQANTEST_OBJS) $(NEWSEQANTEST_OBJS) $(PROFUSETEST_OBJS) $(MUSCLEHMMERTEST_OBJS) $(PROFUSETEST2_OBJS))
 
 #========================================
 # FILE EXTENSIONS.  Extensions and prefixes for different types of

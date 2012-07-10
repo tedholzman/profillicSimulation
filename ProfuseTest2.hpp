@@ -1,14 +1,14 @@
-/*---------------------------------------------------------------------------##
-##  File:
-##      @(#) ProfuseTest.hpp
-##  Author:
-##      D'Oleris Paul Thatcher Edlefsen   paul@galosh.org
-##  Description:
-##
-#******************************************************************************
-#*  Copyright (C) 2008    Paul Edlefsen                                       *
-#*  All rights reserved.                                                      *
-#*****************************************************************************/
+/**
+ * \file ProfuseTest2.hpp
+ * \author D'Oleris Paul Thatcher Edlefsen   paul@galosh.org with some serious modifications
+ * by Ted Holzman
+ * \par Library:
+ * Galosh ProfillicSimulation
+ * \brief Simulation tests of profuse system.
+ * \copyright &copy; 2008, 2011, 2012 by Paul T. Edlefsen, Fred Hutchinson Cancer
+ *    Research Center.
+ *  All rights reserved.
+ *****************************************************************************/
 
 #if     _MSC_VER > 1000
 #pragma once
@@ -65,7 +65,12 @@ using std::clock;
 #include <boost/archive/xml_oarchive.hpp>
 
 #include "boost/filesystem.hpp"
+
+#include "boost/program_options.hpp"
+
+namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+
 
 namespace galosh {
 
@@ -76,9 +81,40 @@ template <class ResidueType,
           class SequenceResidueType>
   class ProfuseTest {
   public:
+    po::options_description m_profusetest_options;
+    po::variables_map m_profusetest_options_map;
+#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
+#define DEFAULT_VARIABLES_MAP       m_profusetest_options_map
+#ifndef DEFAULT_CONFIG_FILE
+#define DEFAULT_CONFIG_FILE "ProfuseTest.cfg"
+#endif
+	///TAH 6/12 constructor from commandline options
+	ProfuseTest(int argc,char **argv) {
+#include "CommandlineParameters.hpp"
+       m_profusetest_options.add_options()("help","This help message.");
+       #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
+       po::store(po::parse_command_line(argc, argv, m_profusetest_options), m_profusetest_options_map);
+       ifstream configFile(DEFAULT_CONFIG_FILE);
+       if (configFile)
+       {
+          po::store(parse_config_file(configFile, m_profusetest_options), m_profusetest_options_map);
+          configFile.close();
+       }
+       po::notify(m_profusetest_options_map);
+       if(m_profusetest_options_map.count("help")) {
+    	  cout << m_profusetest_options << endl;
+    	  exit(0);
+       }
+    }
+    typedef Sequence<SequenceResidueType> SequenceType;
 
-  typedef Sequence<SequenceResidueType> SequenceType;
-  
+    /// TAH 6/12 predefining DEFAULT_OPTIONS_DESCRIPION and DEFAULT_VARIABLES_MAP will
+    /// replace those values in the CommandlineParameters macros
+#undef GALOSH_DEF_OPT
+#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) inline TYPE GET_##NAME() {return m_profusetest_options_map[#NAME].as<TYPE>();}
+    #include "ProfuseTestOptions.hpp"
+#undef GALOSH_DEF_OPT
+
     class Parameters :
       public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
     {
@@ -92,179 +128,111 @@ template <class ResidueType,
         // save/load base class information
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
 
-        ar & BOOST_SERIALIZATION_NVP( saveResultsToFile );
-        ar & BOOST_SERIALIZATION_NVP( saveResultsParentDirectory );
-        ar & BOOST_SERIALIZATION_NVP( resultsFilePrefix );
-        ar & BOOST_SERIALIZATION_NVP( tabFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( parametersFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTrueProfileTrees );
-        ar & BOOST_SERIALIZATION_NVP( trueProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveStartingProfiles );
-        ar & BOOST_SERIALIZATION_NVP( startingProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTestProfiles );
-        ar & BOOST_SERIALIZATION_NVP( testProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( savePatternSequences );
-        ar & BOOST_SERIALIZATION_NVP( patternSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTests );
-        ar & BOOST_SERIALIZATION_NVP( testsFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTrainingSequences );
-        ar & BOOST_SERIALIZATION_NVP( trainingSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTestingSequences );
-        ar & BOOST_SERIALIZATION_NVP( testingSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTrueTrainingAlignments );
-        ar & BOOST_SERIALIZATION_NVP( trainingTrueAlignmentsFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveTrueTestingAlignments );
-        ar & BOOST_SERIALIZATION_NVP( trueTestingAlignmentsFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveResultsToFile );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveResultsParentDirectory );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( resultsFilePrefix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( tabFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( parametersFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueProfileTrees );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( trueProfileTreeFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveStartingProfiles );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( startingProfileTreeFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTestProfiles );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( testProfileTreeFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( savePatternSequences );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( patternSequencesFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTests );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( testsFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrainingSequences );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( trainingSequencesFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTestingSequences );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( testingSequencesFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueTrainingAlignments );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( trainingTrueAlignmentsFileSuffix );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueTestingAlignments );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( trueTestingAlignmentsFileSuffix );
         ar & BOOST_SERIALIZATION_NVP( saveFileVersion );
-        ar & BOOST_SERIALIZATION_NVP( numProfiles );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( numProfiles );
         ar & BOOST_SERIALIZATION_NVP( profileLengths );
-        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
         ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
-        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
         ar & BOOST_SERIALIZATION_NVP( conservationRates );
-        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
         ar & BOOST_SERIALIZATION_NVP( expectedDeletionsCounts );
         ar & BOOST_SERIALIZATION_NVP( expectedInsertionsCounts );
         ar & BOOST_SERIALIZATION_NVP( expectedDeletionLengthAsProfileLengthFractions );
         ar & BOOST_SERIALIZATION_NVP( expectedInsertionLengthAsProfileLengthFractions );
-        ar & BOOST_SERIALIZATION_NVP( minExpectedDeletionLength );
-        ar & BOOST_SERIALIZATION_NVP( minExpectedInsertionLength );
-        ar & BOOST_SERIALIZATION_NVP( preAlignInsertion );
-        ar & BOOST_SERIALIZATION_NVP( postAlignInsertion );
-        ar & BOOST_SERIALIZATION_NVP( priorStrength );
-        ar & BOOST_SERIALIZATION_NVP( priorStrength_internal_transitions );
-        ar & BOOST_SERIALIZATION_NVP( priorMtoM );
-        ar & BOOST_SERIALIZATION_NVP( priorMtoI );
-        ar & BOOST_SERIALIZATION_NVP( priorMtoD );
-        ar & BOOST_SERIALIZATION_NVP( priorItoM );
-        ar & BOOST_SERIALIZATION_NVP( priorItoI );
-        ar & BOOST_SERIALIZATION_NVP( priorDtoM );
-        ar & BOOST_SERIALIZATION_NVP( priorDtoD );
-        ar & BOOST_SERIALIZATION_NVP( reportGibbsMean );
-        ar & BOOST_SERIALIZATION_NVP( reportGibbsMode );
-        ar & BOOST_SERIALIZATION_NVP( numTrueProfiles );
-        ar & BOOST_SERIALIZATION_NVP( numStartingProfiles );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_scalar );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxNtoN );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxBtoD );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoI );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoD );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxItoI );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxDtoD );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxCtoC );
-        ar & BOOST_SERIALIZATION_NVP( startWithUniformPositions );
-        ar & BOOST_SERIALIZATION_NVP( startWithGlobalsDrawnFromPrior );
-        ar & BOOST_SERIALIZATION_NVP( startWithPositionsDrawnFromPrior );
-        ar & BOOST_SERIALIZATION_NVP( testViterbi );
-        ar & BOOST_SERIALIZATION_NVP( coutViterbi );
-        ar & BOOST_SERIALIZATION_NVP( testTruepath );
-        ar & BOOST_SERIALIZATION_NVP( coutTruepath );
-        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToTrue );
-        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToStarting );
-        ar & BOOST_SERIALIZATION_NVP( coutDistances );
-        ar & BOOST_SERIALIZATION_NVP( calculateProfileProfileAlignments );
-        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelOpenCost );
-        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelExtensionCost );
-        ar & BOOST_SERIALIZATION_NVP( testTrueProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutTrueProfile );
-        ar & BOOST_SERIALIZATION_NVP( testStartingProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutStartingProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testConditionalThenUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutConditionalThenUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalThenConditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalThenConditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testConditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutConditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testUnconditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( testLengthadjust );
-        ar & BOOST_SERIALIZATION_NVP( testBaldi );
-        ar & BOOST_SERIALIZATION_NVP( testBaldiSiegel );
-        ar & BOOST_SERIALIZATION_NVP( alsoStartWithEvenPositions );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedDeletionLength );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedInsertionLength );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( preAlignInsertion );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( postAlignInsertion );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorStrength );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorStrength_internal_transitions );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoM );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoI );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoD );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorItoM );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorItoI );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorDtoM );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorDtoD );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( reportGibbsMean );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( reportGibbsMode );
+//fixyfix        ar & boost::serialization::make_nvp("numTrueProfiles", &(GET_numTrueProfiles()));
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( numStartingProfiles );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_scalar );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxNtoN );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxBtoD );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoI );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoD );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxItoI );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxDtoD );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxCtoC );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformPositions );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithGlobalsDrawnFromPrior );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithPositionsDrawnFromPrior );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testViterbi );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutViterbi );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testTruepath );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutTruepath );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToTrue );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToStarting );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutDistances );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateProfileProfileAlignments );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelOpenCost );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelExtensionCost );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testTrueProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutTrueProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testStartingProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutStartingProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testConditionalThenUnconditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutConditionalThenUnconditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalThenConditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalThenConditionalProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testConditionalGibbsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutConditionalGibbsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalGibbsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalGibbsProfile );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testLengthadjust );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testBaldi );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( testBaldiSiegel );
+//fixyfix        ar & BOOST_SERIALIZATION_NVP( alsoStartWithEvenPositions );
       } // serialize( Archive &, const unsigned int )
 
     public:
   
       /// PARAMETERS
-      bool saveResultsToFile;
-  #define DEFAULT_saveResultsToFile true
-
-      string saveResultsParentDirectory;
-  #define DEFAULT_saveResultsParentDirectory "."
-
-      string resultsFilePrefix;
-  #define DEFAULT_resultsFilePrefix "ProfuseTest."
-
-      string tabFileSuffix;
-  #define DEFAULT_tabFileSuffix ".tab"
-
-      string parametersFileSuffix;
-  #define DEFAULT_parametersFileSuffix ".Parameters.xml"
-
-      bool saveTrueProfileTrees;
-  #define DEFAULT_saveTrueProfileTrees true
-
-      string trueProfileTreeFileSuffix;
-  #define DEFAULT_trueProfileTreeFileSuffix ".true.ProfileTree.xml"
-
-      bool saveStartingProfiles;
-  #define DEFAULT_saveStartingProfiles true
-
-      string startingProfileTreeFileSuffix;
-  #define DEFAULT_startingProfileTreeFileSuffix ".starting.ProfileTree.xml"
-
-      bool saveTestProfiles;
-  #define DEFAULT_saveTestProfiles true
-
-      string testProfileTreeFileSuffix;
-  #define DEFAULT_testProfileTreeFileSuffix ".ProfileTree.xml"
-
-      bool savePatternSequences;
-  #define DEFAULT_savePatternSequences true
-
-      string patternSequencesFileSuffix;
-  #define DEFAULT_patternSequencesFileSuffix ".pattern_sequences.fasta"
-
-      bool saveTests;
-  #define DEFAULT_saveTests true
-
-      string testsFileSuffix;
-  #define DEFAULT_testsFileSuffix ".tests"
-
-      bool saveTrainingSequences;
-  #define DEFAULT_saveTrainingSequences true
-
-      string trainingSequencesFileSuffix;
-  #define DEFAULT_trainingSequencesFileSuffix ".training_sequences.fasta"
-
-      bool saveTestingSequences;
-  #define DEFAULT_saveTestingSequences true
-
-      string testingSequencesFileSuffix;
-  #define DEFAULT_testingSequencesFileSuffix ".testing_sequences.fasta"
-
-      bool saveTrueTrainingAlignments;
-  #define DEFAULT_saveTrueTrainingAlignments true
-
-      string trainingTrueAlignmentsFileSuffix;
-  #define DEFAULT_trainingTrueAlignmentsFileSuffix ".training_alignments.fasta"
-
-      bool saveTrueTestingAlignments;
-  #define DEFAULT_saveTrueTestingAlignments true
-
-      string trueTestingAlignmentsFileSuffix;
-  #define DEFAULT_trueTestingAlignmentsFileSuffix ".testing_alignments.fasta"
 
 
       // 1 was the beginning
@@ -280,8 +248,6 @@ template <class ResidueType,
       uint32_t saveFileVersion;
   #define DEFAULT_saveFileVersion 10
 
-      uint32_t numProfiles;
-  #define DEFAULT_numProfiles 1
 
       /**
        * When making the pattern sequence (and the true root profile from it),
@@ -296,13 +262,6 @@ template <class ResidueType,
   #define DEFAULT_profileLengths NULL
 
       /**
-       * When numProfiles > 1, what fraction of the positions of each child
-       * should be shared with its parent?
-       */
-      double sharedPositionRate;
-  #define DEFAULT_sharedPositionRate 1.0
-
-      /**
        * Use this number of sequences when training.
        *
        * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
@@ -313,8 +272,6 @@ template <class ResidueType,
       vector<uint32_t> * numTrainingSequencesPerProfiles;
   #define DEFAULT_numTrainingSequencesPerProfiles NULL
 
-      uint32_t numTestingSequencesPerProfile;
-  #define DEFAULT_numTestingSequencesPerProfile 20
 
       /**
        * When making the true root profile from the pattern sequence, use this
@@ -329,32 +286,7 @@ template <class ResidueType,
       vector<double> * conservationRates;
   #define DEFAULT_conservationRates NULL
 
-      /**
-       * Lock the indel parameters of the true profile to be the same for
-       * insertions as for deletions?  This makes the expectedInsertionsCounts,
-       * expectedInsertionLengthAsProfileLengthFractions, and
-       * minExpectedInsertionLength unused, since the corresponding deletion
-       * values will be used instead.  It also reduces the number of tests by
-       * reducing the number of possible combinations (since deletions and
-       * insertions will go in lock step).
-       */
-      bool useDeletionsForInsertionsParameters;
-  #define DEFAULT_useDeletionsForInsertionsParameters true
-
-      /**
-       * The deletionOpen value of the true profile will be set to (
-       * expectedDeletionsCount / profileLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionOpen value
-       * of the true profile will also be set to ( expectedDeletionsCount /
-       * profileLength ).
-       *
-       * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
-       * expected_deletions_count in expectedDeletionCounts.  If it is NULL,
-       * { 1.0 } will be used (this is the default).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> * expectedDeletionsCounts;
+     vector<double> * expectedDeletionsCounts;
   #define DEFAULT_expectedDeletionsCounts NULL
 
       /**
@@ -406,494 +338,6 @@ template <class ResidueType,
       vector<double> * expectedInsertionLengthAsProfileLengthFractions;
   #define DEFAULT_expectedInsertionLengthAsProfileLengthFractions NULL
 
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFraction *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionExtension
-       * value of the true profile will also be the minimum of ( 1.0 / (
-       * expectedDeletionLengthAsProfileLengthFraction * profileLength ) ) and
-       * ( 1.0 / minExpectedDeletionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      double minExpectedDeletionLength;
-  #define DEFAULT_minExpectedDeletionLength 1.25
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the
-       * insertionExtension value of the true profile will be the minimum of (
-       * 1.0 / ( expectedInsertionLengthAsProfileLengthFraction * profileLength
-       * ) ) and ( 1.0 / minExpectedInsertionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      double minExpectedInsertionLength;
-  #define DEFAULT_minExpectedInsertionLength 1.25
-
-      /**
-       * The preAlignInsertion value of the true profile.
-       */
-      double preAlignInsertion;
-  #define DEFAULT_preAlignInsertion .01
-
-      /**
-       * The postAlignInsertion value of the true profile.
-       */
-      double postAlignInsertion;
-  #define DEFAULT_postAlignInsertion .01
-
-      /**
-       * The effective number of sequences "observed" a priori.  Note that we
-       * use a different prior strength for main-model transitions: see
-       * priorStrength_internal_transitions.
-       */
-      float priorStrength;
-  #define DEFAULT_priorStrength 1.0f
-
-      /**
-       * The effective number of sequences "observed" a priori, for main-model
-       * transitions.
-       */
-      float priorStrength_internal_transitions;
-  #define DEFAULT_priorStrength_internal_transitions 10.0f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoM;
-  #define DEFAULT_priorMtoM .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoI;
-  #define DEFAULT_priorMtoI .025f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoD;
-  #define DEFAULT_priorMtoD .025f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorItoM;
-  #define DEFAULT_priorItoM .05f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorItoI;
-  #define DEFAULT_priorItoI .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorDtoM;
-  #define DEFAULT_priorDtoM .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorDtoD;
-  #define DEFAULT_priorDtoD .05f
-
-      /**
-       * Additionally report the overall mean of all chains found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       */
-      bool reportGibbsMean;
-  #define DEFAULT_reportGibbsMean false
-
-      /**
-       * Additionally report the mode found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       *
-       * Note that it takes some extra time to store the mode (this turns on
-       * saveGibbsMode in the ProfileGibbs class).
-       */
-      bool reportGibbsMode;
-  #define DEFAULT_reportGibbsMode false
-
-      /**
-       * We do the whole thing a number of different times, starting over with
-       * a new pattern sequence.
-       */
-      uint32_t numTrueProfiles;
-  #define DEFAULT_numTrueProfiles 4
-
-      /**
-       * For each true root profile, we run the trainers from a number of
-       * different starting profiles.  This is that number.
-       */
-      uint32_t numStartingProfiles;
-  #define DEFAULT_numStartingProfiles 4
-
-      /**
-       * If startWithGlobalsDrawnFromPrior is not true, and
-       * if startWithUniformGlobals is true, then we set the global values of
-       * the startingProfile to random values between 0 and
-       * min(startWithUniformGlobals_scalar times the true
-       * values,startWithUniformGlobals_maxXtoY).  If it is false, we start
-       * with the known, true globals.
-       *
-       * @see startWithUniformGlobals_scalar
-       */
-      bool startWithUniformGlobals;
-  #define DEFAULT_startWithUniformGlobals false
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_scalar;
-  #define DEFAULT_startWithUniformGlobals_scalar 2.0
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxNtoN;
-  #define DEFAULT_startWithUniformGlobals_maxNtoN .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxBtoD;
-  #define DEFAULT_startWithUniformGlobals_maxBtoD .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxMtoI;
-  #define DEFAULT_startWithUniformGlobals_maxMtoI .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxMtoD;
-  #define DEFAULT_startWithUniformGlobals_maxMtoD .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxItoI;
-  #define DEFAULT_startWithUniformGlobals_maxItoI .5
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxDtoD;
-  #define DEFAULT_startWithUniformGlobals_maxDtoD .5
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxCtoC;
-  #define DEFAULT_startWithUniformGlobals_maxCtoC .2
-
-      /**
-       * If startWithUniformPositions is true, then we set the
-       * position-specific values of the startingProfile to random values
-       * between 0 and 1.  If it is false, we start with the known, true
-       * parameter values.  Note that if startWithPositionsDrawnFromPrior is
-       * also true, then the first half of the starting profiles will start
-       * with positions drawn from the prior and the second half will start
-       * with uniform() positions (possibly excluding the index-0 starting
-       * profile, if alsoStartWithEvenPositions is true).
-       *
-       * @see startWithPositionsDrawnFromPrior
-       * @see alsoStartWithEvenPositions
-       */
-      bool startWithUniformPositions;
-  #define DEFAULT_startWithUniformPositions false
-
-      /**
-       * If startWithGlobalsDrawnFromPrior is true, the
-       * global values of the starting profile will be drawn from the prior.
-       *
-       * @see startWithUniformGlobals
-       */
-      bool startWithGlobalsDrawnFromPrior;
-  #define DEFAULT_startWithGlobalsDrawnFromPrior false
-
-      /**
-       * If startWithPositionsDrawnFromPrior is true, the
-       * position-specific values of the starting profile will be drawn from
-       * the prior... but see the notes in startWithUniformPositions.
-       *
-       * @see startWithUniformPositions
-       * @see alsoStartWithEvenPositions
-       */
-      bool startWithPositionsDrawnFromPrior;
-  #define DEFAULT_startWithPositionsDrawnFromPrior false
-
-      /**
-       * Calculate the viterbi scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool testViterbi;
-  #define DEFAULT_testViterbi true
-
-      /**
-       * Write the viterbi scores to STDOUT?
-       */
-      bool coutViterbi;
-  #define DEFAULT_coutViterbi false
-
-      /**
-       * Calculate the truepath scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool testTruepath;
-  #define DEFAULT_testTruepath true
-
-      /**
-       * Write the truepath scores to STDOUT?
-       */
-      bool coutTruepath;
-  #define DEFAULT_coutTruepath false
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * true profile?
-       */
-      bool calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-  #define DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToTrue true
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * starting profile?
-       */
-      bool calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-  #define DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToStarting false
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * conditional profile?
-       */
-      bool coutDistances;
-  #define DEFAULT_coutDistances true
-
-      /**
-       * Calculate SKL profile-profile alignments between each trained profile
-       * and the true profile?
-       */
-      bool calculateProfileProfileAlignments;
-  #define DEFAULT_calculateProfileProfileAlignments true
-
-      /**
-       * The cost of a gap open when performing SKL profile-profile alignements.
-       */
-      double profileProfileIndelOpenCost;
-  #define DEFAULT_profileProfileIndelOpenCost .25
-
-      /**
-       * The cost of a gap extension when performing SKL profile-profile alignements.
-       */
-      double profileProfileIndelExtensionCost;
-  #define DEFAULT_profileProfileIndelExtensionCost .25
-
-      /**
-       * Calculate forward (etc) scores for the true profile, too?
-       */
-      bool testTrueProfile;
-  #define DEFAULT_testTrueProfile true
-
-      /**
-       * Write forward (etc) scores for the true profile to STDOUT
-       * during training?
-       */
-      bool coutTrueProfile;
-  #define DEFAULT_coutTrueProfile true
-
-      /**
-       * Calculate forward (etc) scores for the pre-training profile, too?
-       */
-      bool testStartingProfile;
-  #define DEFAULT_testStartingProfile true
-
-      /**
-       * Write forward (etc) scores for the pre-training profile to STDOUT
-       * during training?
-       */
-      bool coutStartingProfile;
-  #define DEFAULT_coutStartingProfile true
-
-      /**
-       * Also train the unconditional profile, and calculate forward (etc)
-       * scores using it?
-       */
-      bool testUnconditionalProfile;
-  #define DEFAULT_testUnconditionalProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional profile to STDOUT
-       * during training?
-       */
-      bool coutUnconditionalProfile;
-  #define DEFAULT_coutUnconditionalProfile true
-
-      /**
-       * Also train the unconditional (with fixed starting globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalWithFixedStartingGlobalsProfile;
-  #define DEFAULT_testUnconditionalWithFixedStartingGlobalsProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * starting globals) profile to STDOUT during training?
-       */
-      bool coutUnconditionalWithFixedStartingGlobalsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedStartingGlobalsProfile false
-
-      /**
-       * Also train the unconditional (with fixed true globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalWithFixedTrueGlobalsProfile;
-  #define DEFAULT_testUnconditionalWithFixedTrueGlobalsProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * true globals) profile to STDOUT during training?
-       */
-      bool coutUnconditionalWithFixedTrueGlobalsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedTrueGlobalsProfile false
-
-      /**
-       * Also train the "conditional, then unconditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool testConditionalThenUnconditionalProfile;
-  #define DEFAULT_testConditionalThenUnconditionalProfile true
-
-      /**
-       * Write the forward (etc) scores for the "conditional, then
-       * unconditional" profile to STDOUT during training?
-       */
-      bool coutConditionalThenUnconditionalProfile;
-  #define DEFAULT_coutConditionalThenUnconditionalProfile false
-
-      /**
-       * Also train the "unconditional, then conditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalThenConditionalProfile;
-  #define DEFAULT_testUnconditionalThenConditionalProfile true
-
-      /**
-       * Write the forward (etc) scores for the "unconditional, then
-       * conditional" profile to STDOUT during training?
-       */
-      bool coutUnconditionalThenConditionalProfile;
-  #define DEFAULT_coutUnconditionalThenConditionalProfile false
-
-      /**
-       * Also train the "unconditional (first with fixed starting globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * starting globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Also train the "unconditional (first with fixed true globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * true globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Also use the best profile found after Gibbs sampling using Conditional
-       * ("Per Position") Gibbs and calculate forward (etc) scores using it?
-       */
-      bool testConditionalGibbsProfile;
-  #define DEFAULT_testConditionalGibbsProfile true
-
-      /**
-       * Write the forward (etc) scores for the best profile found (for
-       * Conditional Gibbs) to STDOUT during training?
-       */
-      bool coutConditionalGibbsProfile;
-  #define DEFAULT_coutConditionalGibbsProfile true
-
-      /**
-       * Also use the best profile found after Gibbs sampling using
-       * Unconditional ("Simple") Gibbs and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalGibbsProfile;
-  #define DEFAULT_testUnconditionalGibbsProfile true
-
-      /**
-       * Write the forward (etc) scores for the best profile found profile (for
-       * Unconditional Gibbs) to STDOUT during training?
-       */
-      bool coutUnconditionalGibbsProfile;
-  #define DEFAULT_coutUnconditionalGibbsProfile true
-
-      /**
-       * Also use lengthadjust to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testLengthadjust;
-#define DEFAULT_testLengthadjust true
-
-      /**
-       * Also use Baldi to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testBaldi;
-#define DEFAULT_testBaldi false
-
-      /**
-       * Also use Baldi / Siegel to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testBaldiSiegel;
-#define DEFAULT_testBaldiSiegel true
-
-      /**
-       * If startWithUniformPositions or startWithPositionsDrawnFromPrior are
-       * true, then under normal circumstances numStartingProfiles profiles
-       * would be randomly generated; if alsoStartWithEvenPositions is *also*
-       * true, then the first starting profile (index 0) will have even
-       * positions rather than randomly-generated position emission values.
-       */
-      bool alsoStartWithEvenPositions;
-#define DEFAULT_alsoStartWithEvenPositions false
 
       Parameters ();
       virtual ~Parameters () {};
@@ -1674,12 +1118,12 @@ template <class ResidueType,
 
   // If true, the .tab output file will contain values converted using toLogDouble(..).
   // TODO: Make this into a parameter
-  static const bool convert_tab_output_to_log_double = false;
+    static const bool convert_tab_output_to_log_double = false;
 
     /**
      * For convenience we number the tests from 0 to LAST_TEST_ID.
      */
-  static const uint32_t LAST_TEST_ID = 21;
+     static const uint32_t LAST_TEST_ID = 21;
 
     /**
      * For convenience we number the tests from 0 to LAST_TEST_ID.
@@ -1824,106 +1268,106 @@ template <class ResidueType,
         AnyParameters const & copy_from
       )
       {
-        saveResultsToFile =                            copy_from.saveResultsToFile;
-        saveResultsParentDirectory =                           copy_from.saveResultsParentDirectory;
-        resultsFilePrefix =                            copy_from.resultsFilePrefix;
-        tabFileSuffix =                            copy_from.tabFileSuffix;
-        parametersFileSuffix =                            copy_from.parametersFileSuffix;
-        saveTrueProfileTrees =                            copy_from.saveTrueProfileTrees;
-        trueProfileTreeFileSuffix =                            copy_from.trueProfileTreeFileSuffix;
-        saveStartingProfiles =                            copy_from.saveStartingProfiles;
-        startingProfileTreeFileSuffix =                            copy_from.startingProfileTreeFileSuffix;
-        saveTestProfiles =                            copy_from.saveTestProfiles;
-        testProfileTreeFileSuffix =                            copy_from.testProfileTreeFileSuffix;
-        savePatternSequences =                            copy_from.savePatternSequences;
-        patternSequencesFileSuffix =                            copy_from.patternSequencesFileSuffix;
-        saveTests =                            copy_from.saveTests;
-        testsFileSuffix =                            copy_from.testsFileSuffix;
-        saveTrainingSequences =                            copy_from.saveTrainingSequences;
-        trainingSequencesFileSuffix =                            copy_from.trainingSequencesFileSuffix;
-        saveTestingSequences =                            copy_from.saveTestingSequences;
-        testingSequencesFileSuffix =                            copy_from.testingSequencesFileSuffix;
-        saveTrueTrainingAlignments =                            copy_from.saveTrueTrainingAlignments;
-        trainingTrueAlignmentsFileSuffix =                            copy_from.trainingTrueAlignmentsFileSuffix;
-        saveTrueTestingAlignments =                            copy_from.saveTrueTestingAlignments;
-        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
+// fixyfix        saveResultsToFile =                            copy_from.saveResultsToFile;
+// fixyfix        saveResultsParentDirectory =                           copy_from.saveResultsParentDirectory;
+// fixyfix        resultsFilePrefix =                            copy_from.resultsFilePrefix;
+// fixyfix        tabFileSuffix =                            copy_from.tabFileSuffix;
+// fixyfix        parametersFileSuffix =                            copy_from.parametersFileSuffix;
+// fixyfix        saveTrueProfileTrees =                            copy_from.saveTrueProfileTrees;
+// fixyfix        trueProfileTreeFileSuffix =                            copy_from.trueProfileTreeFileSuffix;
+// fixyfix        saveStartingProfiles =                            copy_from.saveStartingProfiles;
+// fixyfix        startingProfileTreeFileSuffix =                            copy_from.startingProfileTreeFileSuffix;
+// fixyfix        saveTestProfiles =                            copy_from.saveTestProfiles;
+// fixyfix        testProfileTreeFileSuffix =                            copy_from.testProfileTreeFileSuffix;
+// fixyfix        savePatternSequences =                            copy_from.savePatternSequences;
+// fixyfix        patternSequencesFileSuffix =                            copy_from.patternSequencesFileSuffix;
+// fixyfix        saveTests =                            copy_from.saveTests;
+// fixyfix        testsFileSuffix =                            copy_from.testsFileSuffix;
+// fixyfix        saveTrainingSequences =                            copy_from.saveTrainingSequences;
+// fixyfix        trainingSequencesFileSuffix =                            copy_from.trainingSequencesFileSuffix;
+// fixyfix        saveTestingSequences =                            copy_from.saveTestingSequences;
+// fixyfix        testingSequencesFileSuffix =                            copy_from.testingSequencesFileSuffix;
+// fixyfix        saveTrueTrainingAlignments =                            copy_from.saveTrueTrainingAlignments;
+// fixyfix        trainingTrueAlignmentsFileSuffix =                            copy_from.trainingTrueAlignmentsFileSuffix;
+// fixyfix        saveTrueTestingAlignments =                            copy_from.saveTrueTestingAlignments;
+// fixyfix        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
         saveFileVersion =                              copy_from.saveFileVersion;
-        numProfiles =                                  copy_from.numProfiles;
+// fixyfix        numProfiles =                                  copy_from.numProfiles;
         profileLengths =                                copy_from.profileLengths;
-        sharedPositionRate =                           copy_from.sharedPositionRate;
+// fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
         numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
-        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
+// fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
         conservationRates =                             copy_from.conservationRates;
-        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
+//fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
         expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
         expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
         expectedDeletionLengthAsProfileLengthFractions =                          copy_from.expectedDeletionLengthAsProfileLengthFractions;
         expectedInsertionLengthAsProfileLengthFractions =                          copy_from.expectedInsertionLengthAsProfileLengthFractions;
-        minExpectedDeletionLength =                          copy_from.minExpectedDeletionLength;
-        minExpectedInsertionLength =                          copy_from.minExpectedInsertionLength;
-        preAlignInsertion =                          copy_from.preAlignInsertion;
-        postAlignInsertion =                          copy_from.postAlignInsertion;
-        priorStrength =                          copy_from.priorStrength;
-        priorStrength_internal_transitions =                          copy_from.priorStrength_internal_transitions;
-        priorMtoM =                          copy_from.priorMtoM;
-        priorMtoI =                          copy_from.priorMtoI;
-        priorMtoD =                          copy_from.priorMtoD;
-        priorItoM =                          copy_from.priorItoM;
-        priorItoI =                          copy_from.priorItoI;
-        priorDtoM =                          copy_from.priorDtoM;
-        priorDtoD =                          copy_from.priorDtoD;
-        reportGibbsMean =                          copy_from.reportGibbsMean;
-        reportGibbsMode =                          copy_from.reportGibbsMode;
-        numTrueProfiles =                          copy_from.numTrueProfiles;
-        numStartingProfiles =                          copy_from.numStartingProfiles;
-        startWithUniformGlobals =                          copy_from.startWithUniformGlobals;
-        startWithUniformGlobals_scalar =                          copy_from.startWithUniformGlobals_scalar;
-        startWithUniformGlobals_maxNtoN =                          copy_from.startWithUniformGlobals_maxNtoN;
-        startWithUniformGlobals_maxBtoD =                          copy_from.startWithUniformGlobals_maxBtoD;
-        startWithUniformGlobals_maxMtoI =                          copy_from.startWithUniformGlobals_maxMtoI;
-        startWithUniformGlobals_maxMtoD =                          copy_from.startWithUniformGlobals_maxMtoD;
-        startWithUniformGlobals_maxItoI =                          copy_from.startWithUniformGlobals_maxItoI;
-        startWithUniformGlobals_maxDtoD =                          copy_from.startWithUniformGlobals_maxDtoD;
-        startWithUniformGlobals_maxCtoC =                          copy_from.startWithUniformGlobals_maxCtoC;
-        startWithUniformPositions =                          copy_from.startWithUniformPositions;
-        startWithGlobalsDrawnFromPrior =                          copy_from.startWithGlobalsDrawnFromPrior;
-        startWithPositionsDrawnFromPrior =                          copy_from.startWithPositionsDrawnFromPrior;
-        testViterbi =                                   copy_from.testViterbi;
-        coutViterbi =                                   copy_from.coutViterbi;
-        testTruepath =                                   copy_from.testTruepath;
-        coutTruepath =                                   copy_from.coutTruepath;
-        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        coutDistances =     copy_from.coutDistances;
-        calculateProfileProfileAlignments =   copy_from.calculateProfileProfileAlignments;
-        profileProfileIndelOpenCost =   copy_from.profileProfileIndelOpenCost;
-        profileProfileIndelExtensionCost =   copy_from.profileProfileIndelExtensionCost;
-        testTrueProfile =                          copy_from.testTrueProfile;
-        coutTrueProfile =                          copy_from.coutTrueProfile;
-        testStartingProfile =                          copy_from.testStartingProfile;
-        coutStartingProfile =                          copy_from.coutStartingProfile;
-        testUnconditionalProfile =                     copy_from.testUnconditionalProfile;
-        coutUnconditionalProfile =                     copy_from.coutUnconditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.testUnconditionalWithFixedStartingGlobalsProfile;
-        coutUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.coutUnconditionalWithFixedStartingGlobalsProfile;
-        testUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.testUnconditionalWithFixedTrueGlobalsProfile;
-        coutUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.coutUnconditionalWithFixedTrueGlobalsProfile;
-        testConditionalThenUnconditionalProfile =      copy_from.testConditionalThenUnconditionalProfile;
-        coutConditionalThenUnconditionalProfile =      copy_from.coutConditionalThenUnconditionalProfile;
-        testUnconditionalThenConditionalProfile =      copy_from.testUnconditionalThenConditionalProfile;
-        coutUnconditionalThenConditionalProfile =      copy_from.coutUnconditionalThenConditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        testConditionalGibbsProfile =                     copy_from.testConditionalGibbsProfile;
-        coutConditionalGibbsProfile =                     copy_from.coutConditionalGibbsProfile;
-        testUnconditionalGibbsProfile =                     copy_from.testUnconditionalGibbsProfile;
-        coutUnconditionalGibbsProfile =                     copy_from.coutUnconditionalGibbsProfile;
-        testLengthadjust = copy_from.testLengthadjust;
-        testBaldi = copy_from.testBaldi;
-        testBaldiSiegel = copy_from.testBaldiSiegel;
-        alsoStartWithEvenPositions = copy_from.alsoStartWithEvenPositions;
+//fixyfix        minExpectedDeletionLength =                          copy_from.minExpectedDeletionLength;
+//fixyfix        minExpectedInsertionLength =                          copy_from.minExpectedInsertionLength;
+//fixyfix        preAlignInsertion =                          copy_from.preAlignInsertion;
+//fixyfix        postAlignInsertion =                          copy_from.postAlignInsertion;
+//fixyfix        priorStrength =                          copy_from.priorStrength;
+//fixyfix        priorStrength_internal_transitions =                          copy_from.priorStrength_internal_transitions;
+//fixyfix        priorMtoM =                          copy_from.priorMtoM;
+//fixyfix        priorMtoI =                          copy_from.priorMtoI;
+//fixyfix        priorMtoD =                          copy_from.priorMtoD;
+//fixyfix        priorItoM =                          copy_from.priorItoM;
+//fixyfix        priorItoI =                          copy_from.priorItoI;
+//fixyfix        priorDtoM =                          copy_from.priorDtoM;
+//fixyfix        priorDtoD =                          copy_from.priorDtoD;
+//fixyfix        reportGibbsMean =                          copy_from.reportGibbsMean;
+//fixyfix        reportGibbsMode =                          copy_from.reportGibbsMode;
+//Fixyfix        numTrueProfiles =                          copy_from.numTrueProfiles;
+//Fixyfix        numStartingProfiles =                          copy_from.numStartingProfiles;
+//fixyfix        startWithUniformGlobals =                          copy_from.startWithUniformGlobals;
+//fixyfix        startWithUniformGlobals_scalar =                          copy_from.startWithUniformGlobals_scalar;
+//fixyfix        startWithUniformGlobals_maxNtoN =                          copy_from.startWithUniformGlobals_maxNtoN;
+//fixyfix        startWithUniformGlobals_maxBtoD =                          copy_from.startWithUniformGlobals_maxBtoD;
+//fixyfix        startWithUniformGlobals_maxMtoI =                          copy_from.startWithUniformGlobals_maxMtoI;
+//fixyfix        startWithUniformGlobals_maxMtoD =                          copy_from.startWithUniformGlobals_maxMtoD;
+//fixyfix        startWithUniformGlobals_maxItoI =                          copy_from.startWithUniformGlobals_maxItoI;
+//fixyfix        startWithUniformGlobals_maxDtoD =                          copy_from.startWithUniformGlobals_maxDtoD;
+//fixyfix        startWithUniformGlobals_maxCtoC =                          copy_from.startWithUniformGlobals_maxCtoC;
+//fixyfix        startWithUniformPositions =                          copy_from.startWithUniformPositions;
+//fixyfix        startWithGlobalsDrawnFromPrior =                          copy_from.startWithGlobalsDrawnFromPrior;
+//fixyfix        startWithPositionsDrawnFromPrior =                          copy_from.startWithPositionsDrawnFromPrior;
+//fixyfix        testViterbi =                                   copy_from.testViterbi;
+//fixyfix        coutViterbi =                                   copy_from.coutViterbi;
+//fixyfix        testTruepath =                                   copy_from.testTruepath;
+//fixyfix        coutTruepath =                                   copy_from.coutTruepath;
+//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToTrue;
+//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToStarting;
+//fixyfix        coutDistances =     copy_from.coutDistances;
+//fixyfix        calculateProfileProfileAlignments =   copy_from.calculateProfileProfileAlignments;
+//fixyfix        profileProfileIndelOpenCost =   copy_from.profileProfileIndelOpenCost;
+//fixyfix        profileProfileIndelExtensionCost =   copy_from.profileProfileIndelExtensionCost;
+//fixyfix        testTrueProfile =                          copy_from.testTrueProfile;
+//fixyfix        coutTrueProfile =                          copy_from.coutTrueProfile;
+//fixyfix        testStartingProfile =                          copy_from.testStartingProfile;
+//fixyfix        coutStartingProfile =                          copy_from.coutStartingProfile;
+//fixyfix        testUnconditionalProfile =                     copy_from.testUnconditionalProfile;
+//fixyfix        coutUnconditionalProfile =                     copy_from.coutUnconditionalProfile;
+//fixyfix        testUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.testUnconditionalWithFixedStartingGlobalsProfile;
+//fixyfix        coutUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.coutUnconditionalWithFixedStartingGlobalsProfile;
+//fixyfix        testUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.testUnconditionalWithFixedTrueGlobalsProfile;
+//fixyfix        coutUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.coutUnconditionalWithFixedTrueGlobalsProfile;
+//fixyfix        testConditionalThenUnconditionalProfile =      copy_from.testConditionalThenUnconditionalProfile;
+//fixyfix        coutConditionalThenUnconditionalProfile =      copy_from.coutConditionalThenUnconditionalProfile;
+//fixyfix        testUnconditionalThenConditionalProfile =      copy_from.testUnconditionalThenConditionalProfile;
+//fixyfix        coutUnconditionalThenConditionalProfile =      copy_from.coutUnconditionalThenConditionalProfile;
+//fixyfix        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
+//fixyfix        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
+//fixyfix        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
+//fixyfix        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
+//fixyfix        testConditionalGibbsProfile =                     copy_from.testConditionalGibbsProfile;
+//fixyfix        coutConditionalGibbsProfile =                     copy_from.coutConditionalGibbsProfile;
+//fixyfix        testUnconditionalGibbsProfile =                     copy_from.testUnconditionalGibbsProfile;
+//fixyfix        coutUnconditionalGibbsProfile =                     copy_from.coutUnconditionalGibbsProfile;
+//fixyfix        testLengthadjust = copy_from.testLengthadjust;
+//fixyfix        testBaldi = copy_from.testBaldi;
+//fixyfix        testBaldiSiegel = copy_from.testBaldiSiegel;
+//fixyfix        alsoStartWithEvenPositions = copy_from.alsoStartWithEvenPositions;
       } // copyFromNonVirtualDontDelegate( AnyParameters const & )
 
 
@@ -1956,106 +1400,106 @@ template <class ResidueType,
         //  cout << "[debug] ProfuseTest::Parameters::resetToDefaults()" << endl;
         //} // End if DEBUG_All
 
-        saveResultsToFile =                            DEFAULT_saveResultsToFile;
-        saveResultsParentDirectory =                           DEFAULT_saveResultsParentDirectory;
-        resultsFilePrefix =                            DEFAULT_resultsFilePrefix;
-        tabFileSuffix =                            DEFAULT_tabFileSuffix;
-        parametersFileSuffix =                            DEFAULT_parametersFileSuffix;
-        saveTrueProfileTrees =                            DEFAULT_saveTrueProfileTrees;
-        trueProfileTreeFileSuffix =                            DEFAULT_trueProfileTreeFileSuffix;
-        saveStartingProfiles =                            DEFAULT_saveStartingProfiles;
-        startingProfileTreeFileSuffix =                            DEFAULT_startingProfileTreeFileSuffix;
-        saveTestProfiles =                            DEFAULT_saveTestProfiles;
-        testProfileTreeFileSuffix =                            DEFAULT_testProfileTreeFileSuffix;
-        savePatternSequences =                            DEFAULT_savePatternSequences;
-        patternSequencesFileSuffix =                            DEFAULT_patternSequencesFileSuffix;
-        saveTests =                            DEFAULT_saveTests;
-        testsFileSuffix =                            DEFAULT_testsFileSuffix;
-        saveTrainingSequences =                            DEFAULT_saveTrainingSequences;
-        trainingSequencesFileSuffix =                            DEFAULT_trainingSequencesFileSuffix;
-        saveTestingSequences =                            DEFAULT_saveTestingSequences;
-        testingSequencesFileSuffix =                            DEFAULT_testingSequencesFileSuffix;
-        saveTrueTrainingAlignments =                            DEFAULT_saveTrueTrainingAlignments;
-        trainingTrueAlignmentsFileSuffix =                            DEFAULT_trainingTrueAlignmentsFileSuffix;
-        saveTrueTestingAlignments =                            DEFAULT_saveTrueTestingAlignments;
-        trueTestingAlignmentsFileSuffix =                            DEFAULT_trueTestingAlignmentsFileSuffix;
-        saveFileVersion =                              DEFAULT_saveFileVersion;
-        numProfiles =                                  DEFAULT_numProfiles;
+//fixyfix        saveResultsToFile =                            DEFAULT_saveResultsToFile;
+//fixyfix        saveResultsParentDirectory =                           DEFAULT_saveResultsParentDirectory;
+//fixyfix        resultsFilePrefix =                            DEFAULT_resultsFilePrefix;
+//fixyfix        tabFileSuffix =                            DEFAULT_tabFileSuffix;
+//fixyfix        parametersFileSuffix =                            DEFAULT_parametersFileSuffix;
+//fixyfix        saveTrueProfileTrees =                            DEFAULT_saveTrueProfileTrees;
+//fixyfix        trueProfileTreeFileSuffix =                            DEFAULT_trueProfileTreeFileSuffix;
+//fixyfix        saveStartingProfiles =                            DEFAULT_saveStartingProfiles;
+//fixyfix        startingProfileTreeFileSuffix =                            DEFAULT_startingProfileTreeFileSuffix;
+//fixyfix        saveTestProfiles =                            DEFAULT_saveTestProfiles;
+//fixyfix        testProfileTreeFileSuffix =                            DEFAULT_testProfileTreeFileSuffix;
+//fixyfix        savePatternSequences =                            DEFAULT_savePatternSequences;
+//fixyfix        patternSequencesFileSuffix =                            DEFAULT_patternSequencesFileSuffix;
+//fixyfix        saveTests =                            DEFAULT_saveTests;
+//fixyfix        testsFileSuffix =                            DEFAULT_testsFileSuffix;
+//fixyfix        saveTrainingSequences =                            DEFAULT_saveTrainingSequences;
+//fixyfix        trainingSequencesFileSuffix =                            DEFAULT_trainingSequencesFileSuffix;
+//fixyfix        saveTestingSequences =                            DEFAULT_saveTestingSequences;
+//fixyfix        testingSequencesFileSuffix =                            DEFAULT_testingSequencesFileSuffix;
+//fixyfix        saveTrueTrainingAlignments =                            DEFAULT_saveTrueTrainingAlignments;
+//fixyfix        trainingTrueAlignmentsFileSuffix =                            DEFAULT_trainingTrueAlignmentsFileSuffix;
+//fixyfix        saveTrueTestingAlignments =                            DEFAULT_saveTrueTestingAlignments;
+//fixyfix        trueTestingAlignmentsFileSuffix =                            DEFAULT_trueTestingAlignmentsFileSuffix;
+//fixyfix        saveFileVersion =                              DEFAULT_saveFileVersion;
+//fixyfix        numProfiles =                                  DEFAULT_numProfiles;
         profileLengths =                                DEFAULT_profileLengths;
-        sharedPositionRate =                           DEFAULT_sharedPositionRate;
+//fixyfix        sharedPositionRate =                           DEFAULT_sharedPositionRate;
         numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
-        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
+//fixyfix        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
         conservationRates =                             DEFAULT_conservationRates;
-        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
+//fixyfix        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
         expectedDeletionsCounts =                          DEFAULT_expectedDeletionsCounts;
         expectedInsertionsCounts =                          DEFAULT_expectedInsertionsCounts;
         expectedDeletionLengthAsProfileLengthFractions =                          DEFAULT_expectedDeletionLengthAsProfileLengthFractions;
         expectedInsertionLengthAsProfileLengthFractions =                          DEFAULT_expectedInsertionLengthAsProfileLengthFractions;
-        minExpectedDeletionLength =                          DEFAULT_minExpectedDeletionLength;
-        minExpectedInsertionLength =                          DEFAULT_minExpectedInsertionLength;
-        preAlignInsertion =                          DEFAULT_preAlignInsertion;
-        postAlignInsertion =                          DEFAULT_postAlignInsertion;
-        priorStrength =                          DEFAULT_priorStrength;
-        priorStrength_internal_transitions =                          DEFAULT_priorStrength_internal_transitions;
-        priorMtoM =                          DEFAULT_priorMtoM;
-        priorMtoI =                          DEFAULT_priorMtoI;
-        priorMtoD =                          DEFAULT_priorMtoD;
-        priorItoM =                          DEFAULT_priorItoM;
-        priorItoI =                          DEFAULT_priorItoI;
-        priorDtoM =                          DEFAULT_priorDtoM;
-        priorDtoD =                          DEFAULT_priorDtoD;
-        reportGibbsMean =                          DEFAULT_reportGibbsMean;
-        reportGibbsMode =                          DEFAULT_reportGibbsMode;
-        numTrueProfiles =                          DEFAULT_numTrueProfiles;
-        numStartingProfiles =                          DEFAULT_numStartingProfiles;
-        startWithUniformGlobals =                          DEFAULT_startWithUniformGlobals;
-        startWithUniformGlobals_scalar =                          DEFAULT_startWithUniformGlobals_scalar;
-        startWithUniformGlobals_maxNtoN =                          DEFAULT_startWithUniformGlobals_maxNtoN;
-        startWithUniformGlobals_maxBtoD =                          DEFAULT_startWithUniformGlobals_maxBtoD;
-        startWithUniformGlobals_maxMtoI =                          DEFAULT_startWithUniformGlobals_maxMtoI;
-        startWithUniformGlobals_maxMtoD =                          DEFAULT_startWithUniformGlobals_maxMtoD;
-        startWithUniformGlobals_maxItoI =                          DEFAULT_startWithUniformGlobals_maxItoI;
-        startWithUniformGlobals_maxDtoD =                          DEFAULT_startWithUniformGlobals_maxDtoD;
-        startWithUniformGlobals_maxCtoC =                          DEFAULT_startWithUniformGlobals_maxCtoC;
-        startWithUniformPositions =                          DEFAULT_startWithUniformPositions;
-        startWithGlobalsDrawnFromPrior =                          DEFAULT_startWithGlobalsDrawnFromPrior;
-        startWithPositionsDrawnFromPrior =                          DEFAULT_startWithPositionsDrawnFromPrior;
-        testViterbi =                                   DEFAULT_testViterbi;
-        coutViterbi =                                   DEFAULT_coutViterbi;
-        testTruepath =                                   DEFAULT_testTruepath;
-        coutTruepath =                                   DEFAULT_coutTruepath;
-        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        coutDistances =     DEFAULT_coutDistances;
-        calculateProfileProfileAlignments =   DEFAULT_calculateProfileProfileAlignments;
-        profileProfileIndelOpenCost =   DEFAULT_profileProfileIndelOpenCost;
-        profileProfileIndelExtensionCost =   DEFAULT_profileProfileIndelExtensionCost;
-        testTrueProfile =                          DEFAULT_testTrueProfile;
-        coutTrueProfile =                          DEFAULT_coutTrueProfile;
-        testStartingProfile =                          DEFAULT_testStartingProfile;
-        coutStartingProfile =                          DEFAULT_coutStartingProfile;
-        testUnconditionalProfile =                     DEFAULT_testUnconditionalProfile;
-        coutUnconditionalProfile =                     DEFAULT_coutUnconditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedStartingGlobalsProfile;
-        coutUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedStartingGlobalsProfile;
-        testUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedTrueGlobalsProfile;
-        coutUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedTrueGlobalsProfile;
-        testConditionalThenUnconditionalProfile =      DEFAULT_testConditionalThenUnconditionalProfile;
-        coutConditionalThenUnconditionalProfile =      DEFAULT_coutConditionalThenUnconditionalProfile;
-        testUnconditionalThenConditionalProfile =      DEFAULT_testUnconditionalThenConditionalProfile;
-        coutUnconditionalThenConditionalProfile =      DEFAULT_coutUnconditionalThenConditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        testConditionalGibbsProfile =                     DEFAULT_testConditionalGibbsProfile;
-        coutConditionalGibbsProfile =                     DEFAULT_coutConditionalGibbsProfile;
-        testUnconditionalGibbsProfile =                     DEFAULT_testUnconditionalGibbsProfile;
-        coutUnconditionalGibbsProfile =                     DEFAULT_coutUnconditionalGibbsProfile;
-        testLengthadjust = DEFAULT_testLengthadjust;
-        testBaldi = DEFAULT_testBaldi;
-        testBaldiSiegel = DEFAULT_testBaldiSiegel;
-        alsoStartWithEvenPositions = DEFAULT_alsoStartWithEvenPositions;
+//fixyfix        minExpectedDeletionLength =                          DEFAULT_minExpectedDeletionLength;
+//fixyfix        minExpectedInsertionLength =                          DEFAULT_minExpectedInsertionLength;
+//fixyfix        preAlignInsertion =                          DEFAULT_preAlignInsertion;
+//fixyfix        postAlignInsertion =                          DEFAULT_postAlignInsertion;
+//fixyfix        priorStrength =                          DEFAULT_priorStrength;
+//fixyfix        priorStrength_internal_transitions =                          DEFAULT_priorStrength_internal_transitions;
+//fixyfix        priorMtoM =                          DEFAULT_priorMtoM;
+//fixyfix        priorMtoI =                          DEFAULT_priorMtoI;
+//fixyfix        priorMtoD =                          DEFAULT_priorMtoD;
+//fixyfix        priorItoM =                          DEFAULT_priorItoM;
+//fixyfix        priorItoI =                          DEFAULT_priorItoI;
+//fixyfix        priorDtoM =                          DEFAULT_priorDtoM;
+//fixyfix        priorDtoD =                          DEFAULT_priorDtoD;
+//fixyfix        reportGibbsMean =                          DEFAULT_reportGibbsMean;
+//fixyfix        reportGibbsMode =                          DEFAULT_reportGibbsMode;
+//fixyfix        numTrueProfiles =                          DEFAULT_numTrueProfiles;
+//fixyfix        numStartingProfiles =                          DEFAULT_numStartingProfiles;
+//fixyfix        startWithUniformGlobals =                          DEFAULT_startWithUniformGlobals;
+//fixyfix        startWithUniformGlobals_scalar =                          DEFAULT_startWithUniformGlobals_scalar;
+//fixyfix        startWithUniformGlobals_maxNtoN =                          DEFAULT_startWithUniformGlobals_maxNtoN;
+//fixyfix        startWithUniformGlobals_maxBtoD =                          DEFAULT_startWithUniformGlobals_maxBtoD;
+//fixyfix        startWithUniformGlobals_maxMtoI =                          DEFAULT_startWithUniformGlobals_maxMtoI;
+//fixyfix        startWithUniformGlobals_maxMtoD =                          DEFAULT_startWithUniformGlobals_maxMtoD;
+//fixyfix        startWithUniformGlobals_maxItoI =                          DEFAULT_startWithUniformGlobals_maxItoI;
+//fixyfix        startWithUniformGlobals_maxDtoD =                          DEFAULT_startWithUniformGlobals_maxDtoD;
+//fixyfix        startWithUniformGlobals_maxCtoC =                          DEFAULT_startWithUniformGlobals_maxCtoC;
+//fixyfix        startWithUniformPositions =                          DEFAULT_startWithUniformPositions;
+//fixyfix        startWithGlobalsDrawnFromPrior =                          DEFAULT_startWithGlobalsDrawnFromPrior;
+//fixyfix        startWithPositionsDrawnFromPrior =                          DEFAULT_startWithPositionsDrawnFromPrior;
+//fixyfix        testViterbi =                                   DEFAULT_testViterbi;
+//fixyfix        coutViterbi =                                   DEFAULT_coutViterbi;
+//fixyfix        testTruepath =                                   DEFAULT_testTruepath;
+//fixyfix        coutTruepath =                                   DEFAULT_coutTruepath;
+//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToTrue;
+//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToStarting;
+//fixyfix        coutDistances =     DEFAULT_coutDistances;
+//fixyfix        calculateProfileProfileAlignments =   DEFAULT_calculateProfileProfileAlignments;
+//fixyfix        profileProfileIndelOpenCost =   DEFAULT_profileProfileIndelOpenCost;
+//fixyfix        profileProfileIndelExtensionCost =   DEFAULT_profileProfileIndelExtensionCost;
+//fixyfix        testTrueProfile =                          DEFAULT_testTrueProfile;
+//fixyfix        coutTrueProfile =                          DEFAULT_coutTrueProfile;
+//fixyfix        testStartingProfile =                          DEFAULT_testStartingProfile;
+//fixyfix        coutStartingProfile =                          DEFAULT_coutStartingProfile;
+//fixyfix        testUnconditionalProfile =                     DEFAULT_testUnconditionalProfile;
+//fixyfix        coutUnconditionalProfile =                     DEFAULT_coutUnconditionalProfile;
+//fixyfix        testUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedStartingGlobalsProfile;
+//fixyfix        coutUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedStartingGlobalsProfile;
+//fixyfix        testUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedTrueGlobalsProfile;
+//fixyfix        coutUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedTrueGlobalsProfile;
+//fixyfix        testConditionalThenUnconditionalProfile =      DEFAULT_testConditionalThenUnconditionalProfile;
+//fixyfix        coutConditionalThenUnconditionalProfile =      DEFAULT_coutConditionalThenUnconditionalProfile;
+//fixyfix        testUnconditionalThenConditionalProfile =      DEFAULT_testUnconditionalThenConditionalProfile;
+//fixyfix        coutUnconditionalThenConditionalProfile =      DEFAULT_coutUnconditionalThenConditionalProfile;
+//fixyfix        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
+//fixyfix        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
+//fixyfix        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
+//fixyfix        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
+//fixyfix        testConditionalGibbsProfile =                     DEFAULT_testConditionalGibbsProfile;
+//fixyfix        coutConditionalGibbsProfile =                     DEFAULT_coutConditionalGibbsProfile;
+//fixyfix        testUnconditionalGibbsProfile =                     DEFAULT_testUnconditionalGibbsProfile;
+//fixyfix        coutUnconditionalGibbsProfile =                     DEFAULT_coutUnconditionalGibbsProfile;
+//fixyfix        testLengthadjust = DEFAULT_testLengthadjust;
+//fixyfix        testBaldi = DEFAULT_testBaldi;
+//fixyfix        testBaldiSiegel = DEFAULT_testBaldiSiegel;
+//fixyfix        alsoStartWithEvenPositions = DEFAULT_alsoStartWithEvenPositions;
       } // resetToDefaults()
 
   template <class ResidueType,
@@ -2071,36 +1515,38 @@ template <class ResidueType,
         std::basic_ostream<CharT,Traits>& os
       ) const
       {
+        ///  \todo fixyfix ITERATE through m_...whatever
+
         ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
         os << endl;
 
         os << "[ProfuseTest]" << endl;
 
-        os << "saveResultsToFile = " <<                           saveResultsToFile << endl;
-        os << "saveResultsParentDirectory = " <<                          saveResultsParentDirectory << endl;
-        os << "resultsFilePrefix = " <<                          resultsFilePrefix << endl;
-        os << "tabFileSuffix = " <<                          tabFileSuffix << endl;
-        os << "parametersFileSuffix = " <<                          parametersFileSuffix << endl;
-        os << "saveTrueProfileTrees = " <<                          saveTrueProfileTrees << endl;
-        os << "trueProfileTreeFileSuffix = " <<                          trueProfileTreeFileSuffix << endl;
-        os << "saveStartingProfiles = " <<                          saveStartingProfiles << endl;
-        os << "startingProfileTreeFileSuffix = " <<                          startingProfileTreeFileSuffix << endl;
-        os << "saveTestProfiles = " <<                          saveTestProfiles << endl;
-        os << "testProfileTreeFileSuffix = " <<                          testProfileTreeFileSuffix << endl;
-        os << "savePatternSequences = " <<                          savePatternSequences << endl;
-        os << "patternSequencesFileSuffix = " <<                          patternSequencesFileSuffix << endl;
-        os << "saveTests = " <<                          saveTests << endl;
-        os << "testsFileSuffix = " <<                          testsFileSuffix << endl;
-        os << "saveTrainingSequences = " <<                          saveTrainingSequences << endl;
-        os << "trainingSequencesFileSuffix = " <<                          trainingSequencesFileSuffix << endl;
-        os << "saveTestingSequences = " <<                          saveTestingSequences << endl;
-        os << "testingSequencesFileSuffix = " <<                          testingSequencesFileSuffix << endl;
-        os << "saveTrueTrainingAlignments = " <<                          saveTrueTrainingAlignments << endl;
-        os << "trainingTrueAlignmentsFileSuffix = " <<                          trainingTrueAlignmentsFileSuffix << endl;
-        os << "saveTrueTestingAlignments = " <<                          saveTrueTestingAlignments << endl;
-        os << "trueTestingAlignmentsFileSuffix = " <<                          trueTestingAlignmentsFileSuffix << endl;
+        os << "saveResultsToFile = " <<                           GET_saveResultsToFile() << endl;
+        os << "saveResultsParentDirectory = " <<                  GET_saveResultsParentDirectory() << endl;
+        os << "resultsFilePrefix = " <<                          GET_resultsFilePrefix() << endl;
+        os << "tabFileSuffix = " <<                          GET_tabFileSuffix() << endl;
+        os << "parametersFileSuffix = " <<                          GET_parametersFileSuffix() << endl;
+        os << "saveTrueProfileTrees = " <<                          GET_saveTrueProfileTrees() << endl;
+        os << "trueProfileTreeFileSuffix = " <<                          GET_trueProfileTreeFileSuffix() << endl;
+        os << "saveStartingProfiles = " <<                          GET_saveStartingProfiles() << endl;
+        os << "startingProfileTreeFileSuffix = " <<                          GET_startingProfileTreeFileSuffix() << endl;
+        os << "saveTestProfiles = " <<                          GET_saveTestProfiles() << endl;
+        os << "testProfileTreeFileSuffix = " <<                          GET_testProfileTreeFileSuffix() << endl;
+        os << "savePatternSequences = " <<                          GET_savePatternSequences() << endl;
+        os << "patternSequencesFileSuffix = " <<                          GET_patternSequencesFileSuffix() << endl;
+        os << "saveTests = " <<                          GET_saveTests() << endl;
+        os << "testsFileSuffix = " <<                          GET_testsFileSuffix() << endl;
+        os << "saveTrainingSequences = " <<                          GET_saveTrainingSequences() << endl;
+        os << "trainingSequencesFileSuffix = " <<                          GET_trainingSequencesFileSuffix() << endl;
+        os << "saveTestingSequences = " <<                          GET_saveTestingSequences() << endl;
+        os << "testingSequencesFileSuffix = " <<                          GET_testingSequencesFileSuffix() << endl;
+        os << "saveTrueTrainingAlignments = " <<                          GET_saveTrueTrainingAlignments() << endl;
+        os << "trainingTrueAlignmentsFileSuffix = " <<                          GET_trainingTrueAlignmentsFileSuffix() << endl;
+        os << "saveTrueTestingAlignments = " <<                          GET_saveTrueTestingAlignments() << endl;
+        os << "trueTestingAlignmentsFileSuffix = " <<                          GET_trueTestingAlignmentsFileSuffix() << endl;
         os << "saveFileVersion = " <<                             saveFileVersion << endl;
-        os << "numProfiles = " <<                                 numProfiles << endl;
+        os << "numProfiles = " <<                                 GET_numProfiles() << endl;
 
         if( profileLengths == NULL ) {
           os << "profileLengths = NULL" << endl;
@@ -2114,7 +1560,7 @@ template <class ResidueType,
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if profileLengths == NULL .. else ..
-        os << "sharedPositionRate = " <<                          sharedPositionRate << endl;
+        os << "sharedPositionRate = " <<                          GET_sharedPositionRate() << endl;
         if( numTrainingSequencesPerProfiles == NULL ) {
           os << "numTrainingSequencesPerProfiles = NULL" << endl;
               } else {
@@ -2127,7 +1573,7 @@ template <class ResidueType,
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if numTrainingSequencesPerProfiles == NULL .. else ..
-        os << "numTestingSequencesPerProfile = " <<                  numTestingSequencesPerProfile << endl;
+        os << "numTestingSequencesPerProfile = " <<                  GET_numTestingSequencesPerProfile() << endl;
         if( profileLengths == NULL ) {
           os << "profileLengths = NULL" << endl;
               } else {
@@ -2191,73 +1637,73 @@ template <class ResidueType,
             os << ( *expectedInsertionLengthAsProfileLengthFractions )[ cr_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
-              } // End if expectedInsertionLengthAsProfileLengthFractions == NULL .. else ..
+        } // End if expectedInsertionLengthAsProfileLengthFractions == NULL .. else ..
 
-        os << "minExpectedDeletionLength = " <<                         minExpectedDeletionLength << endl;
-        os << "minExpectedInsertionLength = " <<                         minExpectedInsertionLength << endl;
-        os << "preAlignInsertion = " <<                         preAlignInsertion << endl;
-        os << "postAlignInsertion = " <<                         postAlignInsertion << endl;
-        os << "priorStrength = " <<                         priorStrength << endl;
-        os << "priorStrength_internal_transitions = " <<                         priorStrength_internal_transitions << endl;
-        os << "priorMtoM = " <<                         priorMtoM << endl;
-        os << "priorMtoI = " <<                         priorMtoI << endl;
-        os << "priorMtoD = " <<                         priorMtoD << endl;
-        os << "priorItoM = " <<                         priorItoM << endl;
-        os << "priorItoI = " <<                         priorItoI << endl;
-        os << "priorDtoM = " <<                         priorDtoM << endl;
-        os << "priorDtoD = " <<                         priorDtoD << endl;
-        os << "reportGibbsMean = " <<                         reportGibbsMean << endl;
-        os << "reportGibbsMode = " <<                         reportGibbsMode << endl;
-        os << "numTrueProfiles = " <<                         numTrueProfiles << endl;
-        os << "numStartingProfiles = " <<                         numStartingProfiles << endl;
-        os << "startWithUniformGlobals = " <<                         startWithUniformGlobals << endl;
-        os << "startWithUniformGlobals_scalar = " <<                         startWithUniformGlobals_scalar << endl;
-        os << "startWithUniformGlobals_maxNtoN = " <<                         startWithUniformGlobals_maxNtoN << endl;
-        os << "startWithUniformGlobals_maxBtoD = " <<                         startWithUniformGlobals_maxBtoD << endl;
-        os << "startWithUniformGlobals_maxMtoI = " <<                         startWithUniformGlobals_maxMtoI << endl;
-        os << "startWithUniformGlobals_maxMtoD = " <<                         startWithUniformGlobals_maxMtoD << endl;
-        os << "startWithUniformGlobals_maxItoI = " <<                         startWithUniformGlobals_maxItoI << endl;
-        os << "startWithUniformGlobals_maxDtoD = " <<                         startWithUniformGlobals_maxDtoD << endl;
-        os << "startWithUniformGlobals_maxCtoC = " <<                         startWithUniformGlobals_maxCtoC << endl;
-        os << "startWithUniformPositions = " <<                         startWithUniformPositions << endl;
-        os << "startWithGlobalsDrawnFromPrior = " <<                         startWithGlobalsDrawnFromPrior << endl;
-        os << "startWithPositionsDrawnFromPrior = " <<                         startWithPositionsDrawnFromPrior << endl;
-        os << "testViterbi = " <<                                  testViterbi << endl;
-        os << "coutViterbi = " <<                                  coutViterbi << endl;
-        os << "testTruepath = " <<                                  testTruepath << endl;
-        os << "coutTruepath = " <<                                  coutTruepath << endl;
-        os << "calculateSymmeterizedKullbackLeiblerDistancesToTrue = " <<       calculateSymmeterizedKullbackLeiblerDistancesToTrue << endl;
-        os << "calculateSymmeterizedKullbackLeiblerDistancesToStarting = " <<       calculateSymmeterizedKullbackLeiblerDistancesToStarting << endl;
-        os << "coutDistances = " <<    coutDistances << endl;
-        os << "calculateProfileProfileAlignments = " <<  calculateProfileProfileAlignments << endl;
-        os << "profileProfileIndelOpenCost = " <<  profileProfileIndelOpenCost << endl;
-        os << "profileProfileIndelExtensionCost = " <<  profileProfileIndelExtensionCost << endl;
-        os << "testTrueProfile = " <<                         testTrueProfile << endl;
-        os << "coutTrueProfile = " <<                         coutTrueProfile << endl;
-        os << "testStartingProfile = " <<                         testStartingProfile << endl;
-        os << "coutStartingProfile = " <<                         coutStartingProfile << endl;
-        os << "testUnconditionalProfile = " <<                    testUnconditionalProfile << endl;
-        os << "coutUnconditionalProfile = " <<                    coutUnconditionalProfile << endl;
-        os << "testUnconditionalWithFixedStartingGlobalsProfile = " <<                    testUnconditionalWithFixedStartingGlobalsProfile << endl;
-        os << "coutUnconditionalWithFixedStartingGlobalsProfile = " <<                    coutUnconditionalWithFixedStartingGlobalsProfile << endl;
-        os << "testUnconditionalWithFixedTrueGlobalsProfile = " <<                    testUnconditionalWithFixedTrueGlobalsProfile << endl;
-        os << "coutUnconditionalWithFixedTrueGlobalsProfile = " <<                    coutUnconditionalWithFixedTrueGlobalsProfile << endl;
-        os << "testConditionalThenUnconditionalProfile = " <<     testConditionalThenUnconditionalProfile << endl;
-        os << "coutConditionalThenUnconditionalProfile = " <<     coutConditionalThenUnconditionalProfile << endl;
-        os << "testUnconditionalThenConditionalProfile = " <<     testUnconditionalThenConditionalProfile << endl;
-        os << "coutUnconditionalThenConditionalProfile = " <<     coutUnconditionalThenConditionalProfile << endl;
-        os << "testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        os << "coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        os << "testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        os << "coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        os << "testConditionalGibbsProfile = " <<                    testConditionalGibbsProfile << endl;
-        os << "coutConditionalGibbsProfile = " <<                    coutConditionalGibbsProfile << endl;
-        os << "testUnconditionalGibbsProfile = " <<                    testUnconditionalGibbsProfile << endl;
-        os << "coutUnconditionalGibbsProfile = " <<                    coutUnconditionalGibbsProfile << endl;
-        os << "testLengthadjust = " << testLengthadjust << endl;
-        os << "testBaldi = " << testBaldi << endl;
-        os << "testBaldiSiegel = " << testBaldiSiegel << endl;
-        os << "alsoStartWithEvenPositions = " << alsoStartWithEvenPositions << endl;
+        os << "minExpectedDeletionLength = " <<                         GET_minExpectedDeletionLength() << endl;
+        os << "minExpectedInsertionLength = " <<                         GET_minExpectedInsertionLength() << endl;
+        os << "preAlignInsertion = " <<                         GET_preAlignInsertion() << endl;
+        os << "postAlignInsertion = " <<                         GET_postAlignInsertion() << endl;
+        os << "priorStrength = " <<                         GET_priorStrength() << endl;
+        os << "priorStrength_internal_transitions = " <<                         GET_priorStrength_internal_transitions() << endl;
+        os << "priorMtoM = " <<                         GET_priorMtoM() << endl;
+        os << "priorMtoI = " <<                         GET_priorMtoI() << endl;
+        os << "priorMtoD = " <<                         GET_priorMtoD() << endl;
+        os << "priorItoM = " <<                         GET_priorItoM() << endl;
+        os << "priorItoI = " <<                         GET_priorItoI() << endl;
+        os << "priorDtoM = " <<                         GET_priorDtoM() << endl;
+        os << "priorDtoD = " <<                         GET_priorDtoD() << endl;
+        os << "reportGibbsMean = " <<                         GET_reportGibbsMean() << endl;
+        os << "reportGibbsMode = " <<                         GET_reportGibbsMode() << endl;
+        os << "numTrueProfiles = " <<                         GET_numTrueProfiles() << endl;
+        os << "numStartingProfiles = " <<                         GET_numStartingProfiles() << endl;
+        os << "startWithUniformGlobals = " <<                         GET_startWithUniformGlobals() << endl;
+        os << "startWithUniformGlobals_scalar = " <<                         GET_startWithUniformGlobals_scalar() << endl;
+        os << "startWithUniformGlobals_maxNtoN = " <<                         GET_startWithUniformGlobals_maxNtoN() << endl;
+        os << "startWithUniformGlobals_maxBtoD = " <<                         GET_startWithUniformGlobals_maxBtoD() << endl;
+        os << "startWithUniformGlobals_maxMtoI = " <<                         GET_startWithUniformGlobals_maxMtoI() << endl;
+        os << "startWithUniformGlobals_maxMtoD = " <<                         GET_startWithUniformGlobals_maxMtoD() << endl;
+        os << "startWithUniformGlobals_maxItoI = " <<                         GET_startWithUniformGlobals_maxItoI() << endl;
+        os << "startWithUniformGlobals_maxDtoD = " <<                         GET_startWithUniformGlobals_maxDtoD() << endl;
+        os << "startWithUniformGlobals_maxCtoC = " <<                         GET_startWithUniformGlobals_maxCtoC() << endl;
+        os << "startWithUniformPositions = " <<                         GET_startWithUniformPositions() << endl;
+        os << "startWithGlobalsDrawnFromPrior = " <<                         GET_startWithGlobalsDrawnFromPrior() << endl;
+        os << "startWithPositionsDrawnFromPrior = " <<                         GET_startWithPositionsDrawnFromPrior() << endl;
+        os << "testViterbi = " <<                                  GET_testViterbi() << endl;
+        os << "coutViterbi = " <<                                  GET_coutViterbi() << endl;
+        os << "testTruepath = " <<                                  GET_testTruepath() << endl;
+        os << "coutTruepath = " <<                                  GET_coutTruepath() << endl;
+        os << "calculateSymmeterizedKullbackLeiblerDistancesToTrue = " <<       GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() << endl;
+        os << "calculateSymmeterizedKullbackLeiblerDistancesToStarting = " <<       GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting() << endl;
+        os << "coutDistances = " <<    GET_coutDistances() << endl;
+        os << "calculateProfileProfileAlignments = " <<  GET_calculateProfileProfileAlignments() << endl;
+        os << "profileProfileIndelOpenCost = " <<  GET_profileProfileIndelOpenCost() << endl;
+        os << "profileProfileIndelExtensionCost = " <<  GET_profileProfileIndelExtensionCost() << endl;
+        os << "testTrueProfile = " <<                         GET_testTrueProfile() << endl;
+        os << "coutTrueProfile = " <<                         GET_coutTrueProfile() << endl;
+        os << "testStartingProfile = " <<                         GET_testStartingProfile() << endl;
+        os << "coutStartingProfile = " <<                         GET_coutStartingProfile() << endl;
+        os << "testUnconditionalProfile = " <<                    GET_testUnconditionalProfile() << endl;
+        os << "coutUnconditionalProfile = " <<                    GET_coutUnconditionalProfile() << endl;
+        os << "testUnconditionalWithFixedStartingGlobalsProfile = " <<                    GET_testUnconditionalWithFixedStartingGlobalsProfile() << endl;
+        os << "coutUnconditionalWithFixedStartingGlobalsProfile = " <<                    GET_coutUnconditionalWithFixedStartingGlobalsProfile() << endl;
+        os << "testUnconditionalWithFixedTrueGlobalsProfile = " <<                    GET_testUnconditionalWithFixedTrueGlobalsProfile() << endl;
+        os << "coutUnconditionalWithFixedTrueGlobalsProfile = " <<                    GET_coutUnconditionalWithFixedTrueGlobalsProfile() << endl;
+        os << "testConditionalThenUnconditionalProfile = " <<     GET_testConditionalThenUnconditionalProfile() << endl;
+        os << "coutConditionalThenUnconditionalProfile = " <<     GET_coutConditionalThenUnconditionalProfile() << endl;
+        os << "testUnconditionalThenConditionalProfile = " <<     GET_testUnconditionalThenConditionalProfile() << endl;
+        os << "coutUnconditionalThenConditionalProfile = " <<     GET_coutUnconditionalThenConditionalProfile() << endl;
+        os << "testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << GET_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile() << endl;
+        os << "coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << GET_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile() << endl;
+        os << "testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << GET_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile() << endl;
+        os << "coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << GET_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile() << endl;
+        os << "testConditionalGibbsProfile = " <<                    GET_testConditionalGibbsProfile() << endl;
+        os << "coutConditionalGibbsProfile = " <<                    GET_coutConditionalGibbsProfile() << endl;
+        os << "testUnconditionalGibbsProfile = " <<                    GET_testUnconditionalGibbsProfile() << endl;
+        os << "coutUnconditionalGibbsProfile = " <<                    GET_coutUnconditionalGibbsProfile() << endl;
+        os << "testLengthadjust = " << GET_testLengthadjust() << endl;
+        os << "testBaldi = " << GET_testBaldi() << endl;
+        os << "testBaldiSiegel = " << GET_testBaldiSiegel() << endl;
+        os << "alsoStartWithEvenPositions = " << GET_alsoStartWithEvenPositions() << endl;
       } // writeParameters ( basic_ostream & )
 
   ////// Class galosh::ProfuseTest::ParametersModifierTemplate ////
@@ -3456,12 +2902,12 @@ template <class ResidueType,
       typename DynamicProgramming<ResidueType, ProbabilityType, ScoreType, MatrixValueType>::template DirichletMixtureGlobalPrior<float> globalPrior;
 
       // Set up the priors
-      if( m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior ) {
-        matchEmissionPrior.reinitializeToEven( m_parameters.priorStrength );
+      if( m_parameters.usePriors || GET_startWithPositionsDrawnFromPrior() ) {
+        matchEmissionPrior.reinitializeToEven( GET_priorStrength() );
         //matchEmissionPrior.reinitializeToEven( ( .5f * m_parameters.priorStrength ) );
         m_parameters.matchEmissionPrior = &matchEmissionPrior;
       } // End if m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior
-      if( m_parameters.usePriors || m_parameters.startWithGlobalsDrawnFromPrior ) {
+      if( m_parameters.usePriors || GET_startWithGlobalsDrawnFromPrior() ) {
         globalPrior.reinitializeToEven( m_parameters.priorStrength );
         m_parameters.globalPrior = &globalPrior;
         // NOTE: We will do additional set-up of the global prior for each
@@ -3620,10 +3066,10 @@ template <class ResidueType,
       //}; // test_names
 
       // Set up the tests.
-      if( m_parameters.testTrueProfile ) {
+      if( GET_testTrueProfile() ) {
         tests[ TEST_ID_true ].name = "true";
         tests[ TEST_ID_true ].isRun = true;
-        if( m_parameters.coutTrueProfile ) {
+        if( GET_coutTrueProfile() ) {
           tests[ TEST_ID_true ].isCout = true;
         } else {
           tests[ TEST_ID_true ].isCout = false;
@@ -3637,10 +3083,10 @@ template <class ResidueType,
       // No modifications, since we don't train the true profile.
       // tests[ TEST_ID_true ].parametersModifier
 
-      if( m_parameters.testStartingProfile ) {
+      if( GET_testStartingProfile() ) {
         tests[ TEST_ID_starting ].name = "starting";
         tests[ TEST_ID_starting ].isRun = true;
-        if( m_parameters.coutStartingProfile ) {
+        if( GET_coutStartingProfile() ) {
           tests[ TEST_ID_starting ].isCout = true;
         } else {
           tests[ TEST_ID_starting ].isCout = false;
@@ -3681,13 +3127,13 @@ template <class ResidueType,
       //tests[ TEST_ID_conditional ].parametersModifier.parameters.verbosity = VERBOSITY_All;
       //tests[ TEST_ID_conditional ].parametersModifier.isModified_verbosity = true;
 
-      if( m_parameters.testUnconditionalProfile ) {
+      if( GET_testUnconditionalProfile() ) {
         tests[ TEST_ID_unconditional ].name = "unconditional";
         tests[ TEST_ID_unconditional ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalProfile ) {
+      if( GET_coutUnconditionalProfile() ) {
         tests[ TEST_ID_unconditional ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional ].isCout = false;
@@ -3715,13 +3161,13 @@ template <class ResidueType,
       //tests[ TEST_ID_unconditional ].parametersModifier.parameters.trainProfileGlobals = false;
       //tests[ TEST_ID_unconditional ].parametersModifier.isModified_trainProfileGlobals = true;
 
-      if( m_parameters.testUnconditionalWithFixedStartingGlobalsProfile ) {
+      if( GET_testUnconditionalWithFixedStartingGlobalsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals ].name = "unconditional_with_fixed_starting_globals";
         tests[ TEST_ID_unconditional_with_fixed_starting_globals ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalWithFixedStartingGlobalsProfile ) {
+      if( GET_coutUnconditionalWithFixedStartingGlobalsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals ].isCout = false;
@@ -3740,13 +3186,13 @@ template <class ResidueType,
       tests[ TEST_ID_unconditional_with_fixed_starting_globals ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_unconditional_with_fixed_starting_globals ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testUnconditionalWithFixedTrueGlobalsProfile ) {
+      if( GET_testUnconditionalWithFixedTrueGlobalsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_true_globals ].name = "unconditional_with_fixed_true_globals";
         tests[ TEST_ID_unconditional_with_fixed_true_globals ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_true_globals ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalWithFixedTrueGlobalsProfile ) {
+      if( GET_coutUnconditionalWithFixedTrueGlobalsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_true_globals ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_true_globals ].isCout = false;
@@ -3766,13 +3212,13 @@ template <class ResidueType,
       tests[ TEST_ID_unconditional_with_fixed_true_globals ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_unconditional_with_fixed_true_globals ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testConditionalThenUnconditionalProfile ) {
+      if( GET_testConditionalThenUnconditionalProfile() ) {
         tests[ TEST_ID_conditional_then_unconditional ].name = "conditional_then_unconditional";
         tests[ TEST_ID_conditional_then_unconditional ].isRun = true;
       } else {
         tests[ TEST_ID_conditional_then_unconditional ].isRun = false;
       }
-      if( m_parameters.coutConditionalThenUnconditionalProfile ) {
+      if( GET_coutConditionalThenUnconditionalProfile() ) {
         tests[ TEST_ID_conditional_then_unconditional ].isCout = true;
       } else {
         tests[ TEST_ID_conditional_then_unconditional ].isCout = false;
@@ -3793,13 +3239,13 @@ template <class ResidueType,
       tests[ TEST_ID_conditional_then_unconditional ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_conditional_then_unconditional ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testUnconditionalThenConditionalProfile ) {
+      if( GET_testUnconditionalThenConditionalProfile() ) {
         tests[ TEST_ID_unconditional_then_conditional ].name = "unconditional_then_conditional";
         tests[ TEST_ID_unconditional_then_conditional ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional_then_conditional ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalThenConditionalProfile ) {
+      if( GET_coutUnconditionalThenConditionalProfile() ) {
         tests[ TEST_ID_unconditional_then_conditional ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional_then_conditional ].isCout = false;
@@ -3820,13 +3266,13 @@ template <class ResidueType,
       tests[ TEST_ID_unconditional_then_conditional ].parametersModifier.parameters.useUnconditionalBaumWelch = false;
       tests[ TEST_ID_unconditional_then_conditional ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
+      if( GET_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].name = "unconditional_with_fixed_starting_globals_then_with_fixed_positions";
         tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
+      if( GET_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].isCout = false;
@@ -3848,13 +3294,13 @@ template <class ResidueType,
       tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_unconditional_with_fixed_starting_globals_then_with_fixed_positions ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
+      if( GET_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].name = "unconditional_with_fixed_true_globals_then_with_fixed_positions";
         tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].isRun = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
+      if( GET_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile() ) {
         tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].isCout = true;
       } else {
         tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].isCout = false;
@@ -3876,13 +3322,13 @@ template <class ResidueType,
       tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testConditionalGibbsProfile ) {
+      if( GET_testConditionalGibbsProfile() ) {
         tests[ TEST_ID_gibbs_conditional ].name = "cGibbs";
         tests[ TEST_ID_gibbs_conditional ].isRun = true;
       } else {
         tests[ TEST_ID_gibbs_conditional ].isRun = false;
       }
-      if( m_parameters.coutConditionalGibbsProfile ) {
+      if( GET_coutConditionalGibbsProfile() ) {
         tests[ TEST_ID_gibbs_conditional ].isCout = true;
       } else {
         tests[ TEST_ID_gibbs_conditional ].isCout = false;
@@ -3908,18 +3354,18 @@ template <class ResidueType,
       //}
       tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.useUnconditionalGibbs = false;
       tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
-      if( m_parameters.reportGibbsMode ) {
+      if( GET_reportGibbsMode() ) {
         tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.saveGibbsMode = true;
         tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_saveGibbsMode = true;
       } // End if reportGibbsMode
 
-      if( m_parameters.testUnconditionalGibbsProfile ) {
+      if( GET_testUnconditionalGibbsProfile() ) {
         tests[ TEST_ID_gibbs_unconditional ].name = "uGibbs";
         tests[ TEST_ID_gibbs_unconditional ].isRun = true;
       } else {
         tests[ TEST_ID_gibbs_unconditional ].isRun = false;
       }
-      if( m_parameters.coutUnconditionalGibbsProfile ) {
+      if( GET_coutUnconditionalGibbsProfile() ) {
         tests[ TEST_ID_gibbs_unconditional ].isCout = true;
       } else {
         tests[ TEST_ID_gibbs_unconditional ].isCout = false;
@@ -3945,12 +3391,12 @@ template <class ResidueType,
       //}
       tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.useUnconditionalGibbs = true;
       tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
-      if( m_parameters.reportGibbsMode ) {
+      if( GET_reportGibbsMode() ) {
         tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.saveGibbsMode = true;
         tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_saveGibbsMode = true;
       } // End if reportGibbsMode
 
-      if( m_parameters.testLengthadjust ) {
+      if( GET_testLengthadjust() ) {
         tests[ TEST_ID_lengthadjust_conditional ].name = "conditionalLA";
         tests[ TEST_ID_lengthadjust_conditional ].isRun = true;
         // Always write conditional BW results to STDOUT
@@ -3972,14 +3418,14 @@ template <class ResidueType,
         //tests[ TEST_ID_lengthadjust_conditional ].parametersModifier.isModified_verbosity = true;
        } // End if testLengthadjust
         
-       if( m_parameters.testLengthadjust ) {
-        if( m_parameters.testUnconditionalProfile ) {
+      if( GET_testLengthadjust() ) {
+        if( GET_testUnconditionalProfile() ) {
           tests[ TEST_ID_lengthadjust_unconditional ].name = "unconditionalLA";
           tests[ TEST_ID_lengthadjust_unconditional ].isRun = true;
         } else {
           tests[ TEST_ID_lengthadjust_unconditional ].isRun = false;
         }
-        if( m_parameters.coutUnconditionalProfile ) {
+        if( GET_coutUnconditionalProfile() ) {
           tests[ TEST_ID_lengthadjust_unconditional ].isCout = true;
         } else {
           tests[ TEST_ID_lengthadjust_unconditional ].isCout = false;
@@ -3998,7 +3444,7 @@ template <class ResidueType,
       } // End if testLengthadjust
 
       // mark
-      if( m_parameters.testBaldi ) {
+      if( GET_testBaldi() ) {
         // Always test conditional Baldi if testBaldi is true.
         tests[ TEST_ID_baldi_conditional ].name = "conditionalBaldi";
         tests[ TEST_ID_baldi_conditional ].isRun = true;
@@ -4030,13 +3476,13 @@ template <class ResidueType,
         //tests[ TEST_ID_baldi_conditional ].parametersModifier.parameters.verbosity = VERBOSITY_All;
         //tests[ TEST_ID_baldi_conditional ].parametersModifier.isModified_verbosity = true;
   
-        if( m_parameters.testUnconditionalProfile ) {
+        if( GET_testUnconditionalProfile() ) {
           tests[ TEST_ID_baldi_unconditional ].name = "unconditionalBaldi";
           tests[ TEST_ID_baldi_unconditional ].isRun = true;
         } else {
           tests[ TEST_ID_baldi_unconditional ].isRun = false;
         }
-        if( m_parameters.coutUnconditionalProfile ) {
+        if( GET_coutUnconditionalProfile() ) {
           tests[ TEST_ID_baldi_unconditional ].isCout = true;
         } else {
           tests[ TEST_ID_baldi_unconditional ].isCout = false;
@@ -4066,7 +3512,7 @@ template <class ResidueType,
         // TODO: REMOVE
         //tests[ TEST_ID_baldi_unconditional ].parametersModifier.parameters.verbosity = VERBOSITY_All;
         //tests[ TEST_ID_baldi_unconditional ].parametersModifier.isModified_verbosity = true;
-        if( m_parameters.testLengthadjust ) {
+        if( GET_testLengthadjust() ) {
           tests[ TEST_ID_baldi_lengthadjust_conditional ].name = "conditionalBaldiLA";
           tests[ TEST_ID_baldi_lengthadjust_conditional ].isRun = true;
           // Always write conditional BW results to STDOUT
@@ -4100,14 +3546,14 @@ template <class ResidueType,
           //tests[ TEST_ID_baldi_lengthadjust_conditional ].parametersModifier.isModified_verbosity = true;
         } // End if testLengthadjust
           
-        if( m_parameters.testLengthadjust ) {
-          if( m_parameters.testUnconditionalProfile ) {
+        if( GET_testLengthadjust() ) {
+          if( GET_testUnconditionalProfile() ) {
             tests[ TEST_ID_baldi_lengthadjust_unconditional ].name = "unconditionalBaldiLA";
             tests[ TEST_ID_baldi_lengthadjust_unconditional ].isRun = true;
           } else {
             tests[ TEST_ID_baldi_lengthadjust_unconditional ].isRun = false;
           }
-          if( m_parameters.coutUnconditionalProfile ) {
+          if( GET_coutUnconditionalProfile() ) {
             tests[ TEST_ID_baldi_lengthadjust_unconditional ].isCout = true;
           } else {
             tests[ TEST_ID_baldi_lengthadjust_unconditional ].isCout = false;
@@ -4138,7 +3584,7 @@ template <class ResidueType,
         } // End if testLengthadjust
       } // End if testBaldi
 
-      if( m_parameters.testBaldiSiegel ) {
+      if( GET_testBaldiSiegel() ) {
         // Always test conditional Baldi / Siegel if testBaldiSiegel is true.
         tests[ TEST_ID_baldi_siegel_conditional ].name = "conditionalBaldiSiegel";
         tests[ TEST_ID_baldi_siegel_conditional ].isRun = true;
@@ -4172,13 +3618,13 @@ template <class ResidueType,
         //tests[ TEST_ID_baldi_siegel_conditional ].parametersModifier.parameters.verbosity = VERBOSITY_All;
         //tests[ TEST_ID_baldi_siegel_conditional ].parametersModifier.isModified_verbosity = true;
   
-        if( m_parameters.testUnconditionalProfile ) {
+        if( GET_testUnconditionalProfile() ) {
           tests[ TEST_ID_baldi_siegel_unconditional ].name = "unconditionalBaldiSiegel";
           tests[ TEST_ID_baldi_siegel_unconditional ].isRun = true;
         } else {
           tests[ TEST_ID_baldi_siegel_unconditional ].isRun = false;
         }
-        if( m_parameters.coutUnconditionalProfile ) {
+        if( GET_coutUnconditionalProfile() ) {
           tests[ TEST_ID_baldi_siegel_unconditional ].isCout = true;
         } else {
           tests[ TEST_ID_baldi_siegel_unconditional ].isCout = false;
@@ -4211,7 +3657,7 @@ template <class ResidueType,
         //tests[ TEST_ID_baldi_siegel_unconditional ].parametersModifier.parameters.verbosity = VERBOSITY_All;
         //tests[ TEST_ID_baldi_siegel_unconditional ].parametersModifier.isModified_verbosity = true;
 
-        if( m_parameters.testLengthadjust ) {
+        if( GET_testLengthadjust() ) {
           tests[ TEST_ID_baldi_siegel_lengthadjust_conditional ].name = "conditionalBaldiSiegelLA";
           tests[ TEST_ID_baldi_siegel_lengthadjust_conditional ].isRun = true;
           // Always write conditional BW results to STDOUT
@@ -4246,14 +3692,14 @@ template <class ResidueType,
           //tests[ TEST_ID_baldi_siegel_lengthadjust_conditional ].parametersModifier.isModified_verbosity = true;
         } // End if testLengthadjust
         
-        if( m_parameters.testLengthadjust ) {
-          if( m_parameters.testUnconditionalProfile ) {
+        if( GET_testLengthadjust() ) {
+          if( GET_testUnconditionalProfile() ) {
             tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].name = "unconditionalBaldiSiegelLA";
             tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].isRun = true;
           } else {
             tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].isRun = false;
           }
-          if( m_parameters.coutUnconditionalProfile ) {
+          if( GET_coutUnconditionalProfile() ) {
             tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].isCout = true;
           } else {
             tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].isCout = false;
@@ -4323,17 +3769,17 @@ template <class ResidueType,
       string run_unique_id =
         ( "v" + boost::lexical_cast<string>( m_parameters.saveFileVersion ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_type" );
       fs::path dirname =
-        ( static_cast<fs::path>( m_parameters.saveResultsParentDirectory ) /
+        ( static_cast<fs::path>( GET_saveResultsParentDirectory() ) /
           run_unique_id );
       std::ofstream tab_stream;
-      if( m_parameters.saveResultsToFile ) {
-        if( !fs::exists( m_parameters.saveResultsParentDirectory ) ) {
-          cout << "Creating directory \"" << m_parameters.saveResultsParentDirectory << "\"..";
+      if(GET_saveResultsToFile() ) {
+        if( !fs::exists(GET_saveResultsParentDirectory() ) ) {
+          cout << "Creating directory \"" << GET_saveResultsParentDirectory() << "\"..";
           cout.flush();
-          fs::create_directory( m_parameters.saveResultsParentDirectory );
+          fs::create_directory(GET_saveResultsParentDirectory());
           cout << ".done." << endl;
 //        } else {
-//          cout << "Directory \"" << m_parameters.saveResultsParentDirectory << "\" exists." << endl;
+//          cout << "Directory \"" << GET_saveResultsParentDirectory() << "\" exists." << endl;
         }
         if( !fs::exists( dirname ) ) {
           cout << "Creating directory \"" << dirname << "\"..";
@@ -4348,13 +3794,13 @@ template <class ResidueType,
 
         // Parameters file
         fs::path parameters_filename =
-          ( m_parameters.resultsFilePrefix +
+          ( GET_resultsFilePrefix() +
             run_unique_id +
-            m_parameters.parametersFileSuffix );
+            GET_parametersFileSuffix() );
         ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
         assert( parameters_stream.good() );
         boost::archive::xml_oarchive parameters_oa( parameters_stream );
-        parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
+        parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
         //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
         //parameters_oa << 
         //  boost::serialization::make_nvp( "m_parameters", m_parameters );
@@ -4363,18 +3809,18 @@ template <class ResidueType,
         //parameters_oa.close();
         //parameters_stream.close();
 
-        if( m_parameters.saveTests ) {
+        if( GET_saveTests() ) {
           fs::path tests_filename =
-            ( m_parameters.resultsFilePrefix +
+            ( GET_resultsFilePrefix() +
               run_unique_id +
-              m_parameters.testsFileSuffix );
-          writeXML( tests, ( dirname / tests_filename ).string().c_str() );
+              GET_testsFileSuffix() );
+              writeXML( tests, ( dirname / tests_filename ).string().c_str() );
         } // End if saveTests
 
         fs::path tab_filename =
-          ( m_parameters.resultsFilePrefix +
+          ( GET_resultsFilePrefix() +
             run_unique_id +
-            m_parameters.tabFileSuffix );
+            GET_tabFileSuffix() );
         cout << endl << "For filename: " << tab_filename << endl;
         tab_stream.open( ( dirname / tab_filename ).string().c_str() );
 
@@ -4386,41 +3832,41 @@ template <class ResidueType,
         tab_stream << "expected_insertions_count\t";
         tab_stream << "expected_deletion_length_as_profile_length_fraction\t";
         tab_stream << "expected_insertion_length_as_profile_length_fraction\t";
-        if( m_parameters.numTrueProfiles > 1 ) {
+        if( GET_numTrueProfiles() > 1 ) {
           tab_stream << "true_profile_id\t";
           cout << "true_profile_id ";
         }
 
-        if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ) {
+        if( GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "SKLPositions_" << tests[ test_id ].name << "_to_true\t";
-              if( ( test_id != TEST_ID_true ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+              if( ( test_id != TEST_ID_true ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                 cout << "SKLPositions_" << tests[ test_id ].name << "_to_true ";
               }
               tab_stream << "SKLExceptPositions_" << tests[ test_id ].name << "_to_true\t";
-              if( ( test_id != TEST_ID_true ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+              if( ( test_id != TEST_ID_true ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                 cout << "SKLExceptPositions_" << tests[ test_id ].name << "_to_true ";
               }
             }
           } // End foreach test_id, print "SKL*_[name]_to_true\t";
         } // End if calculateSymmeterizedKullbackLeiblerDistancesToTrue
-        if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting ) {
+        if( GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "SKLPositions_" << tests[ test_id ].name << "_to_starting\t";
-              if( ( !m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+              if( ( !GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                 cout << "SKLPositions_" << tests[ test_id ].name << "_to_starting ";
               }
               tab_stream << "SKLExceptPositions_" << tests[ test_id ].name << "_to_starting\t";
-              if( ( !m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+              if( ( !GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                 cout << "SKLExceptPositions_" << tests[ test_id ].name << "_to_starting ";
               }
             } // End if isRun
           } // End foreach test_id, print "SKL*_[name]_to_starting\t";
         } // End if calculateSymmeterizedKullbackLeiblerDistancesToStarting
 
-        if( m_parameters.calculateProfileProfileAlignments ) {
+        if( GET_calculateProfileProfileAlignments() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if(
               ( test_id == TEST_ID_true ) ||
@@ -4468,20 +3914,20 @@ template <class ResidueType,
               cout << " ";
             }
             if( tests[ test_id ].isGibbs ) {
-              if( m_parameters.reportGibbsMean ) {
+              if( GET_reportGibbsMean() ) {
                 tab_stream << "training_" << tests[ test_id ].name << "_mean_forward\t";
               }
-              if( m_parameters.reportGibbsMode ) {
+              if( GET_reportGibbsMode() ) {
                 tab_stream << "training_" << tests[ test_id ].name << "_mode_forward\t";
               }
               if( tests[ test_id ].isCout ) {
-                if( m_parameters.reportGibbsMean ) {
+                if( GET_reportGibbsMean() ) {
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << "training_" << tests[ test_id ].name << "_mean_forward";
                   cout << tests[ test_id ].coutRightBrace;
                   cout << " ";
                 } // End if reportGibbsMean
-                if( m_parameters.reportGibbsMode ) {
+                if( GET_reportGibbsMode() ) {
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << "training_" << tests[ test_id ].name << "_mode_forward";
                   cout << tests[ test_id ].coutRightBrace;
@@ -4492,11 +3938,11 @@ template <class ResidueType,
           } // End if isRun
         } // End foreach test_id, print "training_[name]_forward\t";
 
-        if( m_parameters.testViterbi ) {
+        if( GET_testViterbi() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "training_" << tests[ test_id ].name << "_viterbi\t";
-              if( m_parameters.coutViterbi && tests[ test_id ].isCout ) {
+              if( GET_coutViterbi() && tests[ test_id ].isCout ) {
                 cout << "training_" << tests[ test_id ].name << "_viterbi ";
               }
             }
@@ -4504,11 +3950,11 @@ template <class ResidueType,
 
         } // End if testViterbi
 
-        if( m_parameters.testTruepath ) {
+        if( GET_testTruepath() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "training_" << tests[ test_id ].name << "_truepath\t";
-              if( m_parameters.coutTruepath && tests[ test_id ].isCout ) {
+              if( GET_coutTruepath() && tests[ test_id ].isCout ) {
                 cout << "training_" << tests[ test_id ].name << "_truepath ";
               }
             }
@@ -4529,14 +3975,14 @@ template <class ResidueType,
               cout << " ";
             }
             if( tests[ test_id ].isGibbs ) {
-              if( m_parameters.reportGibbsMean ) {
+              if( GET_reportGibbsMean() ) {
                 tab_stream << "test_" << tests[ test_id ].name << "_mean_forward\t";
               }
-              if( m_parameters.reportGibbsMode ) {
+              if( GET_reportGibbsMode() ) {
                 tab_stream << "test_" << tests[ test_id ].name << "_mode_forward\t";
               }
               if( tests[ test_id ].isCout ) {
-                if( m_parameters.reportGibbsMean ) {
+                if( GET_reportGibbsMean() ) {
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << "test_" << tests[ test_id ].name << "_mean_forward";
@@ -4544,7 +3990,7 @@ template <class ResidueType,
                   cout << tests[ test_id ].coutRightBrace;
                   cout << " ";
                 } // End if reportGibbsMean
-                if( m_parameters.reportGibbsMode ) {
+                if( GET_reportGibbsMode() ) {
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << tests[ test_id ].coutLeftBrace;
                   cout << "test_" << tests[ test_id ].name << "_mode_forward";
@@ -4557,11 +4003,11 @@ template <class ResidueType,
           } // End if isRun
         } // End foreach test_id, print "test_[name]_forward\t";
 
-        if( m_parameters.testViterbi ) {
+        if( GET_testViterbi() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "test_" << tests[ test_id ].name << "_viterbi\t";
-              if( m_parameters.coutViterbi && tests[ test_id ].isCout ) {
+              if( GET_coutViterbi() && tests[ test_id ].isCout ) {
                 cout << "test_" << tests[ test_id ].name << "_viterbi ";
               }
             }
@@ -4569,11 +4015,11 @@ template <class ResidueType,
 
         } // End if testViterbi
 
-        if( m_parameters.testTruepath ) {
+        if( GET_testTruepath() ) {
           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
             if( tests[ test_id ].isRun ) {
               tab_stream << "test_" << tests[ test_id ].name << "_truepath\t";
-              if( m_parameters.coutTruepath && tests[ test_id ].isCout ) {
+              if( GET_coutTruepath() && tests[ test_id ].isCout ) {
                 cout << "test_" << tests[ test_id ].name << "_truepath ";
               }
             }
@@ -4591,7 +4037,7 @@ template <class ResidueType,
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesTo? are true, then
        * selfEntropyPositions[ test_num ] will hold the self-entropy of the
-       * positions of the profile corresoponding to test test_num.
+       * positions of the profile corresponding to test test_num.
        */
       double selfEntropyPositions[ last_test_id + 1 ];
 
@@ -4601,7 +4047,7 @@ template <class ResidueType,
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesTo? are true, then
        * selfEntropyExceptPositions[ test_num ] will hold the self-entropy of
-       * the the non-position distributions of the profile corresoponding to
+       * the the non-position distributions of the profile corresponding to
        * test test_num.
        */
       double selfEntropyExceptPositions[ last_test_id + 1 ];
@@ -4611,9 +4057,9 @@ template <class ResidueType,
        *
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesToTrue are true,
-       * then distanceSKLPositions_true[ test_num ] will hold the symmeterized
+       * then distanceSKLPositions_true[ test_num ] will hold the symmetrized
        * Kullback-Leibler divergence between the positions of the profile
-       * corresoponding to test test_num and the positions of the true profile.
+       * corresponding to test test_num and the positions of the true profile.
        */
       double distanceSKLPositions_true[ last_test_id + 1 ];
   
@@ -4623,8 +4069,8 @@ template <class ResidueType,
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesToTrue are true,
        * then distanceSKLExceptPositions_true[ test_num ] will hold the
-       * symmeterized Kullback-Leibler divergence between the non-position
-       * distributions of the profile corresoponding to test test_num and those
+       * symmetrized Kullback-Leibler divergence between the non-position
+       * distributions of the profile corresponding to test test_num and those
        * distributions of the true profile.
        */
       double distanceSKLExceptPositions_true[ last_test_id + 1 ];
@@ -4636,8 +4082,8 @@ template <class ResidueType,
        * params.calculateProfileProfileAlignments and
        * params.calculateSymmeterizedKullbackLeiblerDistancesToTrue are true,
        * then distanceSKLPositions_aligned_true[ test_num ] will hold the
-       * symmeterized Kullback-Leibler divergence between just the aligned
-       * positions of the profile corresoponding to test test_num and those
+       * symmetrized Kullback-Leibler divergence between just the aligned
+       * positions of the profile corresponding to test test_num and those
        * positions of the true profile.
        */
       double distanceSKLPositions_aligned_true[ last_test_id + 1 ];
@@ -4649,7 +4095,7 @@ template <class ResidueType,
        * params.calculateProfileProfileAlignments are true, then
        * numProfileProfileAlignedPositions_true[ test_num ] will hold the
        * number of aligned positions in the SKL profile-profile alignment
-       * between the profile corresoponding to test test_num and the true
+       * between the profile corresponding to test test_num and the true
        * profile.  See also params.profileProfileIndelOpenCost and
        * params.profileProfileIndelExtensionCost.
        */
@@ -4660,9 +4106,9 @@ template <class ResidueType,
        *
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesTo? are true, then
-       * distanceSKLPositions_starting[ test_num ] will hold the symmeterized
+       * distanceSKLPositions_starting[ test_num ] will hold the symmetrized
        * Kullback-Leibler divergence between the positions of the profile
-       * corresoponding to test test_num and the positions of the starting
+       * corresponding to test test_num and the positions of the starting
        * profile.
        */
       double distanceSKLPositions_starting[ last_test_id + 1 ];
@@ -4673,8 +4119,8 @@ template <class ResidueType,
        * If tests[ test_num ].isRun and
        * params.calculateSymmeterizedKullbackLeiblerDistancesTo? are true, then
        * distanceSKLExceptPositions_starting[ test_num ] will hold the
-       * symmeterized Kullback-Leibler divergence between the non-position
-       * distributions of the profile corresoponding to test test_num and those
+       * symmetrized Kullback-Leibler divergence between the non-position
+       * distributions of the profile corresponding to test test_num and those
        * distributions the starting profile.
        */
       double distanceSKLExceptPositions_starting[ last_test_id + 1 ];
@@ -4851,15 +4297,15 @@ template <class ResidueType,
       //vector<vector<SequenceType> > testProfileSequences[ last_test_id + 1 ];
       //for( test_id = 0; test_id <= last_test_id; test_id++ ) {
       //  testProfileSequences[ test_id ] =
-      //    vector<vector<SequenceType> >( m_parameters.numProfiles );
+      //    vector<vector<SequenceType> >( GET_numProfiles() );
       //}
 
       DynamicProgramming<ResidueType, ProbabilityType, ScoreType, MatrixValueType> dp;
       MultinomialDistribution<ResidueType,ProbabilityType> residue_dist;
-      Fasta<SequenceResidueType>  pattern_sequences( m_parameters.numProfiles );
-      vector<Fasta<SequenceResidueType> > training_fastas( m_parameters.numProfiles );
+      Fasta<SequenceResidueType>  pattern_sequences( GET_numProfiles() );
+      vector<Fasta<SequenceResidueType> > training_fastas( GET_numProfiles() );
       Fasta<SequenceResidueType>  training_fasta; // All together now
-      vector<Fasta<SequenceResidueType> > testing_fastas( m_parameters.numProfiles );
+      vector<Fasta<SequenceResidueType> > testing_fastas( GET_numProfiles() );
       Fasta<SequenceResidueType>  testing_fasta; // All together now
                     
       RootTypeMultipleAlignment training_root_ma;
@@ -4902,12 +4348,12 @@ template <class ResidueType,
               ( *m_parameters.profileLengths )[ profile_length_i ] :
               ( 10 * ( profile_length_i + 1 ) ) );
 
-          // Do additional setup of the transition priors for those transtions
+          // Do additional setup of the transition priors for those transitions
           // observed many times (since the number of transitions depends on
           // the profile length).
-          if( m_parameters.usePriors || m_parameters.startWithGlobalsDrawnFromPrior ) {
-            globalPrior[ 0 ][ Transition::fromMatch ][ TransitionFromMatch::toMatch ] = ( profile_length * m_parameters.priorStrength_internal_transitions * m_parameters.priorMtoM );
-            globalPrior[ 0 ][ Transition::fromMatch ][ TransitionFromMatch::toDeletion ] = ( profile_length * m_parameters.priorStrength_internal_transitions * m_parameters.priorMtoD );
+          if( m_parameters.usePriors || GET_startWithGlobalsDrawnFromPrior() ) {
+            globalPrior[ 0 ][ Transition::fromMatch ][ TransitionFromMatch::toMatch ] = ( profile_length * GET_priorStrength_internal_transitions() * GET_priorMtoM() );
+            globalPrior[ 0 ][ Transition::fromMatch ][ TransitionFromMatch::toDeletion ] = ( profile_length * GET_priorStrength_internal_transitions() * GET_priorMtoD() );
 #ifdef USE_DEL_IN_DEL_OUT
             // TODO: Create training_parameters_template.priorMtoW
             globalPrior[ 0 ][ Transition::fromMatch ][ TransitionFromMatch::toDeletionOut ] = ( profile_length * m_parameters.priorStrength_internal_transitions * .5 );
@@ -4987,17 +4433,17 @@ template <class ResidueType,
                     // OLD:
                     //longest_training_sequence_length = 0;
                     //longest_testing_sequence_length = 0;
-                    for( uint32_t true_profile_i = 0; true_profile_i < m_parameters.numTrueProfiles; true_profile_i++ ) {
+                    for( uint32_t true_profile_i = 0; true_profile_i < GET_numTrueProfiles(); true_profile_i++ ) {
                       // Generate a pattern sequence from the uniform
                       // distribution, of length profile_length.
                       pattern_sequences.reinitialize(
-                        m_parameters.numProfiles
+                        GET_numProfiles()
                       );
                       uint32_t which_profile;
                     
                       // TODO: Take a unique prefix?
                       pattern_sequences.m_descriptions[ 0 ] = "Root";
-                      for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                      for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
                         pattern_sequences.m_descriptions[ which_profile ] =
                           ( "Child " + boost::lexical_cast<std::string>( which_profile ) );
                       } // End foreach which_profile
@@ -5013,10 +4459,10 @@ template <class ResidueType,
                         // z = ( (x-y)/(1-y) )
                         double even_base_prob = ( 1.0 / seqan::ValueSize<ResidueType>::VALUE ); // y = .25
                         double shared_pos_rate_trick = // z
-                          ( m_parameters.sharedPositionRate - even_base_prob ) / ( 1.0 - even_base_prob );
+                          ( GET_sharedPositionRate() - even_base_prob ) / ( 1.0 - even_base_prob );
                       
                         // TODO: REMOVE
-                        //cout << "shared position rate is " << m_parameters.sharedPositionRate << endl;
+                        //cout << "shared position rate is " << GET_sharedPositionRate() << endl;
                         //cout << "shared pos rate trick is " << shared_pos_rate_trick << endl;
                       
                         residue_dist.even();
@@ -5025,8 +4471,8 @@ template <class ResidueType,
                             pattern_sequences[ 0 ],
                             residue_dist.draw( m_random )
                           );
-                          for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
-                            if( ( m_parameters.sharedPositionRate == 1.0 ) ||
+                          for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
+                            if( ( GET_sharedPositionRate() == 1.0 ) ||
                                 ( m_random.nextUniform() <= shared_pos_rate_trick ) ) {
                               // Shared, so the pattern of the child is the same as that of the root.
                               // TODO: This is assuming that the topology is flat: all children are
@@ -5054,20 +4500,20 @@ template <class ResidueType,
                         cout << pattern_sequences << endl;
                       } // End if be_verbose
                     
-                      if( m_parameters.saveResultsToFile && m_parameters.savePatternSequences ) {
+                      if( GET_saveResultsToFile() && GET_savePatternSequences() ) {
                         fs::path pattern_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
                                 "." + lexical_cast<string>( expected_insertion_length_as_profile_length_fraction ) +
                             "." + lexical_cast<string>( true_profile_i ) +
-                            m_parameters.patternSequencesFileSuffix );
+                            GET_patternSequencesFileSuffix() );
                         std::ofstream pattern_sequences_stream( ( dirname / pattern_sequences_filename ).string().c_str() );
                         assert( pattern_sequences_stream.good() );
                         pattern_sequences_stream << pattern_sequences;
@@ -5081,7 +4527,7 @@ template <class ResidueType,
                       // taking any reference to the children because modifying the topology
                       // invalidates references to the children (see ProfileTree.hpp for more on
                       // this).
-                      for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                      for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
                         // For now make them all children of the root
                         // TODO: Random (or prescribed) alternate topologies
                         testProfileTree[ TEST_ID_true ].addChildToRoot(); // vertex is which_profile.
@@ -5229,7 +4675,7 @@ template <class ResidueType,
                           }
                       
                           // Now modify the children
-                          for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                          for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
                             if( pattern_sequences[ which_profile ][ pos_i ] ==
                                 pattern_sequences[ 0 ][ pos_i ] ) {
                               // If the child shares the parent pattern at this position, just "useParentPosition".
@@ -5255,26 +4701,26 @@ template <class ResidueType,
                         // TODO: REMOVE?
                         cout << "> " << pattern_sequences.m_descriptions[ 0 ] << endl;
                         cout << true_root << endl;
-                        for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                        for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
                           cout << "> " << pattern_sequences.m_descriptions[ which_profile ] << endl;
                           cout << testProfileTree[ TEST_ID_true ].getChild( 0, which_profile ) << endl;
                         } // End foreach which_profile ..
                       } // End if be_verbose
                     
-                      if( m_parameters.saveResultsToFile && m_parameters.saveTrueProfileTrees ) {
+                      if( GET_saveResultsToFile() && GET_saveTrueProfileTrees() ) {
                         fs::path true_profile_tree_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
                                 "." + lexical_cast<string>( expected_insertion_length_as_profile_length_fraction ) +
                             "." + lexical_cast<string>( true_profile_i ) +
-                            m_parameters.trueProfileTreeFileSuffix );
+                            GET_trueProfileTreeFileSuffix() );
                         writeXML( testProfileTree[ TEST_ID_true ], ( dirname / true_profile_tree_filename ).string().c_str() );
                       } // End if saveResultsToFile
               
@@ -5296,14 +4742,14 @@ template <class ResidueType,
                         //cout << training_root_ma << endl;
                         training_root_ma.toPairwiseStream( cout );
                       } // End if be_verbose
-                      if( m_parameters.saveResultsToFile && m_parameters.saveTrueTrainingAlignments ) {
+                      if( GET_saveResultsToFile() && GET_saveTrueTrainingAlignments() ) {
                         fs::path training_alignments_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
@@ -5311,7 +4757,7 @@ template <class ResidueType,
                             "." + lexical_cast<string>( true_profile_i ) +
                             ".true" +
                             ".root" +
-                            m_parameters.trainingTrueAlignmentsFileSuffix );
+                            GET_trainingTrueAlignmentsFileSuffix() );
                         std::ofstream training_alignments_stream( ( dirname / training_alignments_filename ).string().c_str() );
                         assert( training_alignments_stream.good() );
                         training_root_ma.toPairwiseStream( training_alignments_stream );
@@ -5324,7 +4770,7 @@ template <class ResidueType,
                       dp.drawSequences(
                         m_parameters,
                         true_root,
-                        m_parameters.numTestingSequencesPerProfile,
+                        GET_numTestingSequencesPerProfile(),
                         "Root randomly generated test sequence ",
                         m_random,
                         testing_fastas[ 0 ],
@@ -5335,14 +4781,14 @@ template <class ResidueType,
                         //cout << testing_root_ma << endl;
                         testing_root_ma.toPairwiseStream( cout );
                       } // End if be_verbose
-                      if( m_parameters.saveResultsToFile && m_parameters.saveTrueTestingAlignments ) {
+                      if( GET_saveResultsToFile() && GET_saveTrueTestingAlignments() ) {
                         fs::path test_alignments_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
@@ -5350,7 +4796,7 @@ template <class ResidueType,
                             "." + lexical_cast<string>( true_profile_i ) +
                             ".true" +
                             ".root" +
-                            m_parameters.trueTestingAlignmentsFileSuffix );
+                            GET_trueTestingAlignmentsFileSuffix() );
                         std::ofstream test_alignments_stream( ( dirname / test_alignments_filename ).string().c_str() );
                         assert( test_alignments_stream.good() );
                         testing_root_ma.toPairwiseStream( test_alignments_stream );
@@ -5359,7 +4805,7 @@ template <class ResidueType,
                       testing_fasta = testing_fastas[ 0 ]; // All together now
                    
                       // Now draw the training and test sequences for the internal nodes.
-                      for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                      for( which_profile = 1; which_profile < GET_numProfiles(); which_profile++ ) {
                         // TODO: REMOVE?
                         testProfileTree[ TEST_ID_true ].getProfileTreeInternalNode( which_profile ).ensurePositionsKnowTheirRoot();
 
@@ -5379,14 +4825,14 @@ template <class ResidueType,
                           //cout << training_internal_node_ma << endl;
                           training_internal_node_ma.toPairwiseStream( cout );
                         } // End if be_verbose
-                        if( m_parameters.saveResultsToFile && m_parameters.saveTrueTrainingAlignments ) {
+                        if( GET_saveResultsToFile() && GET_saveTrueTrainingAlignments() ) {
                           fs::path training_alignments_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( GET_resultsFilePrefix() +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
                               "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                              "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                              "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
@@ -5394,7 +4840,7 @@ template <class ResidueType,
                               "." + lexical_cast<string>( true_profile_i ) +
                               ".true" +
                               ".node" + lexical_cast<string>( which_profile ) +
-                              m_parameters.trainingTrueAlignmentsFileSuffix );
+                              GET_trainingTrueAlignmentsFileSuffix() );
                           std::ofstream training_alignments_stream( ( dirname / training_alignments_filename ).string().c_str() );
                           assert( training_alignments_stream.good() );
                           training_internal_node_ma.toPairwiseStream( training_alignments_stream );
@@ -5404,7 +4850,7 @@ template <class ResidueType,
                         dp.drawSequences(
                           m_parameters,
                           testProfileTree[ TEST_ID_true ].getProfileTreeInternalNode( which_profile ),
-                          m_parameters.numTestingSequencesPerProfile,
+                          GET_numTestingSequencesPerProfile(),
                           ( "Child " + boost::lexical_cast<std::string>( which_profile ) + " randomly generated " ),
                           m_random,
                           testing_fastas[ which_profile ],
@@ -5416,14 +4862,14 @@ template <class ResidueType,
                           //cout << testing_internal_node_ma << endl;
                           testing_internal_node_ma.toPairwiseStream( cout );
                         } // End if be_verbose
-                        if( m_parameters.saveResultsToFile && m_parameters.saveTrueTestingAlignments ) {
+                        if( GET_saveResultsToFile() && GET_saveTrueTestingAlignments() ) {
                           fs::path test_alignments_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( GET_resultsFilePrefix() +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
                               "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                              "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                              "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
@@ -5431,7 +4877,7 @@ template <class ResidueType,
                               "." + lexical_cast<string>( true_profile_i ) +
                               ".true" +
                               ".node" + lexical_cast<string>( which_profile ) +
-                              m_parameters.trueTestingAlignmentsFileSuffix );
+                              GET_trueTestingAlignmentsFileSuffix() );
                           std::ofstream test_alignments_stream( ( dirname / test_alignments_filename ).string().c_str() );
                           assert( test_alignments_stream.good() );
                           testing_internal_node_ma.toPairwiseStream( test_alignments_stream );
@@ -5447,39 +4893,39 @@ template <class ResidueType,
                         cout << "Randomly generated test sequences are:" << endl;
                         cout << testing_fasta << endl;
                       } // End if be_verbose
-                      if( m_parameters.saveResultsToFile && m_parameters.saveTrainingSequences ) {
+                      if( GET_saveResultsToFile() && GET_saveTrainingSequences() ) {
                         fs::path training_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
                                 "." + lexical_cast<string>( expected_insertion_length_as_profile_length_fraction ) +
                             "." + lexical_cast<string>( true_profile_i ) +
-                            m_parameters.trainingSequencesFileSuffix );
+                            GET_trainingSequencesFileSuffix() );
                         std::ofstream training_sequences_stream( ( dirname / training_sequences_filename ).string().c_str() );
                         assert( training_sequences_stream.good() );
                         training_sequences_stream << training_fasta;
                         training_sequences_stream.close();
                       } // End if saveResultsToFile
-                      if( m_parameters.saveResultsToFile && m_parameters.saveTestingSequences ) {
+                      if( GET_saveResultsToFile() && GET_saveTestingSequences() ) {
                         fs::path test_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( GET_resultsFilePrefix() +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
                             "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                            "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                            "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
                                 "." + lexical_cast<string>( expected_insertion_length_as_profile_length_fraction ) +
                             "." + lexical_cast<string>( true_profile_i ) +
-                            m_parameters.testingSequencesFileSuffix );
+                            GET_testingSequencesFileSuffix() );
                         std::ofstream test_sequences_stream( ( dirname / test_sequences_filename ).string().c_str() );
                         assert( test_sequences_stream.good() );
                         test_sequences_stream << testing_fasta;
@@ -5604,7 +5050,7 @@ template <class ResidueType,
                           cout << "The \"true profile\" forward score for the training sequences is " << testScore_training_forward[ TEST_ID_true ] << endl;
                         } // End if be_verbose
                         
-                      for( uint32_t starting_profile_i = 0; starting_profile_i < m_parameters.numStartingProfiles; starting_profile_i++ ) {
+                      for( uint32_t starting_profile_i = 0; starting_profile_i < GET_numStartingProfiles(); starting_profile_i++ ) {
 
                         // TODO: REMOVE
                         //cout << "STARTING PROFILE index is " << starting_profile_i << endl;
@@ -5620,10 +5066,10 @@ template <class ResidueType,
                           testProfileTree[ TEST_ID_starting ].getProfileTreeRoot()->copyPositions( *( testProfileTree[ TEST_ID_true ].getProfileTreeRoot() ) );
                         } else {
                           if(
-                             ( !m_parameters.alsoStartWithEvenPositions || ( starting_profile_i > 0 ) ) &&
+                             ( !GET_alsoStartWithEvenPositions() || ( starting_profile_i > 0 ) ) &&
                              //m_parameters.usePriors &&
                             m_parameters.startWithPositionsDrawnFromPrior &&
-                             ( !m_parameters.startWithUniformPositions || ( starting_profile_i < ( ( m_parameters.numStartingProfiles / 2 ) + ( m_parameters.alsoStartWithEvenPositions ? 1 : 0 ) ) ) ) // If startWithUniformPositions is true ALSO, then only start the first half from the prior, and the last half with uniform() (excluding the 0th, if alsoStartWithEvenPositions).
+                             ( !m_parameters.startWithUniformPositions || ( starting_profile_i < ( ( GET_numStartingProfiles() / 2 ) + ( GET_alsoStartWithEvenPositions() ? 1 : 0 ) ) ) ) // If startWithUniformPositions is true ALSO, then only start the first half from the prior, and the last half with uniform() (excluding the 0th, if alsoStartWithEvenPositions).
                           ) {
                             // Draw position params from the prior
                             testProfileTree[ TEST_ID_starting ].getProfileTreeRoot()->dirichletMixturePositions(
@@ -5631,7 +5077,7 @@ template <class ResidueType,
                               m_random
                             );
                           } else if(
-                             ( !m_parameters.alsoStartWithEvenPositions || ( starting_profile_i > 0 ) ) &&
+                             ( !GET_alsoStartWithEvenPositions() || ( starting_profile_i > 0 ) ) &&
                              m_parameters.startWithUniformPositions
                           ) {
                             // Set the root of the starting profile tree to
@@ -5757,7 +5203,7 @@ template <class ResidueType,
 
                           // When doing lengthadjust, it is best to start with
                           // the indel opens equally probable.
-                          if( m_parameters.testLengthadjust ) {
+                          if( GET_testLengthadjust() ) {
                             ProbabilityType average_indel_open = 1.0;
                             average_indel_open -= starting_root[ Transition::fromMatch ][ TransitionFromMatch::toMatch ];
                             average_indel_open /= 2;
@@ -5799,21 +5245,21 @@ template <class ResidueType,
                         //cout << "=======YO=======" << endl;
                         //cout << "last_test_id is " << last_test_id << endl;
 
-                        if( m_parameters.saveResultsToFile && m_parameters.saveStartingProfiles ) {
+                        if( GET_saveResultsToFile() && GET_saveStartingProfiles() ) {
                           fs::path starting_root_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( GET_resultsFilePrefix() +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
                               "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                              "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                              "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
                                 "." + lexical_cast<string>( expected_insertion_length_as_profile_length_fraction ) +
                               "." + lexical_cast<string>( true_profile_i ) +
                               "." + lexical_cast<string>( starting_profile_i ) +
-                              m_parameters.startingProfileTreeFileSuffix );
+                              GET_startingProfileTreeFileSuffix() );
                           writeXML( testProfileTree[ TEST_ID_starting ], ( dirname / starting_root_filename ).string().c_str() );
                         } // End if saveResultsToFile
 
@@ -5821,7 +5267,7 @@ template <class ResidueType,
                         //cout << "=======YAY=======" << endl;
                         //cout << "last_test_id is " << last_test_id << endl;
 
-                        /// TODO: Move these initializtions out of the loop:
+                        /// TODO: Move these initializations out of the loop:
 
                         // Note that we must set the m_profile value before
                         // training...
@@ -5846,14 +5292,14 @@ template <class ResidueType,
                               ( test_id == TEST_ID_true )
                             ) &&
                             (
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ||
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ||
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting()
                             )
                           ) {
                             // TODO: Support the whole tree.
                             if(
                               ( test_id == TEST_ID_true ) &&
-                              ( m_parameters.numProfiles > 1 )
+                              ( GET_numProfiles() > 1 )
                             ) {
                               cout << "WARNING: Calculating SKL distances using only the root profile, not the whole tree.  TODO: implement it for the whole tree." << endl;
                             }
@@ -5871,8 +5317,8 @@ template <class ResidueType,
                           if(
                             ( test_id == TEST_ID_starting ) &&
                             (
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ||
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ||
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting()
                             ) 
                           ) {
                             //distanceSKLPositions_starting[ test_id ] = 0.0;
@@ -6021,12 +5467,12 @@ template <class ResidueType,
                             testProfileTree[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_samplingProfile );
 
                             // Also separately store the overall mean and mode
-                            if( m_parameters.reportGibbsMean ) {
+                            if( GET_reportGibbsMean() ) {
                               testScore_training_mean_forward[ test_id ] =
                                 sampler.m_averageProfileScore;
                               testProfileTree_mean[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_averageProfile );
                             }
-                            if( m_parameters.reportGibbsMode ) {
+                            if( GET_reportGibbsMode() ) {
                               testScore_training_mode_forward[ test_id ] =
                                 sampler.m_bestProfileScore;
                               testProfileTree_mode[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_bestProfile );
@@ -6097,14 +5543,14 @@ template <class ResidueType,
                             } // End if be_verbose
                           } // End if isGibbs .. else ..
 
-                          if( m_parameters.saveResultsToFile && m_parameters.saveTestProfiles ) {
+                          if( GET_saveResultsToFile() && GET_saveTestProfiles() ) {
                             fs::path test_root_filename =
-                              ( m_parameters.resultsFilePrefix +
+                              ( GET_resultsFilePrefix() +
                                 run_unique_id +
                                 "." + lexical_cast<string>( conservation_rate * 100 ) +
                                 "." + lexical_cast<string>( profile_length ) +
                                 "." + lexical_cast<string>( num_training_sequences_per_profile ) +
-                                "." + lexical_cast<string>( m_parameters.numTestingSequencesPerProfile ) +
+                                "." + lexical_cast<string>( GET_numTestingSequencesPerProfile() ) +
                                 "." + lexical_cast<string>( expected_deletions_count ) +
                                 "." + lexical_cast<string>( expected_insertions_count ) +
                                 "." + lexical_cast<string>( expected_deletion_length_as_profile_length_fraction ) +
@@ -6112,7 +5558,7 @@ template <class ResidueType,
                                 "." + lexical_cast<string>( true_profile_i ) +
                                 "." + lexical_cast<string>( starting_profile_i ) +
                                 "." + tests[ test_id ].name +
-                                m_parameters.testProfileTreeFileSuffix );
+                                GET_testProfileTreeFileSuffix() );
                             writeXML( testProfileTree[ test_id ], ( dirname / test_root_filename ).string().c_str() );
                           } // End if saveResultsToFile
                           //testProfileSequences[ test_id ] =
@@ -6122,8 +5568,8 @@ template <class ResidueType,
                           if(
                             tests[ test_id ].isRun &&
                             (
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ||
-                              m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ||
+                              GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting()
                             )
                           ) {
                             selfEntropyPositions[ test_id ] =
@@ -6138,7 +5584,7 @@ template <class ResidueType,
                             }
                           } // End calculating self entropy
 
-                          if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ) {
+                          if( GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ) {
                             if(
                               testProfileTree[ TEST_ID_true ].getProfileTreeRoot()->length() !=
                               testProfileTree[ test_id ].getProfileTreeRoot()->length()
@@ -6186,7 +5632,7 @@ template <class ResidueType,
                               cout << "The " << tests[ test_id ].name << " profile (non-positions) symmeterized Kullback-Leibler divergence with the true profile is " << distanceSKLExceptPositions_true[ test_id ]  << endl;
                             }
                           } // End if calculateSymmeterizedKullbackLeiblerDistancesToTrue
-                          if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting ) {
+                          if( GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting() ) {
                             if(
                               testProfileTree[ test_id ].getProfileTreeRoot()->length() !=
                               testProfileTree[ TEST_ID_starting ].getProfileTreeRoot()->length()
@@ -6235,7 +5681,7 @@ template <class ResidueType,
                             } // End if be_verbose
                           } // End if calculateSymmeterizedKullbackLeiblerDistancesToStarting
 
-                          if( m_parameters.calculateProfileProfileAlignments ) {
+                          if( GET_calculateProfileProfileAlignments() ) {
                             profile_profile_alignment_cost =
                               dp.profileProfile_align_SKL(
                                 m_parameters,
@@ -6290,7 +5736,7 @@ template <class ResidueType,
                         //cout << "=======YUP=======" << endl;
 
                         // Training sequences score using viterbi
-                        if( m_parameters.testViterbi ) {
+                        if( GET_testViterbi() ) {
                           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                             if( !tests[ test_id ].isRun ) {
                               continue;
@@ -6345,7 +5791,7 @@ template <class ResidueType,
                         } // End if testViterbi
                         
                         // Training sequences score using truepath
-                        if( m_parameters.testTruepath ) {
+                        if( GET_testTruepath() ) {
                           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                             if( !tests[ test_id ].isRun ) {
                               continue;
@@ -6423,7 +5869,7 @@ template <class ResidueType,
                           } // End if be_verbose
                           if( tests[ test_id ].isGibbs ) {
                             // First mean, then mode
-                            if( m_parameters.reportGibbsMean ) {
+                            if( GET_reportGibbsMean() ) {
                               // TODO: Put back
                               //testScore_test_mean_forward[ test_id ] =
                               //  dp.forward_score(
@@ -6450,7 +5896,7 @@ template <class ResidueType,
                             } // End if reportGibbsMean
 
                             // mode
-                            if( m_parameters.reportGibbsMode ) {
+                            if( GET_reportGibbsMode() ) {
                               // TODO: Put back
                               //testScore_test_mode_forward[ test_id ] =
                               //  dp.forward_score(
@@ -6480,7 +5926,7 @@ template <class ResidueType,
                           // sequences.
                         
                         // Test sequences score using viterbi
-                        if( m_parameters.testViterbi ) {
+                        if( GET_testViterbi() ) {
                           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                             if( !tests[ test_id ].isRun ) {
                               continue;
@@ -6528,7 +5974,7 @@ template <class ResidueType,
                         } // End if testTruepath
 
                         // Test sequences score using truepath
-                        if( m_parameters.testTruepath ) {
+                        if( GET_testTruepath() ) {
                           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                             if( !tests[ test_id ].isRun ) {
                               continue;
@@ -6558,7 +6004,7 @@ template <class ResidueType,
                         // Summary:
                         if( be_verbose ) {
                           cout << endl << "Summary for starting profile #" << starting_profile_i << endl;
-                          if( m_parameters.testViterbi ) {
+                          if( GET_testViterbi() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 cout << "The " << tests[ test_id ].name << " total score for all training sequences, using viterbi, is: " << testScore_training_viterbi[ test_id ] << endl;
@@ -6573,7 +6019,7 @@ template <class ResidueType,
                             cout << endl;
                           } // End if testViterbi
 
-                          if( m_parameters.testTruepath ) {
+                          if( GET_testTruepath() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 cout << "The " << tests[ test_id ].name << " total score for all training sequences, using truepath, is: " << testScore_training_truepath[ test_id ] << endl;
@@ -6613,7 +6059,7 @@ template <class ResidueType,
                           cout << endl;
                         } // End if be_verbose
 
-                        if( m_parameters.saveResultsToFile ) {
+                        if( GET_saveResultsToFile() ) {
                           // print the tab results for this starting profile
                           tab_stream << conservation_rate << "\t";
                           tab_stream << profile_length << "\t";
@@ -6622,7 +6068,7 @@ template <class ResidueType,
                           tab_stream << expected_insertions_count << "\t";
                           tab_stream << expected_deletion_length_as_profile_length_fraction << "\t";
                           tab_stream << expected_insertion_length_as_profile_length_fraction << "\t";
-                          if( m_parameters.numTrueProfiles > 1 ) {
+                          if( GET_numTrueProfiles() > 1 ) {
                             tab_stream << true_profile_i << "\t";
                           }
                           cout << conservation_rate << " ";
@@ -6632,29 +6078,29 @@ template <class ResidueType,
                           cout << expected_insertions_count << " ";
                           cout << expected_deletion_length_as_profile_length_fraction << " ";
                           cout << expected_insertion_length_as_profile_length_fraction << " ";
-                          if( m_parameters.numTrueProfiles > 1 ) {
+                          if( GET_numTrueProfiles() > 1 ) {
                             cout << true_profile_i << " ";
                           }
 
                           for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                             if( tests[ test_id ].isRun ) {
-                              if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue ) {
+                              if( GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() ) {
                                 tab_stream << distanceSKLPositions_true[ test_id ] << "\t";
-                                if( ( test_id != TEST_ID_true ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+                                if( ( test_id != TEST_ID_true ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                                   cout << distanceSKLPositions_true[ test_id ] << " ";
                                 }
                                 tab_stream << distanceSKLExceptPositions_true[ test_id ] << "\t";
-                                if( ( test_id != TEST_ID_true ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+                                if( ( test_id != TEST_ID_true ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                                   cout << distanceSKLExceptPositions_true[ test_id ] << " ";
                                 }
                               } // End if calculateSymmeterizedKullbackLeiblerDistancesToTrue
-                              if( m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting ) {
+                              if( GET_calculateSymmeterizedKullbackLeiblerDistancesToStarting() ) {
                                 tab_stream << distanceSKLPositions_starting[ test_id ] << "\t";
-                                if( ( !m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+                                if( ( !GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                                   cout << distanceSKLPositions_starting[ test_id ] << " ";
                                 }
                                 tab_stream << distanceSKLExceptPositions_starting[ test_id ] << "\t";
-                                if( ( !m_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && m_parameters.coutDistances && tests[ test_id ].isCout ) {
+                                if( ( !GET_calculateSymmeterizedKullbackLeiblerDistancesToTrue() || ( test_id != TEST_ID_true ) ) && ( test_id != TEST_ID_starting ) && GET_coutDistances() && tests[ test_id ].isCout ) {
                                   cout << distanceSKLExceptPositions_starting[ test_id ] << " ";
                                 }
                               } // End if calculateSymmeterizedKullbackLeiblerDistancesToStarting
@@ -6669,7 +6115,7 @@ template <class ResidueType,
                               continue;
                             }
                             if( tests[ test_id ].isRun ) {
-                              if( m_parameters.calculateProfileProfileAlignments ) {
+                              if( GET_calculateProfileProfileAlignments() ) {
                                 tab_stream << distanceSKLPositions_aligned_true[ test_id ] << "\t";
                                 if( tests[ test_id ].isCout ) {
                                   cout << distanceSKLPositions_aligned_true[ test_id ] << " ";
@@ -6715,7 +6161,7 @@ template <class ResidueType,
                               }
                               if( tests[ test_id ].isGibbs ) {
                                 // Mean, then mode
-                                if( m_parameters.reportGibbsMean ) {
+                                if( GET_reportGibbsMean() ) {
                                   if( convert_tab_output_to_log_double ) {
                                     tab_stream << toLogDouble( testScore_training_mean_forward[ test_id ] ) << "\t";
                                   } else {
@@ -6729,7 +6175,7 @@ template <class ResidueType,
                                   }
                                 } // End if reportGibbsMean
                                 // mode
-                                if( m_parameters.reportGibbsMode ) {
+                                if( GET_reportGibbsMode() ) {
                                   if( convert_tab_output_to_log_double ) {
                                     tab_stream << toLogDouble( testScore_training_mode_forward[ test_id ] ) << "\t";
                                   } else {
@@ -6746,7 +6192,7 @@ template <class ResidueType,
                             } // End if isRun
                           } // End foreach test_id, print testScore_training_forward[ test_id ]
                   
-                          if( m_parameters.testViterbi ) {
+                          if( GET_testViterbi() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 if( convert_tab_output_to_log_double ) {
@@ -6754,7 +6200,7 @@ template <class ResidueType,
                                 } else {
                                   tab_stream << testScore_training_viterbi[ test_id ] << "\t";
                                 }
-                                if( m_parameters.coutViterbi && tests[ test_id ].isCout ) {
+                                if( GET_coutViterbi() && tests[ test_id ].isCout ) {
                                   //if( test_id == TEST_ID_conditional ) {
                                   //  cout << "<";
                                   //} else if( test_id == TEST_ID_unconditional ) {
@@ -6774,7 +6220,7 @@ template <class ResidueType,
                             } // End foreach test_id, print testScore_training_viterbi[ test_id ]
                           } // End if testViterbi
 
-                          if( m_parameters.testTruepath ) {
+                          if( GET_testTruepath() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 if( convert_tab_output_to_log_double ) {
@@ -6782,7 +6228,7 @@ template <class ResidueType,
                                 } else {
                                   tab_stream << testScore_training_truepath[ test_id ] << "\t";
                                 }
-                                if( m_parameters.coutTruepath && tests[ test_id ].isCout ) {
+                                if( GET_coutTruepath() && tests[ test_id ].isCout ) {
                                   //if( test_id == TEST_ID_conditional ) {
                                   //  cout << "<";
                                   //} else if( test_id == TEST_ID_unconditional ) {
@@ -6821,7 +6267,7 @@ template <class ResidueType,
                               }
                               if( tests[ test_id ].isGibbs ) {
                                 // Mean, then mode
-                                if( m_parameters.reportGibbsMean ) {
+                                if( GET_reportGibbsMean() ) {
                                   if( convert_tab_output_to_log_double ) {
                                     tab_stream << toLogDouble( testScore_test_mean_forward[ test_id ] ) << "\t";
                                   } else {
@@ -6837,7 +6283,7 @@ template <class ResidueType,
                                   }
                                 } // End if reportGibbsMean
                                 // mode
-                                if( m_parameters.reportGibbsMode ) {
+                                if( GET_reportGibbsMode() ) {
                                   if( convert_tab_output_to_log_double ) {
                                     tab_stream << toLogDouble( testScore_test_mode_forward[ test_id ] ) << "\t";
                                   } else {
@@ -6856,7 +6302,7 @@ template <class ResidueType,
                             } // End if isRun
                           } // End foreach test_id, print testScore_test_forward[ test_id ]
               
-                          if( m_parameters.testViterbi ) {
+                          if( GET_testViterbi() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 if( convert_tab_output_to_log_double ) {
@@ -6864,7 +6310,7 @@ template <class ResidueType,
                                 } else {
                                   tab_stream << testScore_test_viterbi[ test_id ] << "\t";
                                 }
-                                if( m_parameters.coutViterbi && tests[ test_id ].isCout ) {
+                                if( GET_coutViterbi() && tests[ test_id ].isCout ) {
                                   //if( test_id == TEST_ID_conditional ) {
                                   //  cout << "<<";
                                   //} else if( test_id == TEST_ID_unconditional ) {
@@ -6886,7 +6332,7 @@ template <class ResidueType,
                             } // End foreach test_id, print testScore_test_viterbi[ test_id ]
                           } // End if testViterbi
 
-                          if( m_parameters.testTruepath ) {
+                          if( GET_testTruepath() ) {
                             for( test_id = 0; test_id <= last_test_id; test_id++ ) {
                               if( tests[ test_id ].isRun ) {
                                 if( convert_tab_output_to_log_double ) {
@@ -6894,7 +6340,7 @@ template <class ResidueType,
                                 } else {
                                   tab_stream << testScore_test_truepath[ test_id ] << "\t";
                                 }
-                                if( m_parameters.coutTruepath && tests[ test_id ].isCout ) {
+                                if( GET_coutTruepath() && tests[ test_id ].isCout ) {
                                   //if( test_id == TEST_ID_conditional ) {
                                   //  cout << "<<";
                                   //} else if( test_id == TEST_ID_unconditional ) {
@@ -6931,9 +6377,9 @@ template <class ResidueType,
         } // End foreach profile_length_i
       } // End foreach conservation_rate_i
 
-      if( m_parameters.saveResultsToFile ) {
+      if( GET_saveResultsToFile() ) {
         // End and close the file.
-        //tab_stream << "</profuse_test_tesults>" << endl;
+        //tab_stream << "</profuse_test_results>" << endl;
         tab_stream.close();
       } // End if m_parameters.saveResultsToFile
 

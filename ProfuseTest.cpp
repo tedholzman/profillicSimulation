@@ -54,7 +54,7 @@ main ( int argc, char **argv )
   profuse_test.m_parameters.numProfiles = 1;//2;
   profuse_test.m_parameters.sharedPositionRate = .5; // For profile trees: the probability for each position that it differs between parent and child.
 
-  // Ammendment: *this is the key: train the globals too!  why?!*
+  // Amendment: *this is the key: train the globals too!  why?!*
   //   profuse_test.m_parameters.trainProfileGlobals = true;//false;
   //  It seems (I see again/recall) that one key is starting the global params sufficiently low.  For some reason the training works best when indels seem extremely unlikely.
 

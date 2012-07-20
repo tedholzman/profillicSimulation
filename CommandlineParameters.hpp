@@ -37,8 +37,11 @@ namespace po = boost::program_options;
 
 #define GALOSH_DEF_OPT6(DESC,VM,NAME,TYPE,DEFAULTVAL,HELP) \
 		  DESC.add_options()(#NAME,po::value<TYPE>()->default_value(DEFAULTVAL),HELP)
-
+/// Note we have to duplicate code here instead of having OPT call OPT6 because on occasion
+/// OPT will be given a macro argument which expands to contain commas.  When this happens,
+/// the inner macro call will have the wrong number of arguments.  See @ProfuseTestOptions.hpp
+/// for the \a profileLengths entry.
 #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
-		GALOSH_DEF_OPT6(DEFAULT_OPTIONS_DESCRIPTION,DEFAULT_VARIABLES_MAP,NAME,TYPE,DEFAULTVAL,HELP)
+		  DEFAULT_OPTIONS_DESCRIPTION.add_options()(#NAME,po::value<TYPE>()->default_value(DEFAULTVAL),HELP)
 
 #endif /* COMMANDLINEPARAMETERS_HPP_ */

@@ -151,9 +151,9 @@ template <class ResidueType,
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( trainingTrueAlignmentsFileSuffix );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueTestingAlignments );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( trueTestingAlignmentsFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( saveFileVersion );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveFileVersion );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numProfiles );
-        ar & BOOST_SERIALIZATION_NVP( profileLengths );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( profileLengths );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
         ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
@@ -234,7 +234,7 @@ template <class ResidueType,
   
       /// PARAMETERS
 
-
+      // Save file version
       // 1 was the beginning
       // 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.
       // 3 is after I added unconditional_with_fixed_starting_globals
@@ -245,9 +245,6 @@ template <class ResidueType,
       // 8 is after I added startWithUniformPositions, startWithPositionsDrawnFromPrior, etc.
       // 9 is after I added convert_tab_output_to_log_double
       // 10 is after I added CPU time
-      uint32_t saveFileVersion;
-  #define DEFAULT_saveFileVersion 10
-
 
       /**
        * When making the pattern sequence (and the true root profile from it),
@@ -258,8 +255,8 @@ template <class ResidueType,
        * { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 }
        * will be used (this is the default).
        */
-      vector<uint32_t> * profileLengths;
-  #define DEFAULT_profileLengths NULL
+//      vector<uint32_t> * profileLengths;
+//  #define DEFAULT_profileLengths NULL
 
       /**
        * Use this number of sequences when training.
@@ -1291,9 +1288,9 @@ template <class ResidueType,
 // fixyfix        trainingTrueAlignmentsFileSuffix =                            copy_from.trainingTrueAlignmentsFileSuffix;
 // fixyfix        saveTrueTestingAlignments =                            copy_from.saveTrueTestingAlignments;
 // fixyfix        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
-        saveFileVersion =                              copy_from.saveFileVersion;
+//        saveFileVersion =                              copy_from.saveFileVersion;
 // fixyfix        numProfiles =                                  copy_from.numProfiles;
-        profileLengths =                                copy_from.profileLengths;
+//        profileLengths =                                copy_from.profileLengths;
 // fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
         numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
 // fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
@@ -1425,7 +1422,7 @@ template <class ResidueType,
 //fixyfix        trueTestingAlignmentsFileSuffix =                            DEFAULT_trueTestingAlignmentsFileSuffix;
 //fixyfix        saveFileVersion =                              DEFAULT_saveFileVersion;
 //fixyfix        numProfiles =                                  DEFAULT_numProfiles;
-        profileLengths =                                DEFAULT_profileLengths;
+//fixyfix        profileLengths =                                DEFAULT_profileLengths;
 //fixyfix        sharedPositionRate =                           DEFAULT_sharedPositionRate;
         numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
 //fixyfix        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
@@ -1545,18 +1542,18 @@ template <class ResidueType,
         os << "trainingTrueAlignmentsFileSuffix = " <<                          GET_trainingTrueAlignmentsFileSuffix() << endl;
         os << "saveTrueTestingAlignments = " <<                          GET_saveTrueTestingAlignments() << endl;
         os << "trueTestingAlignmentsFileSuffix = " <<                          GET_trueTestingAlignmentsFileSuffix() << endl;
-        os << "saveFileVersion = " <<                             saveFileVersion << endl;
+        os << "saveFileVersion = " <<                             GET_saveFileVersion() << endl;
         os << "numProfiles = " <<                                 GET_numProfiles() << endl;
 
-        if( profileLengths == NULL ) {
+        if( GET_profileLengths().size() == 0 ) {
           os << "profileLengths = NULL" << endl;
-              } else {
+        } else {
           os << "profileLengths = { ";
-          for( uint32_t pl_i = 0; pl_i < profileLengths->size(); pl_i++ ) {
+          for( uint32_t pl_i = 0; pl_i < GET_profileLengths().size(); pl_i++ ) {
             if( pl_i > 0 ) {
               os << ", ";
             }
-            os << ( *profileLengths )[ pl_i ];
+            os << GET_profileLengths()[ pl_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if profileLengths == NULL .. else ..
@@ -1574,15 +1571,15 @@ template <class ResidueType,
           os << "}" << endl;
               } // End if numTrainingSequencesPerProfiles == NULL .. else ..
         os << "numTestingSequencesPerProfile = " <<                  GET_numTestingSequencesPerProfile() << endl;
-        if( profileLengths == NULL ) {
+        if( GET_profileLengths().size() > 0 ) {
           os << "profileLengths = NULL" << endl;
               } else {
           os << "profileLengths = { ";
-          for( uint32_t pl_i = 0; pl_i < profileLengths->size(); pl_i++ ) {
+          for( uint32_t pl_i = 0; pl_i < GET_profileLengths().size(); pl_i++ ) {
             if( pl_i > 0 ) {
               os << ", ";
             }
-            os << ( *profileLengths )[ pl_i ];
+            os << GET_profileLengths()[ pl_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if profileLengths == NULL .. else ..
@@ -3767,7 +3764,7 @@ template <class ResidueType,
 
       // Results
       string run_unique_id =
-        ( "v" + boost::lexical_cast<string>( m_parameters.saveFileVersion ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_type" );
+        ( "v" + boost::lexical_cast<string>( GET_saveFileVersion() ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_type" );
       fs::path dirname =
         ( static_cast<fs::path>( GET_saveResultsParentDirectory() ) /
           run_unique_id );
@@ -4340,12 +4337,12 @@ template <class ResidueType,
             ( *m_parameters.conservationRates )[ conservation_rate_i ] :
             ( .1 * ( conservation_rate_i + 1 ) ) );
         for( uint32_t profile_length_i = 0;
-             profile_length_i < ( m_parameters.profileLengths ? m_parameters.profileLengths->size() : 10U );
+             profile_length_i < ( GET_profileLengths().size()>0 ? GET_profileLengths().size() : 10U );
              profile_length_i++
         ) {
           uint32_t profile_length =
-            ( m_parameters.profileLengths ?
-              ( *m_parameters.profileLengths )[ profile_length_i ] :
+            ( GET_profileLengths().size()>0 ?
+              GET_profileLengths()[ profile_length_i ] :
               ( 10 * ( profile_length_i + 1 ) ) );
 
           // Do additional setup of the transition priors for those transitions

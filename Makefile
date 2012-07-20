@@ -3,10 +3,10 @@
 # command line.  Makefiles should not set these.  These variables are
 # for C/C++ compilation, and linking.
 ## -pg is for use with gprof.  Use on CFLAGS and on LDFLAGS
-#CFLAGS		= -Wall -pg
+CFLAGS		= -Wall -pg
 #CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
-#                 --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
-CFLAGS	        = -g3 -gdwarf-2 -pg
+#                 --param max-inline-insns-single=100000 --param inline-unit-growth=500 --param large-function-growth=1000
+#CFLAGS	        = -g3 -gdwarf-2 -pg
 #JFLAGS		=
 LDFLAGS	= -pg
 

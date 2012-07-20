@@ -13,6 +13,10 @@
 #define DEFAULT_CONFIG_FILE "ProfuseTest.cfg"
 #endif
 
+
+#include <boost/preprocessor/punctuation/comma.hpp>
+
+
 /**
  * \note Note the lack of "protective" \#define symbols in this file.  We may
  * want to include it several times, redefining GALOSH_DEF_OPT as needed.
@@ -27,6 +31,7 @@ GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of dif
 
 GALOSH_DEF_OPT(saveResultsToFile,bool,true,"Should we save the results to a file?");
 GALOSH_DEF_OPT(saveResultsParentDirectory,string,".","Parent directory name");
+GALOSH_DEF_OPT(saveFileVersion,uint32_t,10U,"Version of the save file");
 
 ///File prefixes and suffixes, and output options
 GALOSH_DEF_OPT(resultsFilePrefix,string,"ProfuseTest.","Prefix for main results");
@@ -490,3 +495,12 @@ GALOSH_DEF_OPT(alsoStartWithEvenPositions,bool,false,"If startWithUniformPositio
 // TODO: REMOVE
 GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated?");
 
+/// This is how we're handling vectors.  It is a work-around because vectors are handled specially
+/// by boost::program_options.  It allows the command line to look something like
+///
+/// --profileLengths 10 20 30
+///
+
+//GALOSH_DEF_OPT(profileLengths,std::vector<string>,std::vector<string>(1,"100") BOOST_PP_COMMA() string("100"),"Lengths of the profiles");
+
+GALOSH_DEF_OPT(profileLengths,std::vector<int>,std::vector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles");

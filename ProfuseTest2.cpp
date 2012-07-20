@@ -57,17 +57,17 @@ main ( int argc, char **argv )
     //   profuse_test.m_parameters.trainProfileGlobals = true;//false;
     //  It seems (I see again/recall) that one key is starting the global params sufficiently low.  For some reason the training works best when indels seem extremely unlikely.
 
-  vector<uint32_t> pl( 1 );
+//  vector<uint32_t> pl( 1 );
   //pl[ 0 ] = 10;
   //pl[ 1 ] = 50;
   //pl[ 2 ] = 100;
   //pl[ 0 ] = 50;
-  pl[ 0 ] = 100;
+//  pl[ 0 ] = 100;
   //pl[ 0 ] = 25;
   //pl[ 0 ] = 200;
   //pl[ 2 ] = 100;
   //pl[ 2 ] = 200;
-  profuse_test.m_parameters.profileLengths = &pl;
+//  profuse_test.m_parameters.profileLengths = &pl;
 
   vector<uint32_t> tspp( 1 );
   //tspp[ 0 ] = 100;

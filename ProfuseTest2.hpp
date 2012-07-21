@@ -155,7 +155,7 @@ template <class ResidueType,
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numProfiles );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( profileLengths );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
-        ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
         ar & BOOST_SERIALIZATION_NVP( conservationRates );
 //fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
@@ -257,18 +257,6 @@ template <class ResidueType,
        */
 //      vector<uint32_t> * profileLengths;
 //  #define DEFAULT_profileLengths NULL
-
-      /**
-       * Use this number of sequences when training.
-       *
-       * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
-       * num_training_sequences_per_profile_i in
-       * numTrainingSequencesPerProfiles.  If it is NULL, { 10, 100 } will be
-       * used (this is the default).
-       */
-      vector<uint32_t> * numTrainingSequencesPerProfiles;
-  #define DEFAULT_numTrainingSequencesPerProfiles NULL
-
 
       /**
        * When making the true root profile from the pattern sequence, use this
@@ -1292,7 +1280,7 @@ template <class ResidueType,
 // fixyfix        numProfiles =                                  copy_from.numProfiles;
 //        profileLengths =                                copy_from.profileLengths;
 // fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
-        numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
+// fixyfix numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
 // fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
         conservationRates =                             copy_from.conservationRates;
 //fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
@@ -1424,7 +1412,7 @@ template <class ResidueType,
 //fixyfix        numProfiles =                                  DEFAULT_numProfiles;
 //fixyfix        profileLengths =                                DEFAULT_profileLengths;
 //fixyfix        sharedPositionRate =                           DEFAULT_sharedPositionRate;
-        numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
+//fixyfix        numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
 //fixyfix        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
         conservationRates =                             DEFAULT_conservationRates;
 //fixyfix        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
@@ -1558,15 +1546,15 @@ template <class ResidueType,
           os << "}" << endl;
               } // End if profileLengths == NULL .. else ..
         os << "sharedPositionRate = " <<                          GET_sharedPositionRate() << endl;
-        if( numTrainingSequencesPerProfiles == NULL ) {
+        if( GET_numTrainingSequencesPerProfiles().size() == 0 ) {
           os << "numTrainingSequencesPerProfiles = NULL" << endl;
               } else {
           os << "numTrainingSequencesPerProfiles = { ";
-          for( uint32_t pl_i = 0; pl_i < numTrainingSequencesPerProfiles->size(); pl_i++ ) {
+          for( uint32_t pl_i = 0; pl_i < GET_numTrainingSequencesPerProfiles.size(); pl_i++ ) {
             if( pl_i > 0 ) {
               os << ", ";
             }
-            os << ( *numTrainingSequencesPerProfiles )[ pl_i ];
+            os << GET_numTrainingSequencesPerProfiles()[ pl_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if numTrainingSequencesPerProfiles == NULL .. else ..
@@ -4373,23 +4361,13 @@ template <class ResidueType,
           vector<uint32_t> profile_profile_alignment;
           double profile_profile_alignment_cost;
           for( uint32_t num_training_sequences_per_profile_i = 0;
-               num_training_sequences_per_profile_i < ( m_parameters.numTrainingSequencesPerProfiles ? m_parameters.numTrainingSequencesPerProfiles->size() : 2U );
+               num_training_sequences_per_profile_i < ( GET_numTrainingSequencesPerProfiles().size()>0 ? GET_numTrainingSequencesPerProfiles().size() : 2U );
                num_training_sequences_per_profile_i++
           ) {
             uint32_t num_training_sequences_per_profile =
-              ( m_parameters.numTrainingSequencesPerProfiles ?
-                ( *m_parameters.numTrainingSequencesPerProfiles )[ num_training_sequences_per_profile_i ] :
+              ( GET_numTrainingSequencesPerProfiles().size()>0 ?
+                GET_numTrainingSequencesPerProfiles()[ num_training_sequences_per_profile_i ] :
                 ( uint32_t )std::pow( 10.0, ( int )( num_training_sequences_per_profile_i + 1 ) ) );
-            // TODO: REMOVE.  TESTING
-            if( false && ( num_training_sequences_per_profile == 0 ) ) {
-              cout << "Somehow the num_training_sequences_per_profile is 0!" << endl;
-              cout << "num_training_sequences_per_profile_i is " << num_training_sequences_per_profile_i << endl;
-              cout << "m_parameters.numTrainingSequencesPerProfiles is " << m_parameters.numTrainingSequencesPerProfiles << endl;
-              if( m_parameters.numTrainingSequencesPerProfiles ) {
-                cout << "m_parameters.numTrainingSequencesPerProfiles[ " << num_training_sequences_per_profile_i << " ] is " << num_training_sequences_per_profile_i;
-              }
-              exit( 0 );
-            }
             for( uint32_t expected_deletions_count_i = 0;
                  expected_deletions_count_i < ( m_parameters.expectedDeletionsCounts ? m_parameters.expectedDeletionsCounts->size() : 1U );
                  expected_deletions_count_i++

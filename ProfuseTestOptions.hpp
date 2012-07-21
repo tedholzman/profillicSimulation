@@ -503,4 +503,15 @@ GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated?");
 
 //GALOSH_DEF_OPT(profileLengths,std::vector<string>,std::vector<string>(1,"100") BOOST_PP_COMMA() string("100"),"Lengths of the profiles");
 
-GALOSH_DEF_OPT(profileLengths,std::vector<int>,std::vector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles");
+GALOSH_DEF_OPT(profileLengths,std::vector<int>,std::vector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles/fasta seqs");
+
+/**
+  * Use this number of sequences when training.
+  *
+  * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
+  * num_training_sequences_per_profile_i in
+  * numTrainingSequencesPerProfiles.  If it is NULL, { 10, 100 } will be
+  * used (this is the default).
+  */
+
+GALOSH_DEF_OPT(numTrainingSequencesPerProfiles,std::vector<uint32_t>,std::vector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Number of training sequences for each profile");

@@ -156,11 +156,11 @@ template <class ResidueType,
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( conservationRates );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
-        ar & BOOST_SERIALIZATION_NVP( expectedDeletionsCounts );
-        ar & BOOST_SERIALIZATION_NVP( expectedInsertionsCounts );
-        ar & BOOST_SERIALIZATION_NVP( expectedDeletionLengthAsProfileLengthFractions );
-        ar & BOOST_SERIALIZATION_NVP( expectedInsertionLengthAsProfileLengthFractions );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedDeletionsCounts );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedInsertionsCounts );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedDeletionLengthAsProfileLengthFractions );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedInsertionLengthAsProfileLengthFractions );
 //fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedDeletionLength );
 //fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedInsertionLength );
 //fixyfix        ar & BOOST_SERIALIZATION_NVP( preAlignInsertion );
@@ -232,80 +232,6 @@ template <class ResidueType,
   
       /// PARAMETERS
 
-      // Save file version
-      // 1 was the beginning
-      // 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.
-      // 3 is after I added unconditional_with_fixed_starting_globals
-      // 4 is after I added unconditional_with_fixed_starting_globals_then_with_fixed_positions
-      // 5 is after I added startWithUniformGlobals
-      // 6 is after I added startWithUniformGlobals_scalar
-      // 7 is after I added cout[Test] params
-      // 8 is after I added startWithUniformPositions, startWithPositionsDrawnFromPrior, etc.
-      // 9 is after I added convert_tab_output_to_log_double
-      // 10 is after I added CPU time
-
-      /**
-       * When making the pattern sequence (and the true root profile from it),
-       * use this length.
-       *
-       * UPDATE: This is now a pointer to a vector of lengths.  Tests will be
-       * run foreach profile_length in profileLengths.  If it is NULL,
-       * { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 }
-       * will be used (this is the default).
-       */
-
-     vector<double> * expectedDeletionsCounts;
-  #define DEFAULT_expectedDeletionsCounts NULL
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the insertionOpen
-       * value of the true profile will be set to ( expectedInsertionsCount /
-       * profileLength ).
-       *
-       * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
-       * expected_insertions_count in expectedInsertionCounts.  If it is NULL,
-       * { 1.0 } will be used (this is the default).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> * expectedInsertionsCounts;
-  #define DEFAULT_expectedInsertionsCounts NULL
-
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFraction *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionExtension
-       * value of the true profile will also be set to be the minimum of ( 1.0
-       * / ( expectedDeletionLengthAsProfileLengthFraction * profileLength ) )
-       * and ( 1.0 / minExpectedDeletionLength ).
-       *
-       * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
-       * expected_deletion_length_as_profile_length_fraction in
-       * expectedDeletionLengthAsProfileLengthFraction.  If it is NULL, { 0.1 }
-       * will be used (this is the default).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> * expectedDeletionLengthAsProfileLengthFractions;
-  #define DEFAULT_expectedDeletionLengthAsProfileLengthFractions NULL
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the
-       * insertionExtension value of the true profile will be the minimum of (
-       * 1.0 / ( expectedInsertionLengthAsProfileLengthFraction * profileLength
-       * ) ) and ( 1.0 / minExpectedInsertionLength ).
-       *
-       * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
-       * expected_insertion_length_as_profile_length_fraction in
-       * expectedInsertionLengthAsProfileLengthFraction.  If it is NULL, { 0.1 }
-       * will be used (this is the default).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> * expectedInsertionLengthAsProfileLengthFractions;
-  #define DEFAULT_expectedInsertionLengthAsProfileLengthFractions NULL
-
 
       Parameters ();
       virtual ~Parameters () {};
@@ -375,7 +301,6 @@ template <class ResidueType,
         // save/load base class information.  This will serialize the
         // parameters too.
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( base_parameters_modifier_t );
-
 
         // Serialize the new isModified_ stuff
         ar & BOOST_SERIALIZATION_NVP( isModified_saveResultsToFile );
@@ -529,13 +454,6 @@ template <class ResidueType,
 
       bool isModified_trueTestingAlignmentsFileSuffix;
 
-      // 1 was the beginning
-      // 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.
-      // 3 is after I added unconditional_with_fixed_starting_globals
-      // 4 is after I added unconditional_with_fixed_starting_globals_then_with_fixed_positions
-      // 5 is after I added startWithUniformGlobals
-      // 6 is after I added startWithUniformGlobals_scalar
-      // 7 is after I added cout[Test] params
       bool isModified_saveFileVersion;
 
       bool isModified_numProfiles;
@@ -1261,16 +1179,16 @@ template <class ResidueType,
 // fixyfix        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
 //        saveFileVersion =                              copy_from.saveFileVersion;
 // fixyfix        numProfiles =                                  copy_from.numProfiles;
-//        profileLengths =                                copy_from.profileLengths;
+// fixyfix       profileLengths =                                copy_from.profileLengths;
 // fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
 // fixyfix numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
 // fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
 // fixyfix        conservationRates =                             copy_from.conservationRates;
-//fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
-        expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
-        expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
-        expectedDeletionLengthAsProfileLengthFractions =                          copy_from.expectedDeletionLengthAsProfileLengthFractions;
-        expectedInsertionLengthAsProfileLengthFractions =                          copy_from.expectedInsertionLengthAsProfileLengthFractions;
+// fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
+// fixyfix       expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
+// fixyfix        expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
+// fixyfix        expectedDeletionLengthAsProfileLengthFractions =                          copy_from.expectedDeletionLengthAsProfileLengthFractions;
+// fixyfix        expectedInsertionLengthAsProfileLengthFractions =                          copy_from.expectedInsertionLengthAsProfileLengthFractions;
 //fixyfix        minExpectedDeletionLength =                          copy_from.minExpectedDeletionLength;
 //fixyfix        minExpectedInsertionLength =                          copy_from.minExpectedInsertionLength;
 //fixyfix        preAlignInsertion =                          copy_from.preAlignInsertion;
@@ -1399,10 +1317,10 @@ template <class ResidueType,
 //fixyfix        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
 //fixyfix        conservationRates =                             DEFAULT_conservationRates;
 //fixyfix        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
-        expectedDeletionsCounts =                          DEFAULT_expectedDeletionsCounts;
-        expectedInsertionsCounts =                          DEFAULT_expectedInsertionsCounts;
-        expectedDeletionLengthAsProfileLengthFractions =                          DEFAULT_expectedDeletionLengthAsProfileLengthFractions;
-        expectedInsertionLengthAsProfileLengthFractions =                          DEFAULT_expectedInsertionLengthAsProfileLengthFractions;
+//fixyfix        expectedDeletionsCounts =                          DEFAULT_expectedDeletionsCounts;
+//fixyfix        expectedInsertionsCounts =                          DEFAULT_expectedInsertionsCounts;
+//fixyfix        expectedDeletionLengthAsProfileLengthFractions =                          DEFAULT_expectedDeletionLengthAsProfileLengthFractions;
+//fixyfix        expectedInsertionLengthAsProfileLengthFractions =                          DEFAULT_expectedInsertionLengthAsProfileLengthFractions;
 //fixyfix        minExpectedDeletionLength =                          DEFAULT_minExpectedDeletionLength;
 //fixyfix        minExpectedInsertionLength =                          DEFAULT_minExpectedInsertionLength;
 //fixyfix        preAlignInsertion =                          DEFAULT_preAlignInsertion;
@@ -1555,54 +1473,54 @@ template <class ResidueType,
           os << "}" << endl;
               } // End if profileLengths == NULL .. else ..
 
-        if( expectedDeletionsCounts == NULL ) {
+        if( GET_expectedDeletionsCounts().size() == 0 ) {
           os << "expectedDeletionsCounts = NULL" << endl;
               } else {
           os << "expectedDeletionsCounts = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedDeletionsCounts->size(); cr_i++ ) {
+          for( uint32_t cr_i = 0; cr_i < GET_expectedDeletionsCounts().size(); cr_i++ ) {
             if( cr_i > 0 ) {
               os << ", ";
             }
-            os << ( *expectedDeletionsCounts )[ cr_i ];
+            os << GET_expectedDeletionsCounts()[ cr_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if expectedDeletionsCounts == NULL .. else ..
 
-        if( expectedInsertionsCounts == NULL ) {
+        if( GET_expectedInsertionsCounts().size() == 0 ) {
           os << "expectedInsertionsCounts = NULL" << endl;
               } else {
           os << "expectedInsertionsCounts = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedInsertionsCounts->size(); cr_i++ ) {
+          for( uint32_t cr_i = 0; cr_i < GET_expectedInsertionsCounts().size(); cr_i++ ) {
             if( cr_i > 0 ) {
               os << ", ";
             }
-            os << ( *expectedInsertionsCounts )[ cr_i ];
+            os << GET_expectedInsertionsCounts()[ cr_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if expectedInsertionsCounts == NULL .. else ..
 
-        if( expectedDeletionLengthAsProfileLengthFractions == NULL ) {
+        if( GET_expectedDeletionLengthAsProfileLengthFractions().size() == 0 ) {
           os << "expectedDeletionLengthAsProfileLengthFractions = NULL" << endl;
               } else {
           os << "expectedDeletionLengthAsProfileLengthFractions = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedDeletionLengthAsProfileLengthFractions->size(); cr_i++ ) {
+          for( uint32_t cr_i = 0; cr_i < GET_expectedDeletionLengthAsProfileLengthFractions().size(); cr_i++ ) {
             if( cr_i > 0 ) {
               os << ", ";
             }
-            os << ( *expectedDeletionLengthAsProfileLengthFractions )[ cr_i ];
+            os << GET_expectedDeletionLengthAsProfileLengthFractions()[ cr_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
               } // End if expectedDeletionLengthAsProfileLengthFractions == NULL .. else ..
 
-        if( expectedInsertionLengthAsProfileLengthFractions == NULL ) {
+        if( GET_expectedInsertionLengthAsProfileLengthFractions().size() == 0 ) {
           os << "expectedInsertionLengthAsProfileLengthFractions = NULL" << endl;
               } else {
           os << "expectedInsertionLengthAsProfileLengthFractions = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedInsertionLengthAsProfileLengthFractions->size(); cr_i++ ) {
+          for( uint32_t cr_i = 0; cr_i < GET_expectedInsertionLengthAsProfileLengthFractions().size(); cr_i++ ) {
             if( cr_i > 0 ) {
               os << ", ";
             }
-            os << ( *expectedInsertionLengthAsProfileLengthFractions )[ cr_i ];
+            os << GET_expectedInsertionLengthAsProfileLengthFractions()[ cr_i ];
           } // End foreach conservation rate..
           os << "}" << endl;
         } // End if expectedInsertionLengthAsProfileLengthFractions == NULL .. else ..
@@ -4352,40 +4270,40 @@ template <class ResidueType,
                 GET_numTrainingSequencesPerProfiles()[ num_training_sequences_per_profile_i ] :
                 ( uint32_t )std::pow( 10.0, ( int )( num_training_sequences_per_profile_i + 1 ) ) );
             for( uint32_t expected_deletions_count_i = 0;
-                 expected_deletions_count_i < ( m_parameters.expectedDeletionsCounts ? m_parameters.expectedDeletionsCounts->size() : 1U );
+                 expected_deletions_count_i < ( GET_expectedDeletionsCounts().size() > 0 ? GET_expectedDeletionsCounts().size() : 1U );
                  expected_deletions_count_i++
             ) {
               double expected_deletions_count =
-                ( m_parameters.expectedDeletionsCounts ?
-                  ( *m_parameters.expectedDeletionsCounts )[ expected_deletions_count_i ] :
+                ( GET_expectedDeletionsCounts().size() > 0 ?
+                  GET_expectedDeletionsCounts()[ expected_deletions_count_i ] :
                   1.0 );
               for( uint32_t expected_insertions_count_i = 0;
-                   ( m_parameters.useDeletionsForInsertionsParameters ? ( expected_insertions_count_i == 0 ) : ( expected_insertions_count_i < ( m_parameters.expectedInsertionsCounts ? m_parameters.expectedInsertionsCounts->size() : 1U ) ) );
+                   ( m_parameters.useDeletionsForInsertionsParameters ? ( expected_insertions_count_i == 0 ) : ( expected_insertions_count_i < ( GET_expectedInsertionsCounts().size() > 0 ? GET_expectedInsertionsCounts().size() : 1U ) ) );
                    expected_insertions_count_i++
               ) {
                 double expected_insertions_count =
                   ( m_parameters.useDeletionsForInsertionsParameters ?
                     expected_deletions_count :
-                    ( ( m_parameters.expectedInsertionsCounts ?
-                        ( *m_parameters.expectedInsertionsCounts )[ expected_insertions_count_i ] :
+                    ( ( GET_expectedInsertionsCounts().size() > 0 ?
+                        GET_expectedInsertionsCounts()[ expected_insertions_count_i ] :
                         1.0 ) ) );
                 for( uint32_t expected_deletion_length_as_profile_length_fraction_i = 0;
-                     expected_deletion_length_as_profile_length_fraction_i < ( m_parameters.expectedDeletionLengthAsProfileLengthFractions ? m_parameters.expectedDeletionLengthAsProfileLengthFractions->size() : 1U );
+                     expected_deletion_length_as_profile_length_fraction_i < ( GET_expectedDeletionLengthAsProfileLengthFractions().size() > 0 ? GET_expectedDeletionLengthAsProfileLengthFractions().size() : 1U );
                      expected_deletion_length_as_profile_length_fraction_i++
                 ) {
                   double expected_deletion_length_as_profile_length_fraction =
-                    ( m_parameters.expectedDeletionLengthAsProfileLengthFractions ?
-                      ( *m_parameters.expectedDeletionLengthAsProfileLengthFractions )[ expected_deletion_length_as_profile_length_fraction_i ] :
+                    ( GET_expectedDeletionLengthAsProfileLengthFractions().size() > 0 ?
+                      GET_expectedDeletionLengthAsProfileLengthFractions()[ expected_deletion_length_as_profile_length_fraction_i ] :
                       1.0 );
                   for( uint32_t expected_insertion_length_as_profile_length_fraction_i = 0;
-                       ( m_parameters.useDeletionsForInsertionsParameters ? ( expected_insertion_length_as_profile_length_fraction_i == 0 ) : ( expected_insertion_length_as_profile_length_fraction_i < ( m_parameters.expectedInsertionLengthAsProfileLengthFractions ? m_parameters.expectedInsertionLengthAsProfileLengthFractions->size() : 1U ) ) );
+                       ( GET_useDeletionsForInsertionsParameters() ? ( expected_insertion_length_as_profile_length_fraction_i == 0 ) : ( expected_insertion_length_as_profile_length_fraction_i < (GET_expectedInsertionLengthAsProfileLengthFractions().size() > 0 ? GET_expectedInsertionLengthAsProfileLengthFractions().size() : 1U ) ) );
                        expected_insertion_length_as_profile_length_fraction_i++
                   ) {
                     double expected_insertion_length_as_profile_length_fraction =
-                      ( m_parameters.useDeletionsForInsertionsParameters ?
+                      ( GET_useDeletionsForInsertionsParameters() ?
                         expected_deletion_length_as_profile_length_fraction :
-                        ( ( m_parameters.expectedInsertionLengthAsProfileLengthFractions ?
-                            ( *m_parameters.expectedInsertionLengthAsProfileLengthFractions )[ expected_insertion_length_as_profile_length_fraction_i ] :
+                        ( ( GET_expectedInsertionLengthAsProfileLengthFractions().size() > 0 ?
+                            GET_expectedInsertionLengthAsProfileLengthFractions()[ expected_insertion_length_as_profile_length_fraction_i ] :
                             1.0 ) ) );
 
                     // OLD:
@@ -4502,7 +4420,7 @@ template <class ResidueType,
                       ProbabilityType deletion_open =
                         INIT_PROBABILITY(ProbabilityType)( expected_deletions_count / profile_length );
                       ProbabilityType insertion_open =
-                        ( m_parameters.useDeletionsForInsertionsParameters ?
+                        ( GET_useDeletionsForInsertionsParameters() ?
                           deletion_open :
                           INIT_PROBABILITY(ProbabilityType)( expected_insertions_count / profile_length ) );
         
@@ -4510,7 +4428,7 @@ template <class ResidueType,
                       ProbabilityType deletion_extension =
                         INIT_PROBABILITY(ProbabilityType)( 1.0 - min( ( 1.0 / ( expected_deletion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedDeletionLength ) ) );
                       ProbabilityType insertion_extension =
-                        ( m_parameters.useDeletionsForInsertionsParameters ? deletion_extension : INIT_PROBABILITY(ProbabilityType)( 1.0 - min( ( 1.0 / ( expected_insertion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedInsertionLength ) ) ) );
+                        ( GET_useDeletionsForInsertionsParameters() ? deletion_extension : INIT_PROBABILITY(ProbabilityType)( 1.0 - min( ( 1.0 / ( expected_insertion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedInsertionLength ) ) ) );
 
 #ifdef USE_DEL_IN_DEL_OUT
                       // TODO: Make a parameter for this..

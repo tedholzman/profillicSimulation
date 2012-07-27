@@ -22,16 +22,24 @@
  */
 GALOSH_DEF_OPT(configFile,string,"ProfuseTest.cfg","File path for the configuration file");
 
-
-/**
- * We do the whole thing a number of different times, starting over with
- * a new pattern sequence.
+/** Save file version
+ * 1 was the beginning
+ * 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.
+ * 3 is after I added unconditional_with_fixed_starting_globals
+ * 4 is after I added unconditional_with_fixed_starting_globals_then_with_fixed_positions
+ * 5 is after I added startWithUniformGlobals
+ * 6 is after I added startWithUniformGlobals_scalar
+ * 7 is after I added cout[Test] params
+ * 8 is after I added startWithUniformPositions, startWithPositionsDrawnFromPrior, etc.
+ * 9 is after I added convert_tab_output_to_log_double
+ *10 is after I added CPU time
  */
-GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of different times, starting over with a new pattern sequence.");
+GALOSH_DEF_OPT(saveFileVersion,uint32_t,10U,"Version of the save file");
 
 GALOSH_DEF_OPT(saveResultsToFile,bool,true,"Should we save the results to a file?");
 GALOSH_DEF_OPT(saveResultsParentDirectory,string,".","Parent directory name");
-GALOSH_DEF_OPT(saveFileVersion,uint32_t,10U,"Version of the save file");
+
+
 
 ///File prefixes and suffixes, and output options
 GALOSH_DEF_OPT(resultsFilePrefix,string,"ProfuseTest.","Prefix for main results");
@@ -56,6 +64,11 @@ GALOSH_DEF_OPT(trainingTrueAlignmentsFileSuffix,string,".training_alignments.fas
 GALOSH_DEF_OPT(saveTrueTestingAlignments,bool,true,"Shall we save true test alignments?");
 GALOSH_DEF_OPT(trueTestingAlignmentsFileSuffix,string,".testing_alignments.fasta","True test alignment fasta file suffix");
 
+/**
+ * We do the whole thing a number of different times, starting over with
+ * a new pattern sequence.
+ */
+GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of different times, starting over with a new pattern sequence.");
 /**
   * For each true root profile, we run the trainers from a number of
   * different starting profiles.  This is that number.
@@ -539,6 +552,66 @@ myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.
  *
  */
 GALOSH_DEF_OPT(conservationRates,myVector<double>,myVector<double>(tmp_default_conservation_rates) BOOST_PP_COMMA() string("0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0"),"Iterate through each of these conservation rates");
+
+/// Make the expected number of deletions be .5 or 1.0 per sequence.
+/// Note that this will apply to the insertions, too, unless
+/// m_parameters.useDeletionsForInsertionsParameters is set to false.
+GALOSH_DEF_OPT(expectedDeletionsCounts,myVector<double>,myVector<double>(1,1.0) BOOST_PP_COMMA() string("0.5"),"Iterate through this set of expected deletions.  Note that deletions-counts=insertion counts unless useDeletionsForInsertionsParameters is false");
+
+/**
+  * If useDeletionsForInsertionsParameters is false, the insertionOpen
+  * value of the true profile will be set to ( expectedInsertionsCount /
+  * profileLength ).
+  *
+  * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
+  * expected_insertions_count in expectedInsertionCounts.  If it is unspecified,
+  * { 1.0 } will be used.
+  * @see useDeletionsForInsertionsParameters
+  */
+GALOSH_DEF_OPT(expectedInsertionsCounts,myVector<double>,myVector<double>(1,0.5) BOOST_PP_COMMA() string("0.5"),"Iterate through this series of expected insertions.  useDeletionsForInsertionsParameters must be false or this parameter is ignored.");
+
+/**
+   * The deletionExtension value of the true profile will be the minimum of
+   * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFraction *
+   * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).  If
+   * useDeletionsForInsertionsParameters is true, the insertionExtension
+   * value of the true profile will also be set to be the minimum of ( 1.0
+   * / ( expectedDeletionLengthAsProfileLengthFraction * profileLength ) )
+   * and ( 1.0 / minExpectedDeletionLength ).
+   *
+   * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
+   * expected_deletion_length_as_profile_length_fraction in
+   * expectedDeletionLengthAsProfileLengthFraction.  If it is NULL, { 0.1 }
+   * will be used (this is the default).
+   *
+   * @see useDeletionsForInsertionsParameters
+   */
+
+// Make the expected length of each deletion be ( profile_length / 20 ) or (
+// profile_length / 10 )...
+// Note that this will apply to the insertions, too, unless
+// m_parameters.useDeletionsForInsertionsParameters is set to false.
+GALOSH_DEF_OPT(expectedDeletionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.0125) BOOST_PP_COMMA() string("0.0125"),"Expected lengths of deletions. Iterate through all lengths in this list.");
+
+// Make the expected length of each insertion be ( profile_length / 20 ) or (
+// profile_length / 10 )...
+// Note that this is not used unless
+// m_parameters.useDeletionsForInsertionsParameters is set to false.
+// ..(or 1.25, whichever is larger).
+/**
+* If useDeletionsForInsertionsParameters is false, the
+* insertionExtension value of the true profile will be the minimum of (
+* 1.0 / ( expectedInsertionLengthAsProfileLengthFraction * profileLength
+* ) ) and ( 1.0 / minExpectedInsertionLength ).
+*
+* UPDATE: This is now a pointer to a vector.  Tests will be run foreach
+* expected_insertion_length_as_profile_length_fraction in
+* expectedInsertionLengthAsProfileLengthFraction.  If it is NULL, { 0.1 }
+* will be used (this is the default).
+*
+* @see useDeletionsForInsertionsParameters
+*/
+GALOSH_DEF_OPT(expectedInsertionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.1) BOOST_PP_COMMA() string("0.0125"),"Expected lengths of deletions. Iterate through all lengths in this list.");
 
 
 /** do this after the vector definition section */

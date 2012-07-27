@@ -55,60 +55,6 @@ main ( int argc, char **argv )
     //   profuse_test.m_parameters.trainProfileGlobals = true;//false;
     //  It seems (I see again/recall) that one key is starting the global params sufficiently low.  For some reason the training works best when indels seem extremely unlikely.
 
-
-  // Make the expected number of deletions be .5 or 1.0 per sequence.
-  // Note that this will apply to the insertions, too, unless
-  // m_parameters.useDeletionsForInsertionsParameters is set to false.
-  vector<double> edc( 1 );
-  //edc[ 0 ] = 1.0;
-  //edc[ 0 ] = 4.0;
-  edc[ 0 ] = 8.0;
-  //edc[ 1 ] = 1.5;
-  //edc[ 1 ] = 1.0;
-  //edc[ 2 ] = 1.5;
-  //edc[ 0 ] = .5;
-  //edc[ 1 ] = .75;
-  //edc[ 2 ] = 1.0;
-  //edc[ 0 ] = .1;
-  ////edc[ 1 ] = .5;
-  //edc[ 1 ] = .3;
-  //edc[ 2 ] = .5;
-  //edc[ 3 ] = .7;
-  //edc[ 4 ] = .9;
-  profuse_test.m_parameters.expectedDeletionsCounts = &edc;
-
-  // Make the expected number of insertions be .5 or 1.0 per sequence.
-  // Note that this is not used unless
-  // m_parameters.useDeletionsForInsertionsParameters is set to false.
-//  vector<double> eic( 1 );
-//  eic[ 0 ] = .5;
-//  //eic[ 1 ] = 1.0;
-//  profuse_test.m_parameters.expectedInsertionsCounts = &eic;
-
-  // Make the expected length of each deletion be ( profile_length / 20 ) or (
-  // profile_length / 10 )...
-  // Note that this will apply to the insertions, too, unless
-  // m_parameters.useDeletionsForInsertionsParameters is set to false.
-  vector<double> edlaplf( 1 );
-  //edlaplf[ 0 ] = 0.1;
-  //edlaplf[ 0 ] = .025;
-  edlaplf[ 0 ] = .0125;
-  //edlaplf[ 1 ] = .15;
-  //edlaplf[ 1 ] = .10;
-  //edlaplf[ 2 ] = .15;
-  profuse_test.m_parameters.expectedDeletionLengthAsProfileLengthFractions = &edlaplf;
-
-  // Make the expected length of each insertion be ( profile_length / 20 ) or (
-  // profile_length / 10 )...
-  // Note that this is not used unless
-  // m_parameters.useDeletionsForInsertionsParameters is set to false.
-//  vector<double> eilaplf( 1 );
-//  eilaplf[ 0 ] = .05;
-//  //eilaplf[ 1 ] = .1;
-//  profuse_test.m_parameters.expectedInsertionLengthAsProfileLengthFractions = &eilaplf;
-
-  // ..(or 1.25, whichever is larger).
-  
 #ifdef ALLOW_BOLTZMANN_GIBBS
 //fixyfix
   profuse_test.m_parameters.testBaldi = false;

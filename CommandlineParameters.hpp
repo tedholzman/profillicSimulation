@@ -81,9 +81,12 @@ validate (boost::any& v,
     	copy(istream_iterator<T>(ss),istream_iterator<T>(),back_inserter(tvalues));
     }
 
+#ifdef DEBUG
     cerr << "tvalues vector is " << tvalues.size() << " long, and contains:" << endl;
     for(int i = 0; i<tvalues.size(); i++) {cerr << tvalues[i] << endl;}
+#endif
     v = tvalues;
+
 }
 
 #endif /* COMMANDLINEPARAMETERS_HPP_ */

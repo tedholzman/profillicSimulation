@@ -47,6 +47,11 @@ using galosh::Random;
 #include "DynamicProgramming.hpp"
 using galosh::DynamicProgramming;
 
+#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
+#define DEFAULT_VARIABLES_MAP       m_profusetest_options_map
+
+#include "CommandlineParameters.hpp"
+
 #include <string>
 using std::string;
 #include <iostream>
@@ -71,7 +76,6 @@ using std::clock;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-
 namespace galosh {
 
 template <class ResidueType,
@@ -83,18 +87,12 @@ template <class ResidueType,
   public:
     po::options_description m_profusetest_options;
     po::variables_map m_profusetest_options_map;
-#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
-#define DEFAULT_VARIABLES_MAP       m_profusetest_options_map
-#ifndef DEFAULT_CONFIG_FILE
-#define DEFAULT_CONFIG_FILE "ProfuseTest.cfg"
-#endif
 	///TAH 6/12 constructor from commandline options
 	ProfuseTest(int argc,char **argv) {
-#include "CommandlineParameters.hpp"
        m_profusetest_options.add_options()("help","This help message.");
        #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
        po::store(po::parse_command_line(argc, argv, m_profusetest_options), m_profusetest_options_map);
-       ifstream configFile(DEFAULT_CONFIG_FILE);
+       ifstream configFile(GET_configFile().c_str());
        if (configFile)
        {
           po::store(parse_config_file(configFile, m_profusetest_options), m_profusetest_options_map);
@@ -157,7 +155,7 @@ template <class ResidueType,
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
 // fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
-        ar & BOOST_SERIALIZATION_NVP( conservationRates );
+// fixyfix        ar & BOOST_SERIALIZATION_NVP( conservationRates );
 //fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
         ar & BOOST_SERIALIZATION_NVP( expectedDeletionsCounts );
         ar & BOOST_SERIALIZATION_NVP( expectedInsertionsCounts );
@@ -255,21 +253,6 @@ template <class ResidueType,
        * { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 }
        * will be used (this is the default).
        */
-//      vector<uint32_t> * profileLengths;
-//  #define DEFAULT_profileLengths NULL
-
-      /**
-       * When making the true root profile from the pattern sequence, use this
-       * probability for the pattern sequence base at each position, and divide
-       * the remaining probability evenly among the remaining bases.
-       *
-       * UPDATE: This is now a pointer to a vector of rates.  Tests will be run
-       * foreach conservation_rate in conservationRates.  If it is NULL,
-       * { .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0 }
-       * will be used (this is the default).
-       */
-      vector<double> * conservationRates;
-  #define DEFAULT_conservationRates NULL
 
      vector<double> * expectedDeletionsCounts;
   #define DEFAULT_expectedDeletionsCounts NULL
@@ -1282,7 +1265,7 @@ template <class ResidueType,
 // fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
 // fixyfix numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
 // fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
-        conservationRates =                             copy_from.conservationRates;
+// fixyfix        conservationRates =                             copy_from.conservationRates;
 //fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
         expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
         expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
@@ -1414,7 +1397,7 @@ template <class ResidueType,
 //fixyfix        sharedPositionRate =                           DEFAULT_sharedPositionRate;
 //fixyfix        numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
 //fixyfix        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
-        conservationRates =                             DEFAULT_conservationRates;
+//fixyfix        conservationRates =                             DEFAULT_conservationRates;
 //fixyfix        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
         expectedDeletionsCounts =                          DEFAULT_expectedDeletionsCounts;
         expectedInsertionsCounts =                          DEFAULT_expectedInsertionsCounts;
@@ -1550,7 +1533,7 @@ template <class ResidueType,
           os << "numTrainingSequencesPerProfiles = NULL" << endl;
               } else {
           os << "numTrainingSequencesPerProfiles = { ";
-          for( uint32_t pl_i = 0; pl_i < GET_numTrainingSequencesPerProfiles.size(); pl_i++ ) {
+          for( uint32_t pl_i = 0; pl_i < GET_numTrainingSequencesPerProfiles().size(); pl_i++ ) {
             if( pl_i > 0 ) {
               os << ", ";
             }
@@ -4317,12 +4300,12 @@ template <class ResidueType,
       clock_t start_time, end_time; // For calculating the testCPUtime.
               
       for( uint32_t conservation_rate_i = 0;
-           conservation_rate_i < ( m_parameters.conservationRates ? m_parameters.conservationRates->size() : 10U );
+           conservation_rate_i < ( GET_conservationRates().size()>0 ? GET_conservationRates().size() : 10U );
            conservation_rate_i++
       ) {
         double conservation_rate =
-          ( m_parameters.conservationRates ?
-            ( *m_parameters.conservationRates )[ conservation_rate_i ] :
+          ( GET_conservationRates().size()>0 ?
+            GET_conservationRates()[ conservation_rate_i ] :
             ( .1 * ( conservation_rate_i + 1 ) ) );
         for( uint32_t profile_length_i = 0;
              profile_length_i < ( GET_profileLengths().size()>0 ? GET_profileLengths().size() : 10U );

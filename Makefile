@@ -6,7 +6,7 @@
 #CFLAGS		= -Wall -pg
 #CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
 #                 --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
-CFLAGS	        = -g3 -gdwarf-2 -pg
+CFLAGS	        = -g3 -gdwarf-2
 #JFLAGS		=
 LDFLAGS	= -pg
 

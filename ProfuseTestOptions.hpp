@@ -9,13 +9,7 @@
  *  All rights reserved.
  *****************************************************************************/
 
-#ifndef DEFAULT_CONFIG_FILE
-#define DEFAULT_CONFIG_FILE "ProfuseTest.cfg"
-#endif
-
-
 #include <boost/preprocessor/punctuation/comma.hpp>
-
 
 /**
  * \note Note the lack of "protective" \#define symbols in this file.  We may
@@ -23,10 +17,16 @@
  */
 
 /**
+ * The configuration file contains the non-default, non-command-line options
+ *
+ */
+GALOSH_DEF_OPT(configFile,string,"ProfuseTest.cfg","File path for the configuration file");
+
+
+/**
  * We do the whole thing a number of different times, starting over with
  * a new pattern sequence.
  */
-
 GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of different times, starting over with a new pattern sequence.");
 
 GALOSH_DEF_OPT(saveResultsToFile,bool,true,"Should we save the results to a file?");
@@ -258,7 +258,7 @@ GALOSH_DEF_OPT(startWithUniformGlobals_maxCtoC,double,.2,"See \"startWithUniform
   * @see startWithPositionsDrawnFromPrior
   * @see alsoStartWithEvenPositions
   */
-GALOSH_DEF_OPT(startWithUniformPositions,bool,false," If startWithUniformPositions is true, then we set the position-specific values of the startingProfile to random values between 0 and 1.  If it is false, we start with the known, true parameter values.");
+GALOSH_DEF_OPT(startWithUniformPositions,bool,false,"If startWithUniformPositions is true, then we set the position-specific values of the startingProfile to random values between 0 and 1.  If it is false, we start with the known, true parameter values.");
 
  /**
   * If startWithGlobalsDrawnFromPrior is true, the
@@ -500,10 +500,13 @@ GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated?");
 ///
 /// --profileLengths 10 20 30
 ///
+/// The TMP_EXTRA_STUFF must be set to include (at least) the ->multitoken() thing.
+/// It should also be unset at the bottom of the vector initializations.
 
-//GALOSH_DEF_OPT(profileLengths,std::vector<string>,std::vector<string>(1,"100") BOOST_PP_COMMA() string("100"),"Lengths of the profiles");
+#undef TMP_EXTRA_STUFF
+#define TMP_EXTRA_STUFF ->multitoken()
 
-GALOSH_DEF_OPT(profileLengths,std::vector<int>,std::vector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles/fasta seqs");
+GALOSH_DEF_OPT(profileLengths,myVector<int>,myVector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles/fasta seqs");
 
 /**
   * Use this number of sequences when training.
@@ -514,4 +517,30 @@ GALOSH_DEF_OPT(profileLengths,std::vector<int>,std::vector<int>(1,100) BOOST_PP_
   * used (this is the default).
   */
 
-GALOSH_DEF_OPT(numTrainingSequencesPerProfiles,std::vector<uint32_t>,std::vector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Number of training sequences for each profile");
+GALOSH_DEF_OPT(numTrainingSequencesPerProfiles,myVector<uint32_t>,myVector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Number of training sequences for each profile");
+
+#ifndef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
+#define PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
+myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.1){tmp_default_conservation_rates.push_back(x);}
+#endif
+/**
+ * When making the true root profile from the pattern sequence, use this
+ * probability for the pattern sequence base at each position, and divide
+ * the remaining probability evenly among the remaining bases.
+ *
+ * UPDATE: This is now a pointer to a vector of rates.  Tests will be run
+ * foreach conservation_rate in conservationRates.  If it is NULL,
+ * { .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0 }
+ * will be used (this is the default).
+ *
+ * \note Note: It is hard to initialize a vector with different values.  This
+ * might become simpler with C++11 or with boost::array stuff.  Currently we're
+ * doing it as above, and initializing with .begin() and .end() vector iterators
+ *
+ */
+GALOSH_DEF_OPT(conservationRates,myVector<double>,myVector<double>(tmp_default_conservation_rates) BOOST_PP_COMMA() string("0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0"),"Iterate through each of these conservation rates");
+
+
+/** do this after the vector definition section */
+#undef TMP_EXTRA_STUFF
+#define TMP_EXTRA_STUFF BOOST_PP_EMPTY()

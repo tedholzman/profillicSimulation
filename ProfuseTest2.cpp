@@ -28,8 +28,6 @@ int g_argc;
 char **g_argv;
 #endif // __HAVE_MUSCLE
 
-// TAH 6/12 macros for defining and accessing commandline parameters.
-#include "CommandlineParameters.hpp"
 
 int
 main ( int argc, char **argv )
@@ -57,35 +55,6 @@ main ( int argc, char **argv )
     //   profuse_test.m_parameters.trainProfileGlobals = true;//false;
     //  It seems (I see again/recall) that one key is starting the global params sufficiently low.  For some reason the training works best when indels seem extremely unlikely.
 
-
-  vector<double> cr( 7 );
-  //cr[ 0 ] = .5;
-
-  //cr[ 0 ] = .3;
-  //cr[ 1 ] = .5;
-  //cr[ 2 ] = .7;
-  //cr[ 3 ] = .9;
-
-  cr[ 0 ] = .3;
-  cr[ 1 ] = .4;
-  cr[ 2 ] = .5;
-  cr[ 3 ] = .6;
-  cr[ 4 ] = .7;
-  cr[ 5 ] = .8;
-  cr[ 6 ] = .9;
-
-  //cr[ 0 ] = .1;
-  //cr[ 1 ] = .2;
-  //cr[ 2 ] = .3;
-  //cr[ 3 ] = .4;
-  //cr[ 4 ] = .5;
-  //cr[ 5 ] = .6;
-  //cr[ 6 ] = .7;
-  //cr[ 7 ] = .8;
-  //cr[ 8 ] = .9;
-
-  ////cr[ 3 ] = .6;
-  profuse_test.m_parameters.conservationRates = &cr;
 
   // Make the expected number of deletions be .5 or 1.0 per sequence.
   // Note that this will apply to the insertions, too, unless

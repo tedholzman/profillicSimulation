@@ -75,8 +75,8 @@ char **g_argv = 0;
 using namespace galosh;
 
 #include <boost/program_options.hpp>
-
-namespace po = boost::program_options;
+//
+//namespace po = boost::program_options;
 po::options_description galosh_opt_desc("Galosh-specific unit test options");
 po::variables_map galosh_opt_map;
 po::parsed_options parsed(new po::options_description());

@@ -194,9 +194,6 @@ MUSCLEHMMERTEST_INCS = $(INCS)
 
 OBJS = $(HMMOC_LIB)/Algebra.o
 
-TRAIN_OBJS = $(OBJS) \
-Train.o
-
 ALIGN_OBJS = $(OBJS) \
 $(PROFUSE_LIB)/Align.o
 
@@ -247,9 +244,6 @@ NewSeqanTests.o
 
 SOURCES = $(HMMOC_LIB)/Algebra.cpp
 
-TRAIN_SOURCES = $(SOURCES) \
-$(PROFILLIC_LIB)/Train.cpp
-
 ALIGN_SOURCES = $(SOURCES) \
 $(PROFUSE_LIB)/Align.cpp
 
@@ -299,10 +293,6 @@ NEWSEQANTEST_SOURCES = $(HMMOC_LIB)/Algebra.cpp \
 NewSeqanTests.cpp
 
 default: quicktest
-
-train: $(TRAIN_SOURCES) $(TRAIN_INCS) $(TRAIN_OBJS) $(MUSCLE_CPPOBJ)
-	     $(CXX_COMPILE) $(TRAIN_SOURCES)
-	     $(CXX_LINK) -o train $(TRAIN_OBJS) $(MUSCLE_CPPOBJ)
 
 align: $(ALIGN_SOURCES) $(ALIGN_INCS) $(ALIGN_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o align $(ALIGN_OBJS) $(MUSCLE_CPPOBJ)
@@ -361,7 +351,7 @@ converters: sequence2profile alignedFasta2profile xml2profile profile2fasta
 
 converters-with-hmmer: converters profile2hmmer 
 
-progs:  train align score createRandomSequence drawSequences evaluateEntentes
+progs:  align score createRandomSequence drawSequences evaluateEntentes
 
 ## Recompile if the includes are modified ...
 $(PROFUSETEST_OBJS): $(PROFUSETEST_SOURCES) $(PROFUSETEST_INCS)
@@ -374,7 +364,6 @@ $(PROFILE2FASTA_OBJS): $(PROFILE2FASTA_SOURCES) $(PROFILE2FASTA_INCS)
 $(SEQUENCE2PROFILE_OBJS): $(SEQUENCE2PROFILE_SOURCES) $(SEQUENCE2PROFILE_INCS)
 $(ALIGNEDFASTA2PROFILE_OBJS): $(ALIGNEDFASTA2PROFILE_SOURCES) $(ALIGNEDFASTA2PROFILE_INCS)
 $(XML2PROFILE_OBJS): $(XML2PROFILE_SOURCES) $(XML2PROFILE_INCS)
-$(TRAIN_OBJS): $(TRAIN_SOURCES) $(TRAIN_INCS)
 $(ALIGN_OBJS): $(ALIGN_SOURCES) $(ALIGN_INCS)
 $(SCORE_OBJS): $(SCORE_SOURCES) $(SCORE_INCS)
 $(MUSCLEHMMERTEST_OBJS): $(MUSCLEHMMERTEST_SOURCES) $(MUSCLEHMMERTEST_INCS)
@@ -383,7 +372,7 @@ $(SEQANTEST_OBJS): $(SEQANTEST_SOURCES) $(SEQANTEST_INCS)
 $(NEWSEQANTEST_OBJS): $(NEWSEQANTEST_SOURCES) $(NEWSEQANTEST_INCS)
 .PHONY: clean
 clean:
-	rm -f $(notdir train align score createRandomSequence drawSequences evaluateEntentes profile2hmmer profile2fasta sequence2profile alignedFasta2profile xml2profile quicktest seqantest profusetest musclehmmertest newseqantest profusetest2 $(TRAIN_OBJS) $(ALIGN_OBJS) $(SCORE_OBJS) $(PROFILE2HMMER_OBJS) $(CREATERANDOMSEQUENCE_OBJS) $(DRAWSEQUENCES_OBJS) $(EVALUATEENTENTES_OBJS) $(PROFILE2HMMER_OBJS) $(PROFILE2FASTA_OBJS) $(SEQUENCE2PROFILE_OBJS) $(XML2PROFILE_OBJS) $(ALIGNEDFASTA2PROFILE_OBJS) $(QUICKTEST_OBJS) $(SEQANTEST_OBJS) $(NEWSEQANTEST_OBJS) $(PROFUSETEST_OBJS) $(MUSCLEHMMERTEST_OBJS) $(PROFUSETEST2_OBJS))
+	rm -f $(notdir align score createRandomSequence drawSequences evaluateEntentes profile2hmmer profile2fasta sequence2profile alignedFasta2profile xml2profile quicktest seqantest profusetest musclehmmertest newseqantest profusetest2 $(TRAIN_OBJS) $(ALIGN_OBJS) $(SCORE_OBJS) $(PROFILE2HMMER_OBJS) $(CREATERANDOMSEQUENCE_OBJS) $(DRAWSEQUENCES_OBJS) $(EVALUATEENTENTES_OBJS) $(PROFILE2HMMER_OBJS) $(PROFILE2FASTA_OBJS) $(SEQUENCE2PROFILE_OBJS) $(XML2PROFILE_OBJS) $(ALIGNEDFASTA2PROFILE_OBJS) $(QUICKTEST_OBJS) $(SEQANTEST_OBJS) $(NEWSEQANTEST_OBJS) $(PROFUSETEST_OBJS) $(MUSCLEHMMERTEST_OBJS) $(PROFUSETEST2_OBJS))
 
 #========================================
 # FILE EXTENSIONS.  Extensions and prefixes for different types of

@@ -9,7 +9,12 @@
  *  All rights reserved.
  *****************************************************************************/
 
-#include <boost/preprocessor/punctuation/comma.hpp>
+
+
+///Useful for modifying GALOSH_DEF_OPT behavior.  See vector-valued options below
+#ifndef TMP_EXTRA_STUFF
+#define TMP_EXTRA_STUFF BOOST_PP_EMPTY()
+#endif
 
 /**
  * \note Note the lack of "protective" \#define symbols in this file.  We may
@@ -33,8 +38,9 @@ GALOSH_DEF_OPT(configFile,string,"ProfuseTest.cfg","File path for the configurat
  * 8 is after I added startWithUniformPositions, startWithPositionsDrawnFromPrior, etc.
  * 9 is after I added convert_tab_output_to_log_double
  *10 is after I added CPU time
+ *11 TAH 7/12 moved options to BOOST program options
  */
-GALOSH_DEF_OPT(saveFileVersion,uint32_t,10U,"Version of the save file");
+GALOSH_DEF_OPT(saveFileVersion,uint32_t,11U,"Version of the save file");
 
 GALOSH_DEF_OPT(saveResultsToFile,bool,true,"Should we save the results to a file?");
 GALOSH_DEF_OPT(saveResultsParentDirectory,string,".","Parent directory name");
@@ -532,8 +538,7 @@ GALOSH_DEF_OPT(profileLengths,myVector<int>,myVector<int>(1,100) BOOST_PP_COMMA(
 
 GALOSH_DEF_OPT(numTrainingSequencesPerProfiles,myVector<uint32_t>,myVector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Number of training sequences for each profile");
 
-#ifndef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
-#define PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
+#ifdef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
 myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.1){tmp_default_conservation_rates.push_back(x);}
 #endif
 /**

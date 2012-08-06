@@ -47,11 +47,6 @@ using galosh::Random;
 #include "DynamicProgramming.hpp"
 using galosh::DynamicProgramming;
 
-#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
-#define DEFAULT_VARIABLES_MAP       m_profusetest_options_map
-
-#include "CommandlineParameters.hpp"
-
 #include <string>
 using std::string;
 #include <iostream>
@@ -71,10 +66,14 @@ using std::clock;
 
 #include "boost/filesystem.hpp"
 
-#include "boost/program_options.hpp"
-
+#include <boost/program_options.hpp>
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+#include "CommandlineParameters.hpp"
+/// TAH 6/12 predefining DEFAULT_OPTIONS_DESCRIPION and DEFAULT_VARIABLES_MAP will
+/// replace those values in the CommandlineParameters macros
+#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
+#define DEFAULT_VARIABLES_MAP       m_parameters.m_options_map
 
 namespace galosh {
 
@@ -85,153 +84,44 @@ template <class ResidueType,
           class SequenceResidueType>
   class ProfuseTest {
   public:
-    po::options_description m_profusetest_options;
-    po::variables_map m_profusetest_options_map;
-	///TAH 6/12 constructor from commandline options
-	ProfuseTest(int argc,char **argv) {
-       m_profusetest_options.add_options()("help","This help message.");
-       #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
-       po::store(po::parse_command_line(argc, argv, m_profusetest_options), m_profusetest_options_map);
-       ifstream configFile(GET_configFile().c_str());
-       if (configFile)
-       {
-          po::store(parse_config_file(configFile, m_profusetest_options), m_profusetest_options_map);
-          configFile.close();
-       }
-       po::notify(m_profusetest_options_map);
-       if(m_profusetest_options_map.count("help")) {
-    	  cout << m_profusetest_options << endl;
-    	  exit(0);
-       }
-    }
     typedef Sequence<SequenceResidueType> SequenceType;
 
-    /// TAH 6/12 predefining DEFAULT_OPTIONS_DESCRIPION and DEFAULT_VARIABLES_MAP will
-    /// replace those values in the CommandlineParameters macros
-#undef GALOSH_DEF_OPT
-#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) inline TYPE GET_##NAME() {return m_profusetest_options_map[#NAME].as<TYPE>();}
-    #include "ProfuseTestOptions.hpp"
-#undef GALOSH_DEF_OPT
-
     class Parameters :
-      public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
+       public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
     {
-      // Boost serialization
+    public:
+       po::options_description m_profusetest_options;
+
     private:
       typedef typename ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_gibbs_parameters_t;
+      // Boost serialization
       friend class boost::serialization::access;
       template<class Archive>
       void serialize ( Archive & ar, const unsigned int /* file_version */ )
       {
         // save/load base class information
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
+//        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
+//        ar & m_options_map;
+/**
+ * \note This is a hack based on Paul's suggestion that the real use for the serialization
+ * is for making a permanent file copy of parameter values, not for deserialization.
+ * The "correct" way to do this would be to serialize (and potentially deserialize) the
+ * the variables_map object (m_options_map) within the Parameters object.
+ * Unfortunately, the variables_map object ultimately stores objects of type boost:any,
+ * which are not serializable in the general case. However, since we tend to store only
+ * doubles, unsigned ints and strings, it may be serializable for these particular cases.
+ * That counts as a \todo for the current time.
+ */
 
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveResultsToFile );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveResultsParentDirectory );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( resultsFilePrefix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( tabFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( parametersFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueProfileTrees );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( trueProfileTreeFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveStartingProfiles );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( startingProfileTreeFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTestProfiles );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( testProfileTreeFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( savePatternSequences );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( patternSequencesFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTests );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( testsFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrainingSequences );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( trainingSequencesFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTestingSequences );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( testingSequencesFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueTrainingAlignments );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( trainingTrueAlignmentsFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveTrueTestingAlignments );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( trueTestingAlignmentsFileSuffix );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( saveFileVersion );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( numProfiles );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( profileLengths );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( sharedPositionRate );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( numTrainingSequencesPerProfiles );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( numTestingSequencesPerProfile );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( conservationRates );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( useDeletionsForInsertionsParameters );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedDeletionsCounts );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedInsertionsCounts );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedDeletionLengthAsProfileLengthFractions );
-// fixyfix        ar & BOOST_SERIALIZATION_NVP( expectedInsertionLengthAsProfileLengthFractions );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedDeletionLength );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( minExpectedInsertionLength );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( preAlignInsertion );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( postAlignInsertion );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorStrength );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorStrength_internal_transitions );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoM );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoI );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorMtoD );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorItoM );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorItoI );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorDtoM );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( priorDtoD );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( reportGibbsMean );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( reportGibbsMode );
-//fixyfix        ar & boost::serialization::make_nvp("numTrueProfiles", &(GET_numTrueProfiles()));
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( numStartingProfiles );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_scalar );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxNtoN );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxBtoD );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoI );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxMtoD );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxItoI );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxDtoD );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformGlobals_maxCtoC );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithUniformPositions );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithGlobalsDrawnFromPrior );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( startWithPositionsDrawnFromPrior );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testViterbi );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutViterbi );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testTruepath );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutTruepath );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToTrue );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateSymmeterizedKullbackLeiblerDistancesToStarting );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutDistances );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( calculateProfileProfileAlignments );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelOpenCost );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( profileProfileIndelExtensionCost );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testTrueProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutTrueProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testStartingProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutStartingProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testConditionalThenUnconditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutConditionalThenUnconditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalThenConditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalThenConditionalProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testConditionalGibbsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutConditionalGibbsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testUnconditionalGibbsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( coutUnconditionalGibbsProfile );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testLengthadjust );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testBaldi );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( testBaldiSiegel );
-//fixyfix        ar & BOOST_SERIALIZATION_NVP( alsoStartWithEvenPositions );
-      } // serialize( Archive &, const unsigned int )
+#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) \
+        ar & boost::serialization::make_nvp(#NAME, ((galosh::Parameters)(*this)).m_options_map[#NAME].as<TYPE>())
+        #include "ProfuseTestOptions.hpp"
+#undef GALOSH_DEF_OPT
+      } // serialize Parameters
 
     public:
   
       /// PARAMETERS
-
 
       Parameters ();
       virtual ~Parameters () {};
@@ -1053,6 +943,24 @@ template <class ResidueType,
      */  
     ProfuseTest ();
 
+	///TAH 6/12 constructor from commandline options
+    ProfuseTest (int argc,char **argv) {
+
+       m_parameters.m_profusetest_options.add_options()("help","This help message.");
+       po::store(po::parse_command_line(argc, argv, m_parameters.m_profusetest_options), m_parameters.m_options_map);
+       ifstream configFile(GET_configFile().c_str());
+       if (configFile)
+       {
+          po::store(parse_config_file(configFile, m_parameters.m_profusetest_options), m_parameters.m_options_map);
+          configFile.close();
+       }
+       po::notify(m_parameters.m_options_map);
+       if(m_parameters.m_options_map.count("help")) {
+    	  cout << m_parameters.m_profusetest_options << endl;
+    	  exit(0);
+       }
+    }
+
     /**
      * Construct a profuse test object, using the provided seed.
      */  
@@ -1062,10 +970,16 @@ template <class ResidueType,
 
     void
     start ();
+#undef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
+#undef GALOSH_DEF_OPT
+#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) inline TYPE GET_##NAME() {return m_parameters.m_options_map[#NAME].as<TYPE>();}
+       #include "ProfuseTestOptions.hpp"
+#undef GALOSH_DEF_OPT
 
   }; // End class ProfuseTest
 
   //======//// potentially non-inline implementations ////========//
+
 
   ////// Class galosh::ProfuseTest::Parameters ////
   template <class ResidueType,
@@ -1081,6 +995,12 @@ template <class ResidueType,
           cout << "[debug] ProfuseTest::Parameters::<init>()" << endl;
         } // End if DEBUG_All
         resetToDefaults();
+#undef GALOSH_DEF_OPT
+#define PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
+#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
+		  DEFAULT_OPTIONS_DESCRIPTION.add_options()(#NAME,po::value<TYPE>()->default_value(DEFAULTVAL) TMP_EXTRA_STUFF,HELP)
+        #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
+#undef GALOSH_DEF_OPT
       } // <init>()
 
   template <class ResidueType,
@@ -1152,109 +1072,11 @@ template <class ResidueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       copyFromNonVirtualDontDelegate (
         AnyParameters const & copy_from
-      )
-      {
-// fixyfix        saveResultsToFile =                            copy_from.saveResultsToFile;
-// fixyfix        saveResultsParentDirectory =                           copy_from.saveResultsParentDirectory;
-// fixyfix        resultsFilePrefix =                            copy_from.resultsFilePrefix;
-// fixyfix        tabFileSuffix =                            copy_from.tabFileSuffix;
-// fixyfix        parametersFileSuffix =                            copy_from.parametersFileSuffix;
-// fixyfix        saveTrueProfileTrees =                            copy_from.saveTrueProfileTrees;
-// fixyfix        trueProfileTreeFileSuffix =                            copy_from.trueProfileTreeFileSuffix;
-// fixyfix        saveStartingProfiles =                            copy_from.saveStartingProfiles;
-// fixyfix        startingProfileTreeFileSuffix =                            copy_from.startingProfileTreeFileSuffix;
-// fixyfix        saveTestProfiles =                            copy_from.saveTestProfiles;
-// fixyfix        testProfileTreeFileSuffix =                            copy_from.testProfileTreeFileSuffix;
-// fixyfix        savePatternSequences =                            copy_from.savePatternSequences;
-// fixyfix        patternSequencesFileSuffix =                            copy_from.patternSequencesFileSuffix;
-// fixyfix        saveTests =                            copy_from.saveTests;
-// fixyfix        testsFileSuffix =                            copy_from.testsFileSuffix;
-// fixyfix        saveTrainingSequences =                            copy_from.saveTrainingSequences;
-// fixyfix        trainingSequencesFileSuffix =                            copy_from.trainingSequencesFileSuffix;
-// fixyfix        saveTestingSequences =                            copy_from.saveTestingSequences;
-// fixyfix        testingSequencesFileSuffix =                            copy_from.testingSequencesFileSuffix;
-// fixyfix        saveTrueTrainingAlignments =                            copy_from.saveTrueTrainingAlignments;
-// fixyfix        trainingTrueAlignmentsFileSuffix =                            copy_from.trainingTrueAlignmentsFileSuffix;
-// fixyfix        saveTrueTestingAlignments =                            copy_from.saveTrueTestingAlignments;
-// fixyfix        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
-//        saveFileVersion =                              copy_from.saveFileVersion;
-// fixyfix        numProfiles =                                  copy_from.numProfiles;
-// fixyfix       profileLengths =                                copy_from.profileLengths;
-// fixyfix        sharedPositionRate =                           copy_from.sharedPositionRate;
-// fixyfix numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
-// fixyfix        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
-// fixyfix        conservationRates =                             copy_from.conservationRates;
-// fixyfix        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
-// fixyfix       expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
-// fixyfix        expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
-// fixyfix        expectedDeletionLengthAsProfileLengthFractions =                          copy_from.expectedDeletionLengthAsProfileLengthFractions;
-// fixyfix        expectedInsertionLengthAsProfileLengthFractions =                          copy_from.expectedInsertionLengthAsProfileLengthFractions;
-//fixyfix        minExpectedDeletionLength =                          copy_from.minExpectedDeletionLength;
-//fixyfix        minExpectedInsertionLength =                          copy_from.minExpectedInsertionLength;
-//fixyfix        preAlignInsertion =                          copy_from.preAlignInsertion;
-//fixyfix        postAlignInsertion =                          copy_from.postAlignInsertion;
-//fixyfix        priorStrength =                          copy_from.priorStrength;
-//fixyfix        priorStrength_internal_transitions =                          copy_from.priorStrength_internal_transitions;
-//fixyfix        priorMtoM =                          copy_from.priorMtoM;
-//fixyfix        priorMtoI =                          copy_from.priorMtoI;
-//fixyfix        priorMtoD =                          copy_from.priorMtoD;
-//fixyfix        priorItoM =                          copy_from.priorItoM;
-//fixyfix        priorItoI =                          copy_from.priorItoI;
-//fixyfix        priorDtoM =                          copy_from.priorDtoM;
-//fixyfix        priorDtoD =                          copy_from.priorDtoD;
-//fixyfix        reportGibbsMean =                          copy_from.reportGibbsMean;
-//fixyfix        reportGibbsMode =                          copy_from.reportGibbsMode;
-//Fixyfix        numTrueProfiles =                          copy_from.numTrueProfiles;
-//Fixyfix        numStartingProfiles =                          copy_from.numStartingProfiles;
-//fixyfix        startWithUniformGlobals =                          copy_from.startWithUniformGlobals;
-//fixyfix        startWithUniformGlobals_scalar =                          copy_from.startWithUniformGlobals_scalar;
-//fixyfix        startWithUniformGlobals_maxNtoN =                          copy_from.startWithUniformGlobals_maxNtoN;
-//fixyfix        startWithUniformGlobals_maxBtoD =                          copy_from.startWithUniformGlobals_maxBtoD;
-//fixyfix        startWithUniformGlobals_maxMtoI =                          copy_from.startWithUniformGlobals_maxMtoI;
-//fixyfix        startWithUniformGlobals_maxMtoD =                          copy_from.startWithUniformGlobals_maxMtoD;
-//fixyfix        startWithUniformGlobals_maxItoI =                          copy_from.startWithUniformGlobals_maxItoI;
-//fixyfix        startWithUniformGlobals_maxDtoD =                          copy_from.startWithUniformGlobals_maxDtoD;
-//fixyfix        startWithUniformGlobals_maxCtoC =                          copy_from.startWithUniformGlobals_maxCtoC;
-//fixyfix        startWithUniformPositions =                          copy_from.startWithUniformPositions;
-//fixyfix        startWithGlobalsDrawnFromPrior =                          copy_from.startWithGlobalsDrawnFromPrior;
-//fixyfix        startWithPositionsDrawnFromPrior =                          copy_from.startWithPositionsDrawnFromPrior;
-//fixyfix        testViterbi =                                   copy_from.testViterbi;
-//fixyfix        coutViterbi =                                   copy_from.coutViterbi;
-//fixyfix        testTruepath =                                   copy_from.testTruepath;
-//fixyfix        coutTruepath =                                   copy_from.coutTruepath;
-//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-//fixyfix        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-//fixyfix        coutDistances =     copy_from.coutDistances;
-//fixyfix        calculateProfileProfileAlignments =   copy_from.calculateProfileProfileAlignments;
-//fixyfix        profileProfileIndelOpenCost =   copy_from.profileProfileIndelOpenCost;
-//fixyfix        profileProfileIndelExtensionCost =   copy_from.profileProfileIndelExtensionCost;
-//fixyfix        testTrueProfile =                          copy_from.testTrueProfile;
-//fixyfix        coutTrueProfile =                          copy_from.coutTrueProfile;
-//fixyfix        testStartingProfile =                          copy_from.testStartingProfile;
-//fixyfix        coutStartingProfile =                          copy_from.coutStartingProfile;
-//fixyfix        testUnconditionalProfile =                     copy_from.testUnconditionalProfile;
-//fixyfix        coutUnconditionalProfile =                     copy_from.coutUnconditionalProfile;
-//fixyfix        testUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.testUnconditionalWithFixedStartingGlobalsProfile;
-//fixyfix        coutUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.coutUnconditionalWithFixedStartingGlobalsProfile;
-//fixyfix        testUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.testUnconditionalWithFixedTrueGlobalsProfile;
-//fixyfix        coutUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.coutUnconditionalWithFixedTrueGlobalsProfile;
-//fixyfix        testConditionalThenUnconditionalProfile =      copy_from.testConditionalThenUnconditionalProfile;
-//fixyfix        coutConditionalThenUnconditionalProfile =      copy_from.coutConditionalThenUnconditionalProfile;
-//fixyfix        testUnconditionalThenConditionalProfile =      copy_from.testUnconditionalThenConditionalProfile;
-//fixyfix        coutUnconditionalThenConditionalProfile =      copy_from.coutUnconditionalThenConditionalProfile;
-//fixyfix        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-//fixyfix        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-//fixyfix        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-//fixyfix        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-//fixyfix        testConditionalGibbsProfile =                     copy_from.testConditionalGibbsProfile;
-//fixyfix        coutConditionalGibbsProfile =                     copy_from.coutConditionalGibbsProfile;
-//fixyfix        testUnconditionalGibbsProfile =                     copy_from.testUnconditionalGibbsProfile;
-//fixyfix        coutUnconditionalGibbsProfile =                     copy_from.coutUnconditionalGibbsProfile;
-//fixyfix        testLengthadjust = copy_from.testLengthadjust;
-//fixyfix        testBaldi = copy_from.testBaldi;
-//fixyfix        testBaldiSiegel = copy_from.testBaldiSiegel;
-//fixyfix        alsoStartWithEvenPositions = copy_from.alsoStartWithEvenPositions;
-      } // copyFromNonVirtualDontDelegate( AnyParameters const & )
+  )
+  {
+	     this->m_options_map.clear();
+	     this->m_options_map = copy_from.m_options_map;
+  } // copyFromNonVirtualDontDelegate( AnyParameters const & )
 
 
   template <class ResidueType,
@@ -3686,7 +3508,7 @@ template <class ResidueType,
         ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
         assert( parameters_stream.good() );
         boost::archive::xml_oarchive parameters_oa( parameters_stream );
-        parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
+        //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
         //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
         //parameters_oa << 
         //  boost::serialization::make_nvp( "m_parameters", m_parameters );

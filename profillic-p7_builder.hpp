@@ -24,7 +24,11 @@ extern "C" {
 #include "esl_alphabet.h"
 #include "esl_dmatrix.h"
 #include "esl_getopts.h"
+
+  ///  \note "new" is a keyword is c++.  This define replaces "new" with "_new" for the duration of esl_msa.h
+#define new _new
 #include "esl_msa.h"
+#undef new
 #include "esl_msacluster.h"
 #include "esl_msaweight.h"
 #include "esl_random.h"

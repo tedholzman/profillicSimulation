@@ -3,12 +3,14 @@
 # command line.  Makefiles should not set these.  These variables are
 # for C/C++ compilation, and linking.
 ## -pg is for use with gprof.  Use on CFLAGS and on LDFLAGS
+## note: -pg produces a gmon.out file, which is medium-sized and confusing.
+## It is just as well not to use -pg if you're not using gmon.
 #CFLAGS		= -Wall -pg
 #CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
 #                 --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
 CFLAGS	        = -g3 -gdwarf-2
 #JFLAGS		=
-LDFLAGS	= -pg
+#LDFLAGS	= -pg
 
 # OPTIMIZE with the -O option.  Override from the command line for
 # building debug versions.
@@ -45,8 +47,8 @@ LDFLAGS	= -pg
 
 #========================================
 ### Paul added these for HMMer (and squid) support
-HMMER_CFLAGS 	= -I./hmmer/src -I./hmmer/squid
-HMMER_LDFLAGS 	= -L./hmmer/src -L./hmmer/squid
+HMMER_CFLAGS 	= -I./hmmer/src -I./hmmer/easel
+HMMER_LDFLAGS 	= -L./hmmer/src -L./hmmer/easel
 HMMER_LIBS	= $(if $(wildcard hmmer/libsquid.*),-lsquid,)  -lhmmer  # TAH temporary: why isn't squid built on hmmer on linux?
 #HMMER_LIBS	=  -lhmmer 
 #HMMER_CFLAGS 	=

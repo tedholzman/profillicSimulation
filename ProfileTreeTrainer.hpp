@@ -92,7 +92,7 @@ template <class ResidueType,
     typedef Sequence<SequenceResidueType> SequenceType;
 
     class Parameters :
-    public ProfileTrainer<ProfileTreeRoot<ResidueType, ProbabilityType>, ScoreType, MatrixValueType, SequenceResidueType, InternalNodeType>::Parameters
+       public ProfileTrainer<ProfileTreeRoot<ResidueType, ProbabilityType>, ScoreType, MatrixValueType, SequenceResidueType, InternalNodeType>::Parameters
     {
       // Boost serialization
     private:

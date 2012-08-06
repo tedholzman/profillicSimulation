@@ -73,7 +73,7 @@ main ( int argc, char **argv )
  *             Galosh::Parameters
  *
  * At this point we are only replacing native ProfuseTest parameters with
- * entries in ProfuseTest.m_profusetest_options_map.  So there are several
+ * entries in Parameters.m_options_map.  So there are several
  * non-native m_parameters entries
  */
   profuse_test.m_parameters.maxIterations = 1000;

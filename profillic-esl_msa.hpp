@@ -84,7 +84,10 @@ extern "C" {
 #ifdef eslAUGMENT_SSI
 #include "esl_ssi.h"
 #endif
+  // TAH 8/12 avoid keyword "new" in c++
+#define new _new
 #include "esl_msa.h"
+#undef new
 #include "esl_vectorops.h"
 #include "esl_wuss.h"
 }
@@ -94,9 +97,12 @@ extern "C" {
 
 /////////////// For profillic-hmmer //////////////////////////////////
 #include "profillic-hmmer.hpp"
+// TAH 8/12 see note above
+#define new _new
 extern "C" {
 #include "esl_msa.h"
 }
+#undef new
 #define eslMSAFILE_PROFILLIC       98103  /* A galosh profile (from profillic)   */
 /////////////// End profillic-hmmer //////////////////////////////////
 

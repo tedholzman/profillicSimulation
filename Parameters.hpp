@@ -55,6 +55,8 @@ using namespace std;
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/version.hpp>
+#include "boost/program_options.hpp"
+#include "boost/program_options/variables_map.hpp"
 
 namespace galosh {
 
@@ -73,6 +75,8 @@ namespace galosh {
     VERBOSITY_High =   100,
     VERBOSITY_All =   1000
   };
+
+namespace po = boost::program_options;
   
   class Parameters {
     // Boost serialization
@@ -83,10 +87,12 @@ namespace galosh {
     {
       ar & BOOST_SERIALIZATION_NVP( debug );
       ar & BOOST_SERIALIZATION_NVP( verbosity );
+      /** \todo should serialize m_options_map when we learn how */
+
     } // serialize( Archive &, const unsigned int )
 
   public:
-  
+    po::variables_map m_options_map;
     DebugLevel debug;
 #define DEFAULT_debug DEBUG_None
 

@@ -951,8 +951,15 @@ template <class ResidueType,
        ifstream configFile(GET_configFile().c_str());
        if (configFile)
        {
-          po::store(parse_config_file(configFile, m_parameters.m_profusetest_options), m_parameters.m_options_map);
-          configFile.close();
+         try {
+           po::store(parse_config_file(configFile, m_parameters.m_profusetest_options), m_parameters.m_options_map);
+         }
+         catch( const std::exception& e )
+         {
+           std::cerr << std::endl << "ERROR PARSING ProfuseTest CONFIG FILE: " << e.what() << std::endl;
+           exit( 1 );
+         }
+         configFile.close();
        }
        po::notify(m_parameters.m_options_map);
        if(m_parameters.m_options_map.count("help")) {
@@ -3475,7 +3482,7 @@ template <class ResidueType,
 
       // Results
       string run_unique_id =
-        ( "v" + boost::lexical_cast<string>( GET_saveFileVersion() ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_type" );
+        ( "v" + boost::lexical_cast<string>( GET_saveFileVersion() ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_ProfuseTest2" );
       fs::path dirname =
         ( static_cast<fs::path>( GET_saveResultsParentDirectory() ) /
           run_unique_id );
@@ -3500,22 +3507,23 @@ template <class ResidueType,
           return;
         }
 
-        // Parameters file
-        fs::path parameters_filename =
-          ( GET_resultsFilePrefix() +
-            run_unique_id +
-            GET_parametersFileSuffix() );
-        ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
-        assert( parameters_stream.good() );
-        boost::archive::xml_oarchive parameters_oa( parameters_stream );
-        //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
-        //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
-        //parameters_oa << 
-        //  boost::serialization::make_nvp( "m_parameters", m_parameters );
-        //parameters_oa << 
-        //  boost::serialization::make_nvp( "Parameters", m_parameters );
-        //parameters_oa.close();
-        //parameters_stream.close();
+        // TODO: REPLACE by saving a reusable ProfuseTest.cfg file with all of the current options.
+        // // Parameters file
+        // fs::path parameters_filename =
+        //   ( GET_resultsFilePrefix() +
+        //     run_unique_id +
+        //     GET_parametersFileSuffix() );
+        // ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
+        // assert( parameters_stream.good() );
+        // boost::archive::xml_oarchive parameters_oa( parameters_stream );
+        // //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
+        // //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
+        // //parameters_oa << 
+        // //  boost::serialization::make_nvp( "m_parameters", m_parameters );
+        // //parameters_oa << 
+        // //  boost::serialization::make_nvp( "Parameters", m_parameters );
+        // //parameters_oa.close();
+        // //parameters_stream.close();
 
         if( GET_saveTests() ) {
           fs::path tests_filename =

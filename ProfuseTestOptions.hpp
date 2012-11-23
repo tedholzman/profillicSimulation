@@ -71,7 +71,11 @@ GALOSH_DEF_OPT(saveTrueTestingAlignments,bool,true,"Shall we save true test alig
 GALOSH_DEF_OPT(trueTestingAlignmentsFileSuffix,string,".testing_alignments.fasta","True test alignment fasta file suffix");
 
 /**
- * We do the whole thing a number of different times, starting over with
+ * Number of times we start from the very beginning (with a new pattern sequence).
+ */
+GALOSH_DEF_OPT(numProfiles,uint32_t,1,"Number of root profiles to run");
+/**
+ * For each "root" profile, do the whole simulation process a number of different times, starting over with
  * a new pattern sequence.
  */
 GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of different times, starting over with a new pattern sequence.");
@@ -80,7 +84,6 @@ GALOSH_DEF_OPT(numTrueProfiles,uint32_t,4,"We do the whole thing a number of dif
   * different starting profiles.  This is that number.
   */
 GALOSH_DEF_OPT(numStartingProfiles,uint32_t,4,"Number of starting profiles per root profile.");
-GALOSH_DEF_OPT(numProfiles,uint32_t,1,"Number of root profiles to run");
 GALOSH_DEF_OPT(numTestingSequencesPerProfile,uint32_t,20,"Number of test sequences per profile");
 
 /**

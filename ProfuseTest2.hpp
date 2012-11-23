@@ -943,30 +943,8 @@ template <class ResidueType,
      */  
     ProfuseTest ();
 
-	///TAH 6/12 constructor from commandline options
-    ProfuseTest (int argc,char **argv) {
-
-       m_parameters.m_profusetest_options.add_options()("help","This help message.");
-       po::store(po::parse_command_line(argc, argv, m_parameters.m_profusetest_options), m_parameters.m_options_map);
-       ifstream configFile(GET_configFile().c_str());
-       if (configFile)
-       {
-         try {
-           po::store(parse_config_file(configFile, m_parameters.m_profusetest_options), m_parameters.m_options_map);
-         }
-         catch( const std::exception& e )
-         {
-           std::cerr << std::endl << "ERROR PARSING ProfuseTest CONFIG FILE: " << e.what() << std::endl;
-           exit( 1 );
-         }
-         configFile.close();
-       }
-       po::notify(m_parameters.m_options_map);
-       if(m_parameters.m_options_map.count("help")) {
-    	  cout << m_parameters.m_profusetest_options << endl;
-    	  exit(0);
-       }
-    }
+    ///TAH 6/12 constructor from commandline options
+   ProfuseTest ( int argc, char **argv );
 
     /**
      * Construct a profuse test object, using the provided seed.
@@ -2577,6 +2555,44 @@ template <class ResidueType,
       } // End if DEBUG_All
       // Do nothing else
     } // <init>()
+
+  template <class ResidueType,
+            class ProbabilityType,
+            class ScoreType,
+            class MatrixValueType,
+            class SequenceResidueType>
+  GALOSH_INLINE_INIT
+  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
+  /**
+   * Construct a profuse test object, using the given command-line arguments.
+   */  
+  ProfuseTest ( const int argc, char ** const argv ) :
+      m_parameters(),
+      m_random( static_cast<uint32_t>( std::time( NULL ) ) )
+  {
+    m_parameters.m_profusetest_options.add_options()( "help", "This help message." );
+    po::store( po::parse_command_line( argc, argv, m_parameters.m_profusetest_options ), m_parameters.m_options_map );
+    ifstream configFile( GET_configFile().c_str() );
+    if( configFile ) {
+      try {
+        po::store( parse_config_file( configFile, m_parameters.m_profusetest_options ), m_parameters.m_options_map );
+      } catch( const std::exception& e ) {
+        std::cerr << std::endl << "ERROR PARSING ProfuseTest CONFIG FILE: " << e.what() << std::endl;
+        exit( 1 );
+      }
+      configFile.close();
+    }
+    po::notify( m_parameters.m_options_map );
+    if( m_parameters.m_options_map.count("help") ) {
+      cout << m_parameters.m_profusetest_options << endl;
+      exit( 0 );
+    }
+    if( m_parameters.m_options_map.count("seed") ) {
+      if( GET_seed() != 0 ) {
+        m_random.setSeed( GET_seed() );
+      }
+    }
+  } // <init>( const int argc, char ** const argv )
 
   template <class ResidueType,
             class ProbabilityType,

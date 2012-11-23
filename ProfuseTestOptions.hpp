@@ -27,6 +27,11 @@
  */
 GALOSH_DEF_OPT(configFile,string,"ProfuseTest.cfg","File path for the configuration file");
 
+/**
+ * The RNG seed..
+ */
+GALOSH_DEF_OPT(seed,uint32_t,0,"The seed to use, or 0 to use the current time.");
+
 /** Save file version
  * 1 was the beginning
  * 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.

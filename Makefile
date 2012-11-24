@@ -6,10 +6,10 @@
 ## note: -pg produces a gmon.out file, which is medium-sized and confusing.
 ## It is just as well not to use -pg if you're not using gmon.
 #CFLAGS		= -Wall -pg
-#CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
-#                 --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
+# CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
+#                  --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
 #CFLAGS	        = -g3 -gdwarf-2
-CFLAGS	        = -03 -DNDEBUG=1
+CFLAGS	        = -03 -DNDEBUG=1 -D__PROFUSE_USE_AMINOS -DALLOW_BOLTZMANN_GIBBS
 #JFLAGS		=
 #LDFLAGS	= -pg
 
@@ -293,7 +293,7 @@ SeqanTests.cpp
 NEWSEQANTEST_SOURCES = $(HMMOC_LIB)/Algebra.cpp \
 NewSeqanTests.cpp
 
-default: quicktest
+default: profusetest2
 
 align: $(ALIGN_SOURCES) $(ALIGN_INCS) $(ALIGN_OBJS) $(MUSCLE_CPPOBJ)
 	     $(CXX_LINK) -o align $(ALIGN_OBJS) $(MUSCLE_CPPOBJ)

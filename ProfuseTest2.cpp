@@ -57,8 +57,8 @@ main ( int argc, char **argv )
 
 #ifdef ALLOW_BOLTZMANN_GIBBS
 //fixyfix
-  profuse_test.m_parameters.testBaldi = false;
-  profuse_test.m_parameters.testBaldiSiegel = true;
+  //profuse_test.m_parameters.testBaldi = false;
+  //profuse_test.m_parameters.testBaldiSiegel = true;
   profuse_test.m_parameters.siegelEpsilonScaleFactor = 1.5;
   profuse_test.m_parameters.siegelMaxRefiningThePeakSteps_positions = 1000;
   profuse_test.m_parameters.siegelRefiningThePeakStepsConvergenceThreshold = 1E-5;

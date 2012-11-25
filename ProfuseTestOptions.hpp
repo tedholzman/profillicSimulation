@@ -9,7 +9,8 @@
  *  All rights reserved.
  *****************************************************************************/
 
-
+// TODO: I think this is _not_ the final solution - I think the options should somehow be chained together later, but I'm not sure how that's done. - DOPTE
+#include "ProfileTrainerOptions.hpp"
 
 ///Useful for modifying GALOSH_DEF_OPT behavior.  See vector-valued options below
 #ifndef TMP_EXTRA_STUFF
@@ -499,7 +500,7 @@ GALOSH_DEF_OPT(coutUnconditionalGibbsProfile,bool,true,"Write the forward (etc) 
  /**
   * Also use lengthadjust to train the profiles, and calculate forward (etc) scores using it?
   */
-GALOSH_DEF_OPT(testLengthadjust,bool,true,"Use lengthadjust to train the profiles, and calculate forward (etc) scores using it?");
+GALOSH_DEF_OPT(testLengthadjust,bool,true,"Also use lengthadjust to train the profiles, and calculate forward (etc) scores using it?");
 
  /**
   * Also use Baldi to train the profiles, and calculate forward (etc) scores using it?
@@ -510,6 +511,7 @@ GALOSH_DEF_OPT(testBaldi,bool,false,"Use Baldi to train the profiles, and calcul
   * Also use Baldi / Siegel to train the profiles, and calculate forward (etc) scores using it?
   */
 GALOSH_DEF_OPT(testBaldiSiegel,bool,true,"Use Baldi / Siegel to train the profiles, and calculate forward (etc) scores using it?");
+
 
  /**
   * If startWithUniformPositions or startWithPositionsDrawnFromPrior are
@@ -533,7 +535,7 @@ GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated?");
 #undef TMP_EXTRA_STUFF
 #define TMP_EXTRA_STUFF ->multitoken()
 
-GALOSH_DEF_OPT(profileLengths,myVector<int>,myVector<int>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles/fasta seqs");
+GALOSH_DEF_OPT(profileLengths,myVector<uint32_t>,myVector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Lengths of the profiles/fasta seqs");
 
 /**
   * Use this number of sequences when training.

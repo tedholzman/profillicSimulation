@@ -3432,11 +3432,9 @@ template <class ResidueType,
       if( m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior ) {
         matchEmissionPrior.reinitializeToEven( m_parameters.priorStrength );
         //matchEmissionPrior.reinitializeToEven( ( .5f * m_parameters.priorStrength ) );
-        m_parameters.matchEmissionPrior = &matchEmissionPrior;
       } // End if m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior
       if( m_parameters.usePriors || m_parameters.startWithGlobalsDrawnFromPrior ) {
         globalPrior.reinitializeToEven( m_parameters.priorStrength );
-        m_parameters.globalPrior = &globalPrior;
         // NOTE: We will do additional set-up of the global prior for each
         // change in the profile length, since we need to adjust for profile
         // length.
@@ -4311,20 +4309,20 @@ template <class ResidueType,
       std::ofstream tab_stream;
       if(m_parameters.saveResultsToFile ) {
         if( !fs::exists(m_parameters.saveResultsParentDirectory ) ) {
-          cout << "Creating directory \"" << m_parameters.saveResultsParentDirectory << "\"..";
+          cout << "Creating directory " << m_parameters.saveResultsParentDirectory << "..";
           cout.flush();
           fs::create_directory(m_parameters.saveResultsParentDirectory);
           cout << ".done." << endl;
 //        } else {
-//          cout << "Directory \"" << m_parameters.saveResultsParentDirectory << "\" exists." << endl;
+//          cout << "Directory " << m_parameters.saveResultsParentDirectory << " exists." << endl;
         }
         if( !fs::exists( dirname ) ) {
-          cout << "Creating directory \"" << dirname << "\"..";
+          cout << "Creating directory " << dirname << "..";
           cout.flush();
           fs::create_directory( dirname );
           cout << ".done." << endl;
         } else {
-          cout << "Directory \"" << dirname << "\" exists." << endl;
+          cout << "Directory " << dirname << " exists." << endl;
           cout << "Please use a different seed or erase that directory." << endl;
           return;
         }
@@ -4910,6 +4908,10 @@ template <class ResidueType,
 //            globalPrior[ 0 ][ Transition::fromDeletion ][ TransitionFromDeletion::toMatch ] = 1.0f + ( m_parameters.priorStrength * m_parameters.priorDtoM );
 //            globalPrior[ 0 ][ Transition::fromDeletion ][ TransitionFromDeletion::toDeletion ] = 1.0f + ( m_parameters.priorStrength * m_parameters.priorDtoD );
           } // End if usePriors
+          if( m_parameters.usePriors ) {
+            m_parameters.matchEmissionPrior = &matchEmissionPrior;
+            m_parameters.globalPrior = &globalPrior;
+          }
           
           vector<uint32_t> profile_profile_alignment;
           double profile_profile_alignment_cost;
@@ -5595,7 +5597,6 @@ template <class ResidueType,
                         } else {
                           if(
                              ( !m_parameters.alsoStartWithEvenPositions || ( starting_profile_i > 0 ) ) &&
-                             //m_parameters.usePriors &&
                             m_parameters.startWithPositionsDrawnFromPrior &&
                              ( !m_parameters.startWithUniformPositions || ( starting_profile_i < ( ( m_parameters.numStartingProfiles / 2 ) + ( m_parameters.alsoStartWithEvenPositions ? 1 : 0 ) ) ) ) // If startWithUniformPositions is true ALSO, then only start the first half from the prior, and the last half with uniform (excluding the 0th, if alsoStartWithEvenPositions).
                           ) {
@@ -5619,8 +5620,8 @@ template <class ResidueType,
 
                         // Globals either start as even (default) or are random
                         // (if startWithUniformGlobals is true), in which case
-                        // they are either drawn from the prior (if usePriors
-                        // is true) or are set to be uniform up to a maximum --
+                        // they are either drawn from the prior 
+                        // or are set to be uniform up to a maximum --
                         // unless trainProfileGlobals is false, in which case
                         // they start as the true globals (and stay there).
                         if( m_parameters.trainProfileGlobals == false ) {
@@ -5634,7 +5635,6 @@ template <class ResidueType,
                           // they will be set to their respective parent's
                           // values before they are trained.
                           if(
-                            m_parameters.usePriors &&
                             m_parameters.startWithGlobalsDrawnFromPrior
                           ) {
                             // Draw globals from the prior

@@ -1,0 +1,16 @@
+Overtraining - diminishing returns after euclidean distance threshold of 1E-3 or 1E-4. (AAs)
+  * Does this happen for DNA?
+
+Idea: plot training score versus test score for the different methods...
+Idea: track each of the 10 starting profiles across the iterations.. (to see to what extent the "mean" response lies - another idea is to plot the SEM).
+
+TODO: Investigate: Baum-Welch methods outperform QA methods for .25-conserved DNA. 
+  - also there's quick overtraining..
+TODO: Q: Could it be that the profileValueMinimum isn't being applied before evaluating the Baldi/Siegel changes?  Doublecheck.
+TODO: test variation by indels (expected # and expected length)
+TODO: Try variously different starting profiles - eg start from all-same-match-emissions, but not all-.25.  Try this in conjunction with letting the true GC content vary.
+TODO: Try with a true profile derived from a transposon
+TODO: Try with a true profile that has pos-specific indels
+ -- might require new code for drawing sequences from such profiles 
+ -- in this context, test the "alignment profile" post-hoc approach to getting back to pos-spec profiles.
+TODO: Try CQA-then-CBW (? actually, maybe not - since there's evidence of overtraining, I'm not sure it's justified)

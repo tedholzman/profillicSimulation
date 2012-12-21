@@ -8,8 +8,8 @@
 #CFLAGS		= -Wall -pg
 # CFLAGS         = -O3 -funroll-loops -Winline -DNDEBUG=1 \
 #                  --param max-inline-insns-single=10000 --param inline-unit-growth=500 --param large-function-growth=1000
-#CFLAGS	        = -g3 -gdwarf-2
-CFLAGS	        = -O3 -DNDEBUG=1 -D__PROFUSE_USE_AMINOS -DALLOW_BOLTZMANN_GIBBS
+CFLAGS	        = -g3 -gdwarf-2 -D__PROFUSE_USE_AMINOS -DALLOW_BOLTZMANN_GIBBS
+#CFLAGS	        = -O3 -DNDEBUG=1 -D__PROFUSE_USE_AMINOS -DALLOW_BOLTZMANN_GIBBS
 #JFLAGS		=
 #LDFLAGS	= -pg
 
@@ -48,8 +48,8 @@ CFLAGS	        = -O3 -DNDEBUG=1 -D__PROFUSE_USE_AMINOS -DALLOW_BOLTZMANN_GIBBS
 
 #========================================
 ### Paul added these for HMMer (and squid) support
-HMMER_CFLAGS 	= -I./hmmer/src -I./hmmer/lib/easel
-HMMER_LDFLAGS 	= -L./hmmer/src -L./hmmer/lib/easel
+HMMER_CFLAGS 	= -I./hmmer/src -I./hmmer/easel
+HMMER_LDFLAGS 	= -L./hmmer/src -L./hmmer/easel
 HMMER_LIBS	= $(if $(wildcard hmmer/libsquid.*),-lsquid,)  -lhmmer  # TAH temporary: why isn't squid built on hmmer on linux?
 #HMMER_LIBS	=  -lhmmer 
 #HMMER_CFLAGS 	=
@@ -67,11 +67,12 @@ ALGLIB_LIBS =
 
 #========================================
 ### Paul added these for Seqan support
-SEQAN_CFLAGS 	= -I./seqan-trunk/core/include
+### Ted added seqan_extra for support of older programs 
+SEQAN_CFLAGS 	= -I./seqan-trunk/core/include -I./seqan_extra
 SEQAN_LDFLAGS 	=
 SEQAN_LIBS	=
 #SEQAN_CFLAGS 	=
-#SEQAN_LDFLAGS =
+#SEQAN_LDFLAGS  =
 #SEQAN_LIBS	=
 
 #========================================
@@ -79,8 +80,9 @@ SEQAN_LIBS	=
 ### For Boost, eg "g++ -I/sw/include/boost-1_44_0/ profile_xml.cpp DNAResidue.o AminoAcidResidue.o DSSPResidue.o Profile.o -o profile_xml -L/sw/lib/ -lboost_serialization":
 BOOST_CFLAGS 	= -I./boost-include
 BOOST_LDFLAGS 	= -L./boost-lib
-BOOST_LIBS	= -lboost_serialization -lboost_graph -lboost_filesystem -lboost_system \
-                   -lboost_program_options \
+### TAH 12/12/12 why does bjam work but this Makefile load the incorrect /usr/lib libraries?  This is part of the ld command that bjam uses.  
+BOOST_LIBS	=   boost-lib/libboost_filesystem.a boost-lib/libboost_program_options.a boost-lib/libboost_graph.a boost-lib/libboost_system.a boost-lib/libboost_serialization.a
+#BOOST_LIBS	= -lboost_serialization -lboost_graph -lboost_filesystem -lboost_system -lboost_program_options
 #                   -lboost_unit_test_framework -lboost_test_exec_monitor
 
 ###==============================================
@@ -122,7 +124,7 @@ ProfileTreeTrainer.hpp \
 ProfileGibbs.hpp \
 ProfuseTest.hpp \
 ProfuseTest2.hpp \
-Parameters.hpp \
+$(PROLIFIC_LIB)/Parameters.hpp \
 CommandlineParameters.hpp \
 ProfuseTestOptions.hpp \
 $(PROFUSE_LIB)/Profuse.hpp \
@@ -186,7 +188,7 @@ XML2PROFILE_INCS = $(PROFUSETEST_INCS)
 
 QUICKTEST_INCS = Galosh.hpp \
 $(HMMOC_LIB)/Algebra.hpp \
-Parameters.hpp
+$(PROLIFIC_LIB)/Parameters.hpp
 
 SEQANTEST_INCS =  $(INCS)
 
@@ -423,6 +425,7 @@ CC_SYSLIBS	=
 # C++ Compile and Link
 #
 CXX		= g++
+#CXX		= clang
 CXX_COMPILE	= $(CXX) -c  $(OPTFLAGS) $(CFLAGS) $(CXX_CFLAGS) $(CXX_SYSCFLAGS)
 CXX_LINK	= $(CXX) $(LDFLAGS) $(CXX_LDFLAGS) $(CXX_SYSLDFLAGS) $(CXX_LIBS)
 CXX_CFLAGS 	= $(BOOST_CFLAGS) $(SEQAN_CFLAGS) $(ALGLIB_CFLAGS) $(HMMER_CFLAGS) $(MUSCLE_CFLAGS) \

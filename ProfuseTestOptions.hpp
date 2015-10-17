@@ -533,14 +533,14 @@ GALOSH_DEF_OPT(profileLengths,myVector<uint32_t>,myVector<uint32_t>(1,100) BOOST
   *
   * UPDATE: This is now a pointer to a vector.  Tests will be run foreach
   * num_training_sequences_per_profile_i in
-  * numTrainingSequencesPerProfiles.  If it is NULL, { 10, 100 } will be
+  * numTrainingSequencesPerProfiles.  If it is NULL, { 100 } will be
   * used (this is the default).
   */
 
 GALOSH_DEF_OPT(numTrainingSequencesPerProfiles,myVector<uint32_t>,myVector<uint32_t>(1,100) BOOST_PP_COMMA() string("100"),"Number of training sequences for each profile");
 
 #ifdef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
-myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.1){tmp_default_conservation_rates.push_back(x);}
+myVector<double> tmp_default_conservation_rates; for(double x=0.25; x<1.0; x+=0.25){tmp_default_conservation_rates.push_back(x);}
 #endif
 /**
  * When making the true root profile from the pattern sequence, use this
@@ -549,7 +549,7 @@ myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.
  *
  * UPDATE: This is now a pointer to a vector of rates.  Tests will be run
  * foreach conservation_rate in conservationRates.  If it is NULL,
- * { .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0 }
+ * { .25, .5, .75 }
  * will be used (this is the default).
  *
  * \note Note: It is hard to initialize a vector with different values.  This
@@ -557,12 +557,12 @@ myVector<double> tmp_default_conservation_rates; for(double x=0.1; x<=1.0; x+=0.
  * doing it as above, and initializing with .begin() and .end() vector iterators
  *
  */
-GALOSH_DEF_OPT(conservationRates,myVector<double>,myVector<double>(tmp_default_conservation_rates) BOOST_PP_COMMA() string("0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0"),"Iterate through each of these conservation rates");
+GALOSH_DEF_OPT(conservationRates,myVector<double>,myVector<double>(tmp_default_conservation_rates) BOOST_PP_COMMA() string("0.25 0.5 0.75"),"Iterate through each of these conservation rates");
 
 /// Make the expected number of deletions be .5 or 1.0 per sequence.
 /// Note that this will apply to the insertions, too, unless
 /// m_parameters.useDeletionsForInsertionsParameters is set to false.
-GALOSH_DEF_OPT(expectedDeletionsCounts,myVector<double>,myVector<double>(1,1.0) BOOST_PP_COMMA() string("0.5"),"Iterate through this set of expected deletions.  Note that deletions-counts=insertion counts unless useDeletionsForInsertionsParameters is false");
+GALOSH_DEF_OPT(expectedDeletionsCounts,myVector<double>,myVector<double>(1,1.0) BOOST_PP_COMMA() string("1.0"),"Iterate through this set of expected deletions.  Note that deletions-counts=insertion counts unless useDeletionsForInsertionsParameters is false");
 
 /**
   * If useDeletionsForInsertionsParameters is false, the insertionOpen
@@ -574,7 +574,7 @@ GALOSH_DEF_OPT(expectedDeletionsCounts,myVector<double>,myVector<double>(1,1.0) 
   * { 1.0 } will be used.
   * @see useDeletionsForInsertionsParameters
   */
-GALOSH_DEF_OPT(expectedInsertionsCounts,myVector<double>,myVector<double>(1,0.5) BOOST_PP_COMMA() string("0.5"),"Iterate through this series of expected insertions.  useDeletionsForInsertionsParameters must be false or this parameter is ignored.");
+GALOSH_DEF_OPT(expectedInsertionsCounts,myVector<double>,myVector<double>(1,1.0) BOOST_PP_COMMA() string("1.0"),"Iterate through this series of expected insertions.  useDeletionsForInsertionsParameters must be false or this parameter is ignored.");
 
 /**
    * The deletionExtension value of the true profile will be the minimum of
@@ -597,7 +597,7 @@ GALOSH_DEF_OPT(expectedInsertionsCounts,myVector<double>,myVector<double>(1,0.5)
 // profile_length / 10 )...
 // Note that this will apply to the insertions, too, unless
 // m_parameters.useDeletionsForInsertionsParameters is set to false.
-GALOSH_DEF_OPT(expectedDeletionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.0125) BOOST_PP_COMMA() string("0.0125"),"Expected lengths of deletions. Iterate through all lengths in this list.");
+GALOSH_DEF_OPT(expectedDeletionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.1) BOOST_PP_COMMA() string("0.1"),"Expected lengths of deletions. Iterate through all lengths in this list.");
 
 // Make the expected length of each insertion be ( profile_length / 20 ) or (
 // profile_length / 10 )...
@@ -617,7 +617,7 @@ GALOSH_DEF_OPT(expectedDeletionLengthAsProfileLengthFractions,myVector<double>,m
 *
 * @see useDeletionsForInsertionsParameters
 */
-GALOSH_DEF_OPT(expectedInsertionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.1) BOOST_PP_COMMA() string("0.0125"),"Expected lengths of deletions. Iterate through all lengths in this list.");
+GALOSH_DEF_OPT(expectedInsertionLengthAsProfileLengthFractions,myVector<double>,myVector<double>(1,0.1) BOOST_PP_COMMA() string("0.1"),"Expected lengths of deletions. Iterate through all lengths in this list.");
 
 
 /** do this after the vector definition section */

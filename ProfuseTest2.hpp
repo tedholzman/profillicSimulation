@@ -951,16 +951,13 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       typedef ProfileTreeRoot<ResidueType, ProbabilityType> ProfileType;
       typedef ProfileTreeRoot<ResidueType, ProbabilityType> InternalNodeType;
 
-      typedef typename ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_tree_trainer_parameters_t;
-      profile_tree_trainer_parameters_t params;
-      
       po::options_description cmdline_options;
-      //cmdline_options.add( generic ).add( params.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
-      cmdline_options.add( generic ).add( params.m_galosh_options_description );
+      //cmdline_options.add( generic ).add( m_parameters.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
+      cmdline_options.add( generic ).add( m_parameters.m_galosh_options_description );
       
       po::options_description config_file_options;
-      //config_file_options.add( params.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
-      config_file_options.add( params.m_galosh_options_description );
+      //config_file_options.add( m_parameters.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
+      config_file_options.add( m_parameters.m_galosh_options_description );
       
       po::options_description visible( "Basic options" );
       //visible.add( generic ).add( config );
@@ -969,11 +966,11 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       po::positional_options_description p;
       p.add( "config", 1 );
           
-      store( po::command_line_parser( argc, argv ).options( cmdline_options ).positional( p ).run(), params.m_galosh_options_map );
-      notify( params.m_galosh_options_map );
+      store( po::command_line_parser( argc, argv ).options( cmdline_options ).positional( p ).run(), m_parameters.m_galosh_options_map );
+      notify( m_parameters.m_galosh_options_map );
       
       // TODO: REMOVE
-      //cout << params << endl;
+      //cout << m_parameters << endl;
       //cout << endl;
       
 #define USAGE() " " << argv[ 0 ] << " [options] [<config file>]"
@@ -984,42 +981,42 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       // Read in the config file.
       if( config_file.length() > 0 ) {
       // TODO: REMOVE
-        cout << "Config file is: " << params.m_galosh_options_map["config"].template as<string>() << endl;
+        cout << "Config file is: " << m_parameters.m_galosh_options_map["config"].template as<string>() << endl;
         ifstream ifs( config_file.c_str() );
         if( !ifs ) {
-          //if(!params.m_galosh_options_map["config"].defaulted()) {         //TAH 3/13 don't choke if config file was defaulted and is missing
+          //if(!m_parameters.m_galosh_options_map["config"].defaulted()) {         //TAH 3/13 don't choke if config file was defaulted and is missing
              cout << "Can't open the config file named \"" << config_file << "\"\n";
              return;
              //} 
         } else {
-          store( parse_config_file( ifs, config_file_options ), params.m_galosh_options_map );
-          notify( params.m_galosh_options_map );
+          store( parse_config_file( ifs, config_file_options ), m_parameters.m_galosh_options_map );
+          notify( m_parameters.m_galosh_options_map );
         }
       }
       
-      if( params.m_galosh_options_map.count( "help" ) > 0 ) {
+      if( m_parameters.m_galosh_options_map.count( "help" ) > 0 ) {
         cout << "Usage: " << USAGE() << endl;
         cout << visible << "\n";
         return;
       }
       
-      if( params.m_galosh_options_map.count( "version" ) ) {
+      if( m_parameters.m_galosh_options_map.count( "version" ) ) {
         cout << "ProfuseTest, version 1.2\n";
         return;
       }
       
-      //if( params.m_galosh_options_map.count( "debug" ) ) {
+      //if( m_parameters.m_galosh_options_map.count( "debug" ) ) {
       //  cout << "[DEBUGGING]\n";
       //  return;
       //}
       
       // Required options
-      if( params.m_galosh_options_map.count( "config" ) == 0 ) {
+      if( m_parameters.m_galosh_options_map.count( "config" ) == 0 ) {
         cout << "Usage: " << USAGE() << endl;
         return;
       }
       
-      if( params.m_galosh_options_map.count( "seed" ) ) {
+      if( m_parameters.m_galosh_options_map.count( "seed" ) ) {
         if( m_parameters.seed != 0 ) {
           m_random.setSeed( m_parameters.seed );
         }
@@ -1069,7 +1066,36 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
     start ()
     {
-      bool be_verbose = true;//false;//( m_parameters.verbosity >= VERBOSITY_Meta );
+      bool be_verbose = ( m_parameters.verbosity > VERBOSITY_Low );
+
+      if( true || ( m_parameters.verbosity > VERBOSITY_High ) ) {
+        // Print out the parameters
+        for( const auto& it : ( m_parameters.m_galosh_options_map ) ) {
+          std::cout << it.first.c_str() << " = ";
+          auto& value = it.second.value();
+          if( auto v = boost::any_cast<bool>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<double>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<float>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<unsigned int>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<int>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<std::string>(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<myVector<double> >(&value) ) {
+            std::cout << *v;
+          } else if( auto v = boost::any_cast<myVector<uint32_t> >(&value) ) {
+            std::cout << *v;
+          } else {
+            std::cout << "error";
+          }
+          std::cout << endl;
+        }
+        std::cout << endl;
+      } // End if we should print out all of the parameters
 
       typename DynamicProgramming<ResidueType, ProbabilityType, ScoreType, MatrixValueType>::template DirichletMixtureMatchEmissionPrior<float> matchEmissionPrior;
 
@@ -1078,7 +1104,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       // Set up the priors
       if( m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior ) {
         matchEmissionPrior.reinitializeToEven( m_parameters.priorStrength );
-        //matchEmissionPrior.reinitializeToEven( ( .5f * m_parameters.priorStrength ) );
       } // End if m_parameters.usePriors || m_parameters.startWithPositionsDrawnFromPrior
       if( m_parameters.usePriors || m_parameters.startWithGlobalsDrawnFromPrior ) {
         globalPrior.reinitializeToEven( m_parameters.priorStrength );
@@ -1086,7 +1111,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         // change in the profile length, since we need to adjust for profile
         // length.
 
-        // TODO: Make these parameters
+        // TODO: Make these parameters, DEHACKIFY
         double priorStrength_flanking_self_transitions = 100;
         double priorStrength_flanking_other_transitions = 100;
         globalPrior[ 0 ][ Transition::fromPreAlign ][ TransitionFromPreAlign::toPreAlign ] = ( priorStrength_flanking_self_transitions * .01 );
@@ -1112,130 +1137,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       } // End if usePriors
 
       vector<Test> tests( LAST_TEST_ID + 1 );
-      //for( test_id = 0; test_id <= LAST_TEST_ID; test_id++ ) {
-      //  tests[ test_id ].name = testNames[ test_id ];
-      //  tests[ test_id ].isRun = runTest[ test_id ];
-      //  tests[ test_id ].isCout = coutTest[ test_id ];
-      //  tests[ test_id ].parametersModifier = testParametersModifier[ test_id ];
-      //  if( ( test_id == TEST_ID_true ) ||
-      //      ( test_id == TEST_ID_starting ) ) {
-      //    tests[ test_id ].startingGlobalsTest = NULL; // ignored
-      //    tests[ test_id ].startingPositionsTest = NULL; // ignored
-      //  } else { // test_id is not true or starting
-      //    if( testStartingGlobals[ test_id ] == TEST_ID_starting ) {
-      //      tests[ test_id ].startingGlobalsTest = NULL; // use starting profile
-      //    } else if( testStartingGlobals[ test_id ] == TEST_ID_true ) {
-      //      tests[ test_id ].startingGlobalsTest =
-      //        &tests[ test_id ]; // use true profile
-      //    } else {
-      //      tests[ test_id ].startingGlobalsTest =
-      //        &tests[ testStartingGlobals[ test_id ] ];
-      //    }
-      //
-      //    if( testStartingPositions[ test_id ] == TEST_ID_starting ) {
-      //      tests[ test_id ].startingPositionsTest = NULL; // use starting profile
-      //    } else if( testStartingPositions[ test_id ] == TEST_ID_true ) {
-      //      tests[ test_id ].startingPositionsTest =
-      //        &tests[ test_id ]; // use true profile
-      //    } else {
-      //      tests[ test_id ].startingPositionsTest =
-      //        &tests[ testStartingPositions[ test_id ] ];
-      //    }
-      //  } // End if test_id is true or starting .. else ..
-      //  if( test_id == TEST_ID_conditional ) {
-      //    tests[ test_id ].coutLeftBrace = "(";
-      //    tests[ test_id ].coutRightBrace = ")";
-      //  } else if( test_id == TEST_ID_unconditional ) {
-      //    tests[ test_id ].coutLeftBrace = "<";
-      //    tests[ test_id ].coutRightBrace = ">";
-      //  }
-      //} // End foreach test_id, set up tests[ test_id ]
-
-
-      // Set up the convenient arrays...
-      /**
-       * For convenience we number the tests from 0 to LAST_TEST_ID.
-       *
-       * If runTest[ test_num ] is true, we are running the corresponding test;
-       * the user controls this via the appropriate parameter (in the
-       * Parameters class).  Note that some tests will be run that the user did
-       * not specify in parameters: any test that is the starting value for a
-       * test that is to be run will also be run.  So for example, if
-       * parameters.testUnconditionalThenConditionalProfile is true, then
-       * runTest[ TEST_ID_unconditional ] will be set to true even if
-       * parameters.testUnconditionalProfile is false.
-       *
-       * @see testStartingGlobals
-       * @see testStartingPositions
-       */
-      //bool runTest[ LAST_TEST_ID + 1 ];
-
-      /**
-       * For convenience we number the tests from 0 to LAST_TEST_ID.
-       *
-       * Test test_num will use the test profile with id testStartingGlobals[
-       * test_num ] as the starting value for the globals, if runTest[ test_num
-       * ] is true.  For the true profile (TEST_ID_true) and starting profile
-       * (TEST_ID_starting), this value is ignored.
-       *
-       * NOTE: The order of the tests matters.  No test should have a test_id
-       * lower than its testStartingGlobals value, and only the true profile
-       * and the starting profile should have test_ids equal to their
-       * testStartingGlobals values.
-       * 
-       * @see testStartingPositions
-       */
-      //uint32_t testStartingGlobals[ LAST_TEST_ID + 1 ];
-
-      /**
-       * For convenience we number the tests from 0 to LAST_TEST_ID.
-       *
-       * Test test_num will use the test profile with id testStartingPositions[
-       * test_num ] as the starting value for the positions, if runTest[
-       * test_num ] is true.  For the true profile (TEST_ID_true) and starting
-       * profile (TEST_ID_starting), this value is ignored.
-       *
-       * NOTE: The order of the tests matters.  No test should have a test_id
-       * lower than its testStartingPositions value, and only the true profile
-       * and the starting profile should have test_ids equal to their
-       * testStartingPositions values.
-       * 
-       * @see testStartingGlobals.
-       */
-      //uint32_t tests[ LAST_TEST_ID + 1 ].startingPositionsTest;
-
-      /**
-       * For convenience we number the tests from 0 to LAST_TEST_ID.
-       *
-       * We write a subset of results to STDOUT (cout) during training.  These
-       * bools indicate which tests we write to cout.  Note that all tests are
-       * written to the file, regardless of the value of coutTest[ test_num ].
-       *
-       * If runTest[ test_num ] and coutTest[ test_num ] are both true, 
-       * then put the test results of test test_num on the STDOUT stream too.
-       */
-      //bool coutTest[ LAST_TEST_ID + 1 ];
-
-      /**
-       * For convenience we number the tests from 0 to LAST_TEST_ID.
-       *
-       * The parameters modifier for each test.
-       */
-      //typename ProfileTrainer<RootType, ScoreType, MatrixValueType>::ParametersModifier tests[ LAST_TEST_ID + 1 ].parametersModifier;
-
-      //string testNames[ LAST_TEST_ID + 1 ] =
-      //{
-      //  "true",
-      //  "starting",
-      //  "conditional",
-      //  "unconditional",
-      //  "unconditional_with_fixed_starting_globals",
-      //  "unconditional_with_fixed_true_globals",
-      //  "conditional_then_unconditional",
-      //  "unconditional_then_conditional",
-      //  "unconditional_with_fixed_starting_globals_then_with_fixed_positions",
-      //  "unconditional_with_fixed_true_globals_then_with_fixed_positions"
-      //}; // test_names
 
       // Set up the tests.
       if( m_parameters.testTrueProfile ) {
@@ -1905,7 +1806,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
           tests[ TEST_ID_baldi_siegel_lengthadjust_unconditional ].parametersModifier.isModified_maxBaumWelchInverseScalar = true;
         } // End if testLengthadjust
       } // End if testBaldiSiegel
-      // endmark
 
 
       uint32_t test_id;
@@ -1917,8 +1817,8 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       while ( cycle_run_tests_again ) {
         cycle_run_tests_again = false;
         for( test_id = 0; test_id <= LAST_TEST_ID; test_id++ ) {
-    // TODO: REMOVE
-          //cout << "Here I am about to crash: test_id is " << test_id << endl;
+          // TODO: REMOVE
+          //cout << "test_id is " << test_id << endl;
           //cout << "Test name: " << tests[ test_id ].name << endl;
 
           if( !tests[ test_id ].isRun ) {
@@ -1945,9 +1845,9 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
       uint32_t last_test_id = tests.size() - 1;
 
-      if( be_verbose ) {
+      if( m_parameters.verbosity >= VERBOSITY_Meta ) {
         cout << "Training with seed " << m_random.getSeed() << ":" << endl;
-      } // End if be_verbose
+      } // End if VERBOSITY_Meta
 
       // Results
       string run_unique_id =
@@ -1956,8 +1856,8 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         ( static_cast<fs::path>( m_parameters.saveResultsParentDirectory ) /
           run_unique_id );
       std::ofstream tab_stream;
-      if(m_parameters.saveResultsToFile ) {
-        if( !fs::exists(m_parameters.saveResultsParentDirectory ) ) {
+      if( m_parameters.saveResultsToFile ) {
+        if( !fs::exists( m_parameters.saveResultsParentDirectory ) ) {
           cout << "Creating directory " << m_parameters.saveResultsParentDirectory << "..";
           cout.flush();
           fs::create_directory(m_parameters.saveResultsParentDirectory);
@@ -1975,33 +1875,49 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
           cout << "Please use a different seed or erase that directory." << endl;
           return;
         }
+        // Parameters file
+        fs::path parameters_filename =
+           ( m_parameters.resultsFilePrefix +
+             run_unique_id +
+             m_parameters.parametersFileSuffix );
+         ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
+        assert( parameters_stream.good() );
 
-        // TODO: REPLACE by saving a reusable ProfuseTest.cfg file with all of the current options.
-        // // Parameters file
-        // fs::path parameters_filename =
-        //   ( m_parameters.resultsFilePrefix +
-        //     run_unique_id +
-        //     m_parameters.parametersFileSuffix );
-        // ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
-        // assert( parameters_stream.good() );
-        // boost::archive::xml_oarchive parameters_oa( parameters_stream );
-        // //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );  //fixyfix
-        // //parameters_oa << BOOST_SERIALIZATION_NVP( m_parameters );
-        // //parameters_oa << 
-        // //  boost::serialization::make_nvp( "m_parameters", m_parameters );
-        // //parameters_oa << 
-        // //  boost::serialization::make_nvp( "Parameters", m_parameters );
-        // //parameters_oa.close();
-        // //parameters_stream.close();
+        // Print out the parameters
+        for( const auto& it : ( m_parameters.m_galosh_options_map ) ) {
+          parameters_stream << it.first.c_str() << " = ";
+          auto& value = it.second.value();
+          if( auto v = boost::any_cast<bool>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<double>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<float>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<unsigned int>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<int>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<std::string>(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<myVector<double> >(&value) ) {
+            parameters_stream << *v;
+          } else if( auto v = boost::any_cast<myVector<uint32_t> >(&value) ) {
+            parameters_stream << *v;
+          } else {
+            parameters_stream << "error";
+          }
+          parameters_stream << endl;
+        }
+        parameters_stream << endl;
+        parameters_stream.close();
 
-        // TODO: PUT BACK.  CAUSING AN INFITE TEMPLATE RECURSION - WHY?
-        //if( m_parameters.saveTests ) {
-        //  fs::path tests_filename =
-        //    ( m_parameters.resultsFilePrefix +
-        //      run_unique_id +
-        //      m_parameters.testsFileSuffix );
-        //      writeXML( tests, ( dirname / tests_filename ).string().c_str() );
-        //} // End if saveTests
+        if( m_parameters.saveTests ) {
+          fs::path tests_filename =
+            ( m_parameters.resultsFilePrefix +
+              run_unique_id +
+              m_parameters.testsFileSuffix );
+              writeXML( tests, ( dirname / tests_filename ).string().c_str() );
+        } // End if saveTests
 
         fs::path tab_filename =
           ( m_parameters.resultsFilePrefix +
@@ -2518,21 +2434,21 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       clock_t start_time, end_time; // For calculating the testCPUtime.
               
       for( uint32_t conservation_rate_i = 0;
-           conservation_rate_i < ( m_parameters.conservationRates.size() >0 ? m_parameters.conservationRates.size() : 10U );
+           conservation_rate_i < ( m_parameters.conservationRates.size() > 0 ? m_parameters.conservationRates.size() : 3U );
            conservation_rate_i++
       ) {
         double conservation_rate =
           ( m_parameters.conservationRates.size()>0 ?
             m_parameters.conservationRates[ conservation_rate_i ] :
-            ( .1 * ( conservation_rate_i + 1 ) ) );
+            ( .25 * ( conservation_rate_i + 1 ) ) );
         for( uint32_t profile_length_i = 0;
-             profile_length_i < ( m_parameters.profileLengths.size()>0 ? m_parameters.profileLengths.size() : 10U );
+             profile_length_i < ( m_parameters.profileLengths.size() > 0 ? m_parameters.profileLengths.size() : 10U );
              profile_length_i++
         ) {
           uint32_t profile_length =
-            ( m_parameters.profileLengths.size()>0 ?
+            ( m_parameters.profileLengths.size() > 0 ?
               m_parameters.profileLengths[ profile_length_i ] :
-              ( 10 * ( profile_length_i + 1 ) ) );
+              ( 100 * ( profile_length_i + 1 ) ) );
 
           // Do additional setup of the transition priors for those transitions
           // observed many times (since the number of transitions depends on
@@ -2566,13 +2482,13 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
           vector<uint32_t> profile_profile_alignment;
           double profile_profile_alignment_cost;
           for( uint32_t num_training_sequences_per_profile_i = 0;
-               num_training_sequences_per_profile_i < ( m_parameters.numTrainingSequencesPerProfiles.size()>0 ? m_parameters.numTrainingSequencesPerProfiles.size() : 2U );
+               num_training_sequences_per_profile_i < ( m_parameters.numTrainingSequencesPerProfiles.size() > 0 ? m_parameters.numTrainingSequencesPerProfiles.size() : 1U );
                num_training_sequences_per_profile_i++
           ) {
             uint32_t num_training_sequences_per_profile =
-              ( m_parameters.numTrainingSequencesPerProfiles.size()>0 ?
+              ( m_parameters.numTrainingSequencesPerProfiles.size() > 0 ?
                 m_parameters.numTrainingSequencesPerProfiles[ num_training_sequences_per_profile_i ] :
-                ( uint32_t )std::pow( 10.0, ( int )( num_training_sequences_per_profile_i + 1 ) ) );
+                ( uint32_t )std::pow( 100.0, ( int )( num_training_sequences_per_profile_i + 1 ) ) );
             for( uint32_t expected_deletions_count_i = 0;
                  expected_deletions_count_i < ( m_parameters.expectedDeletionsCounts.size() > 0 ? m_parameters.expectedDeletionsCounts.size() : 1U );
                  expected_deletions_count_i++
@@ -2598,7 +2514,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                   double expected_deletion_length_as_profile_length_fraction =
                     ( m_parameters.expectedDeletionLengthAsProfileLengthFractions.size() > 0 ?
                       m_parameters.expectedDeletionLengthAsProfileLengthFractions[ expected_deletion_length_as_profile_length_fraction_i ] :
-                      1.0 );
+                      0.1 );
                   for( uint32_t expected_insertion_length_as_profile_length_fraction_i = 0;
                        ( m_parameters.useDeletionsForInsertionsParameters ? ( expected_insertion_length_as_profile_length_fraction_i == 0 ) : ( expected_insertion_length_as_profile_length_fraction_i < (m_parameters.expectedInsertionLengthAsProfileLengthFractions.size() > 0 ? m_parameters.expectedInsertionLengthAsProfileLengthFractions.size() : 1U ) ) );
                        expected_insertion_length_as_profile_length_fraction_i++
@@ -2608,11 +2524,9 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         expected_deletion_length_as_profile_length_fraction :
                         ( ( m_parameters.expectedInsertionLengthAsProfileLengthFractions.size() > 0 ?
                             m_parameters.expectedInsertionLengthAsProfileLengthFractions[ expected_insertion_length_as_profile_length_fraction_i ] :
-                            1.0 ) ) );
+                            0.1 ) ) );
 
-                    // OLD:
-                    //longest_training_sequence_length = 0;
-                    //longest_testing_sequence_length = 0;
+                    // Pattern sequences
                     for( uint32_t true_profile_i = 0; true_profile_i < m_parameters.numTrueProfiles; true_profile_i++ ) {
                       // Generate a pattern sequence from the uniform
                       // distribution, of length profile_length.
@@ -2673,7 +2587,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                             } // End if this position is shared .. else ..
                           } // End foreach child
                         } // End foreach pos_i
-
                     
                       if( be_verbose ) {
                         cout << "Pattern sequences:" << endl;
@@ -2715,7 +2628,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                     
                       RootType & true_root =
                         ( *testProfileTree[ TEST_ID_true ].getProfileTreeRoot() );
-                      // TODO: REMOVE?
+                      // TODO: REMOVE?  This may now be unnecessary.
                       true_root.ensurePositionsKnowTheirRoot();
 
                       // "true" global transition params.
@@ -3112,30 +3025,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         test_sequences_stream.close();
                       } // End if saveResultsToFile
 
-                      // See if we need to reinitialize the training matrices
-                      // OLD. See below.
-                      //last_longest_training_sequence_length =
-                      //  longest_training_sequence_length;
-                      //for( uint32_t seq_i = 0;
-                      //     seq_i < training_fasta.numSequences();
-                      //     seq_i++ ) {
-                      //  if( training_fasta[ seq_i ].length() >
-                      //      longest_training_sequence_length ) {
-                      //    longest_training_sequence_length =
-                      //      training_fasta[ seq_i ].length();
-                      //  }
-                      //} // End foreach training fasta, see if it is the longest.
-                      // TODO: Put back?
-                      //if( longest_training_sequence_length >
-                      //    last_longest_training_sequence_length ) {
-                      //  training_forward_matrices.reinitialize(
-                      //    profile_length,
-                      //    training_fasta,
-                      //    training_fasta.numSequences(),
-                      //    longest_training_sequence_length
-                      //  );
-                      //} // End if longest_training_sequence_length > last_longest_training_sequence_length
-                      // NEW:
                       training_forward_rows_1.reinitialize(
                         training_fasta,
                         training_fasta.size()
@@ -3145,30 +3034,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         training_fasta.size()
                       );
 
-                      // See if we need to reinitialize the testing matrices
-                      // OLD.  See below.
-                      //last_longest_testing_sequence_length =
-                      //  longest_testing_sequence_length;
-                      //for( uint32_t seq_i = 0;
-                      //     seq_i < testing_fasta.numSequences();
-                      //     seq_i++ ) {
-                      //  if( testing_fasta[ seq_i ].length() >
-                      //      longest_testing_sequence_length ) {
-                      //    longest_testing_sequence_length =
-                      //      testing_fasta[ seq_i ].length();
-                      //  }
-                      //} // End foreach testing fasta, see if it is the longest.
-                      // TODO: Put back?
-                      //if( longest_testing_sequence_length >
-                      //    last_longest_testing_sequence_length ) {
-                      //  testing_forward_matrices.reinitialize(
-                      //    profile_length,
-                      //    testing_fasta,
-                      //    testing_fasta.numSequences(),
-                      //    longest_testing_sequence_length
-                      //  );
-                      //} // End if longest_testing_sequence_length > last_longest_testing_sequence_length
-                      // NEW:
                       testing_forward_rows_1.reinitialize(
                         testing_fasta,
                         testing_fasta.size()
@@ -3178,13 +3043,6 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         testing_fasta.size()
                       );
 
-                      // TODO: Start with the globals not correctly set.  If we start with even
-                      // transition probs, the training fails.
-                      //ProfileTreeType training_profile_tree =
-                      //  testProfileTree[ TEST_ID_true ];
-
-                        //ProfileTreeType( profile_length );
-                    
                       //ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType> tree_trainer =
                       //  ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>(
                       //    training_fasta,
@@ -3194,19 +3052,10 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       //
                       //tree_trainer.train();
                     
-                      // TODO: REMOVE.  TESTING
-                      //cout << tree_trainer.m_parameters;
-                    
-                      // TODO: REMOVE
-                      //if( true ) {
-                      //  return 0;
-                      //}
-              
                       if( be_verbose ) {    
                         cout << "The true profile tree is:" << endl;
                         cout << testProfileTree[ TEST_ID_true ] << endl;
                       } // End if be_verbose
-              
               
                       // Get "true profile" forward score for the training sequences.
                       // TODO: Put back -- or make new tree scorer..
@@ -3333,7 +3182,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                             starting_root[ Transition::fromMatch ][ TransitionFromMatch::toDeletion ] =
                               ( ( ProbabilityType )( m_random.nextUniform() ) * unif_max );
 #ifdef USE_DEL_IN_DEL_OUT
-                            // TODO: ERE I AM!!!
+                            // TODO: ERE I AM IN FIXING DEL_IN_DEL_OUT
 #else
                             starting_root[ Transition::fromMatch ][ TransitionFromMatch::toMatch ] =
                               ( ProbabilityType )( 1.0 ) -
@@ -3380,8 +3229,9 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                           // TODO: Incorporate into parameters.
 
                           // When doing lengthadjust, it is best to start with
-                          // the indel opens equally probable.
-                          if( m_parameters.testLengthadjust ) {
+                          // the indel opens (M->I and M->D) equally probable.
+                          // Note for consistency I'm doing this ALWAYS.
+                          //if( m_parameters.testLengthadjust ) {
                             ProbabilityType average_indel_open = 1.0;
                             average_indel_open -= starting_root[ Transition::fromMatch ][ TransitionFromMatch::toMatch ];
                             average_indel_open /= 2;
@@ -3389,7 +3239,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                               average_indel_open;
                             starting_root[ Transition::fromMatch ][ TransitionFromMatch::toInsertion ] =
                               average_indel_open;
-                          } // End if startWithEqualIndelOpens
+                           //} // End if startWithEqualIndelOpens
                         } // End if trainProfileGlobals
               
                         if( be_verbose ) {    
@@ -3398,7 +3248,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         } // End if be_verbose
               
                         // Get "starting profile" forward score for the training sequences.
-                        // TODO: Put back..
+                        // TODO: Put back option to use matrices?
                         //  dp.forward_score( 
                         //    m_parameters,
                         //    testProfileTree[ TEST_ID_starting ],
@@ -3677,7 +3527,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                             //  cout << "it should be unmodified (" << m_parameters.verbosity << ")" << endl;
                             //}
                             
-                            if( be_verbose && 1 ) {
+                            if( be_verbose && true ) {
                               cout << "Now (before training the " << tests[ test_id ].name << " profile), the profile tree is:" << endl;
                               cout << testProfileTree[ test_id ] << endl;
                             } // End if be_verbose

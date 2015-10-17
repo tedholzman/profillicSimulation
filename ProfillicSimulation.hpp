@@ -2,11 +2,11 @@
 ##  Library:
 ##      galosh::profillicSimulation
 ##  File:
-##      ProfuseTest2.hpp
+##      ProfillicSimulation.hpp
 ##  Author:
 ##      D'Oleris Paul Thatcher Edlefsen   paul@galosh.org
 ##  Description:
-##      Class definition for the ProfuseTest class, which implements the
+##      Class definition for the ProfillicSimulation class, which implements the
 ##      profillic simulations for evaluating the methods.
 ##
 #******************************************************************************
@@ -105,8 +105,8 @@ namespace fs = boost::filesystem;
 #include <boost/lexical_cast.hpp>
 
 /**
- * \class ProfuseTest
- * \brief Public / commandline interface to ProfuseTest.
+ * \class ProfillicSimulation
+ * \brief Public / commandline interface to ProfillicSimulation.
  *
  */
 namespace galosh {
@@ -116,7 +116,7 @@ template <class ResidueType,
           class ScoreType,
           class MatrixValueType,
           class SequenceResidueType>
-  class ProfuseTest {
+  class ProfillicSimulation {
   public:
     typedef Sequence<SequenceResidueType> SequenceType;
 
@@ -140,24 +140,24 @@ template <class ResidueType,
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_tree_trainer_parameters_t );
 
         /**
-         * ProfuseTest Members to be serialized
+         * ProfillicSimulation Members to be serialized
          *   TAH 9/13
          **/
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP( NAME )
-        #include "ProfuseTestOptions.hpp"  /// serialize ProfuseTest parameters
+        #include "ProfillicSimulationOptions.hpp"  /// serialize ProfillicSimulation parameters
 
       } // serialize( Archive &, const unsigned int )
 
     public:
   
       /**
-       * Define ProfuseTest::Parameters "members".  These are tightly tied to the options.
+       * Define ProfillicSimulation::Parameters "members".  These are tightly tied to the options.
        *    TAH 9/13
        **/
       #undef GALOSH_DEF_OPT
       #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) TYPE NAME
-      #include "ProfuseTestOptions.hpp"  /// declare Parameters members specific to ProfuseTest
+      #include "ProfillicSimulationOptions.hpp"  /// declare Parameters members specific to ProfillicSimulation
 
       Parameters ();
       virtual ~Parameters () {};
@@ -216,7 +216,7 @@ template <class ResidueType,
 #undef PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
 #undef GALOSH_DEF_OPT
 #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) inline void SET_##NAME( const TYPE new_value ) { /* cout << "SETTING " << #NAME; */ this->NAME = new_value; /* cout << " to "; COUT_IT( this->NAME ); cout << endl; */ }
-       #include "ProfuseTestOptions.hpp"
+       #include "ProfillicSimulationOptions.hpp"
 #undef GALOSH_DEF_OPT
 
     }; // End inner class Parameters
@@ -239,10 +239,10 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         // parameters too.
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( base_parameters_modifier_t );
 
-        // Serialize the ProfuseTest::ParameterModifierTemplate specific isModified_<member>s TAH 9/13
+        // Serialize the ProfillicSimulation::ParameterModifierTemplate specific isModified_<member>s TAH 9/13
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP(isModified_##NAME)
-        #include "ProfuseTestOptions.hpp"  //archive ProfuseTest::ParameterModifierTemplate isModified_<member>s
+        #include "ProfillicSimulationOptions.hpp"  //archive ProfillicSimulation::ParameterModifierTemplate isModified_<member>s
 
       } // serialize( Archive &, const unsigned int )
 
@@ -255,7 +255,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        **/
       #undef GALOSH_DEF_OPT
       #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) bool isModified_##NAME
-      #include "ProfuseTestOptions.hpp"  // Declare isModified<member>s for ProfuseTest::ParametersModifierTemplate
+      #include "ProfillicSimulationOptions.hpp"  // Declare isModified<member>s for ProfillicSimulation::ParametersModifierTemplate
 
       ParametersModifierTemplate ();
     
@@ -311,7 +311,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
     }; // End inner class ParametersModifierTemplate
 
-    typedef ParametersModifierTemplate<typename ProfuseTest::Parameters> ParametersModifier;
+    typedef ParametersModifierTemplate<typename ProfillicSimulation::Parameters> ParametersModifier;
 
     typedef ProfileTreeRoot<ResidueType, ProbabilityType> RootType;
     typedef ProfileTreeRoot<ResidueType, ProbabilityType> InternalNodeType;
@@ -503,39 +503,39 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
      * Construct a profuse test object, using the
      * time to get a random seed.
      */  
-    ProfuseTest ();
+    ProfillicSimulation ();
 
     ///TAH 6/12 constructor from commandline options
-   ProfuseTest ( int argc, char **argv );
+   ProfillicSimulation ( int argc, char **argv );
 
     /**
      * Construct a profuse test object, using the provided seed.
      */  
-    ProfuseTest (
+    ProfillicSimulation (
       uint32_t const seed
     );
 
     void
     start ();
 
-  }; // End class ProfuseTest
+  }; // End class ProfillicSimulation
 
   //======//// potentially non-inline implementations ////========//
 
 
-  ////// Class galosh::ProfuseTest::Parameters ////
+  ////// Class galosh::ProfillicSimulation::Parameters ////
   template <class ResidueType,
             class ProbabilityType,
             class ScoreType,
             class MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       Parameters ()
       {
          #ifdef DEBUG
-         cout << "[debug] ProfuseTest::Parameters::<init>()" << endl;
-         cout << "[debug] using ProfuseTestOptions.hpp" << endl;
+         cout << "[debug] ProfillicSimulation::Parameters::<init>()" << endl;
+         cout << "[debug] using ProfillicSimulationOptions.hpp" << endl;
          #endif
          /**
           *  Describe all options/parameters to the options_description object.  In the main
@@ -547,7 +547,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 #define PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
          #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
          this->galosh::Parameters::m_galosh_options_description.add_options()(#NAME,po::value<TYPE>(&NAME)->default_value(DEFAULTVAL) TMP_EXTRA_STUFF,HELP)
-         #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
+         #include "ProfillicSimulationOptions.hpp"  /// define all the commandline options for this module
 
       } // <init>()
 
@@ -558,12 +558,12 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   template <class AnyParameters>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       // Copy constructor
       Parameters ( const AnyParameters & copy_from )
       {
         //if( static_cast<galosh::Parameters>( copy_from ).debug >= DEBUG_All ) {
-        //  cout << "[debug] ProfuseTest::Parameters::<init>( copy_from )" << endl;
+        //  cout << "[debug] ProfillicSimulation::Parameters::<init>( copy_from )" << endl;
         //} // End if DEBUG_All
         copyFromNonVirtual( copy_from );
       } // <init>( AnyParameters const & )
@@ -575,15 +575,15 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   template <class AnyParameters>
   GALOSH_INLINE_TRIVIAL
-  typename ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters &
+  typename ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters &
       // Copy constructor/operator
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       operator= (
         const AnyParameters & copy_from
       )
       {
         if( copy_from.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::Parameters::operator=( copy_from )" << endl;
+          cout << "[debug] ProfillicSimulation::Parameters::operator=( copy_from )" << endl;
         } // End if DEBUG_All
         copyFromNonVirtual( copy_from );
         return *this;
@@ -597,7 +597,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class AnyParameters>
   GALOSH_INLINE_TRIVIAL
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       copyFromNonVirtual (
         AnyParameters const & copy_from
       )
@@ -605,7 +605,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
         ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
         //if( copy_from.debug >= DEBUG_All ) {
-        //  cout << "[debug] ProfuseTest::Parameters::copyFromNonVirtual( copy_from )" << endl;
+        //  cout << "[debug] ProfillicSimulation::Parameters::copyFromNonVirtual( copy_from )" << endl;
         //} // End if DEBUG_All
         copyFromNonVirtualDontDelegate( copy_from );
       } // copyFromNonVirtual( AnyParameters const & )
@@ -618,7 +618,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class AnyParameters>
   GALOSH_INLINE_COPY
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       copyFromNonVirtualDontDelegate (
         AnyParameters const & copy_from
       )
@@ -626,7 +626,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
     /// TAH 9/13
     #undef GALOSH_DEF_OPT
     #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = copy_from. NAME
-    #include "ProfuseTestOptions.hpp"  /// copy all ProfuseTest::Parameters members
+    #include "ProfillicSimulationOptions.hpp"  /// copy all ProfillicSimulation::Parameters members
 
       } // copyFromNonVirtualDontDelegate( AnyParameters const & )
 
@@ -638,7 +638,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_TRIVIAL
       void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       copyFrom ( const Parameters & copy_from )
       {
         copyFromNonVirtual( copy_from );
@@ -651,20 +651,20 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_REINITIALIZE
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       resetToDefaults ()
       {
         //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
         ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
         #ifdef DEBUG
-          cout << "[debug] ProfuseTest::Parameters::resetToDefaults()" << endl;
+          cout << "[debug] ProfillicSimulation::Parameters::resetToDefaults()" << endl;
         #endif
 
         /// TAH 9/13
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = this->Parameters::m_galosh_options_map[#NAME].template as<TYPE>()
-        #include "ProfuseTestOptions.hpp"  /// reset all Parameters members
-                                              /// (ProfuseTest and through inheritance tree)
+        #include "ProfillicSimulationOptions.hpp"  /// reset all Parameters members
+                                              /// (ProfillicSimulation and through inheritance tree)
 
       } // resetToDefaults()
 
@@ -676,7 +676,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template<class CharT, class Traits>
   GALOSH_INLINE_OSTREAM
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       writeParameters (
         std::basic_ostream<CharT,Traits>& os
       ) const
@@ -685,22 +685,22 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
         os << endl;
 
-        //Note: we must comment out [ProfuseTest] because it means something special to
+        //Note: we must comment out [ProfillicSimulation] because it means something special to
         //in configuration files sensu program_options
-        os << "#[ProfuseTest]" << endl;
+        os << "#[ProfillicSimulation]" << endl;
 
         /**
-         * write out all ProfuseTest specific parameters in the style of a configuration
+         * write out all ProfillicSimulation specific parameters in the style of a configuration
          * file, so that program_options parsers can read it back in
          *   TAH 9/13
          **/
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) os << #NAME << " = " << lexical_cast<string>(NAME) << endl
-        #include "ProfuseTestOptions.hpp"  /// write all ProfuseTest::Parameters members to os
+        #include "ProfillicSimulationOptions.hpp"  /// write all ProfillicSimulation::Parameters members to os
 
       } // writeParameters ( basic_ostream & )
 
-  ////// Class galosh::ProfuseTest::ParametersModifierTemplate ////
+  ////// Class galosh::ProfillicSimulation::ParametersModifierTemplate ////
   template <class ResidueType,
             class ProbabilityType,
             class ScoreType,
@@ -708,11 +708,11 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   template <class ParametersType>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       ParametersModifierTemplate ()
       {
         if( base_parameters_modifier_t::parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::ParametersModifierTemplate::<init>()" << endl;
+          cout << "[debug] ProfillicSimulation::ParametersModifierTemplate::<init>()" << endl;
         } // End if DEBUG_All
         isModified_reset();
       } // <init>()
@@ -725,12 +725,12 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class ParametersType>
   template <class AnyParametersModifierTemplate>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       // Copy constructor
       ParametersModifierTemplate ( const AnyParametersModifierTemplate & copy_from )
       {
         if( copy_from.parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::ParametersModifierTemplate::<init>( copy_from )" << endl;
+          cout << "[debug] ProfillicSimulation::ParametersModifierTemplate::<init>( copy_from )" << endl;
         } // End if DEBUG_All
         copyFromNonVirtual( copy_from );
       } // <init>( AnyParametersModifierTemplate const & )
@@ -743,15 +743,15 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class ParametersType>
   template <class AnyParametersModifierTemplate>
   GALOSH_INLINE_TRIVIAL
-  typename ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::template ParametersModifierTemplate<ParametersType> &
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  typename ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::template ParametersModifierTemplate<ParametersType> &
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       // Copy constructor/operator
   operator= (
         const AnyParametersModifierTemplate & copy_from
       )
       {
         if( copy_from.parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::ParametersModifierTemplate::operator=( copy_from )" << endl;
+          cout << "[debug] ProfillicSimulation::ParametersModifierTemplate::operator=( copy_from )" << endl;
         } // End if DEBUG_All
         copyFromNonVirtual( copy_from );
         return *this;
@@ -766,13 +766,13 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class AnyParametersModifierTemplate>
   GALOSH_INLINE_COPY
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       copyFromNonVirtual (
         AnyParametersModifierTemplate const & copy_from
       )
       {
         if( copy_from.parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::ParametersModifierTemplate::copyFromNonVirtual( copy_from )" << endl;
+          cout << "[debug] ProfillicSimulation::ParametersModifierTemplate::copyFromNonVirtual( copy_from )" << endl;
         } // End if DEBUG_All
 
         isModified_copyFromNonVirtual( copy_from );
@@ -790,7 +790,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class AnyParametersModifierTemplate>
   GALOSH_INLINE_COPY
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       isModified_copyFromNonVirtual (
         AnyParametersModifierTemplate const & copy_from
       )
@@ -798,10 +798,10 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         /// Copy all parent isModified_<member>s
         base_parameters_modifier_t::isModified_copyFromNonVirtual( copy_from );
 
-        /// TAH 9/13 copy all ProfuseTest::isModified_<member>s
+        /// TAH 9/13 copy all ProfillicSimulation::isModified_<member>s
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = copy_from.isModified_##NAME
-        #include "ProfuseTestOptions.hpp"  // Copy ProfuseTest::ParametersModifierTemplate::isModified_<member>s
+        #include "ProfillicSimulationOptions.hpp"  // Copy ProfillicSimulation::ParametersModifierTemplate::isModified_<member>s
 
       } // isModified_copyFromNonVirtual( AnyParametersModifierTemplate const & )
 
@@ -813,7 +813,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class ParametersType>
   GALOSH_INLINE_TRIVIAL
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       reset ()
       {
         isModified_reset();
@@ -828,15 +828,15 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class ParametersType>
   GALOSH_INLINE_REINITIALIZE
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       isModified_reset ()
       {
         /// Set all parent ParametersModifierTemplate::isModified_<member>s to false
         base_parameters_modifier_t::isModified_reset();
-        /// TAH 9/13 set all ProfuseTest::ParametersModifierTemplate::isModified_<member>s to false
+        /// TAH 9/13 set all ProfillicSimulation::ParametersModifierTemplate::isModified_<member>s to false
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = false;
-        #include "ProfuseTestOptions.hpp" // Reset ProfuseTest::ParametersModifierTemplate::isModified_<member>s to false
+        #include "ProfillicSimulationOptions.hpp" // Reset ProfillicSimulation::ParametersModifierTemplate::isModified_<member>s to false
 
       } // isModified_reset()
 
@@ -849,7 +849,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template<class CharT, class Traits>
   GALOSH_INLINE_OSTREAM
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       writeParametersModifier (
         std::basic_ostream<CharT,Traits>& os
       ) const
@@ -858,14 +858,14 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         os << endl;
 
         /// TAH 9/13 must comment out tags in square braces for program_options config file parser
-        os << "#[ProfuseTest]" << endl;
+        os << "#[ProfillicSimulation]" << endl;
         /**
-         * write out ProfuseTest::parameters iff they've been modified
+         * write out ProfillicSimulation::parameters iff they've been modified
          *   TAH 9/13
          **/
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) os << #NAME << " = " << lexical_cast<string>(galosh::ParametersModifierTemplate<ParametersType>::parameters. NAME)
-        #include "ProfuseTestOptions.hpp" // write out changed ProfuseTestParameters::ParametersModifierTemplate parameters
+        #include "ProfillicSimulationOptions.hpp" // write out changed ProfillicSimulationParameters::ParametersModifierTemplate parameters
 
       } // writeParametersModifier ( basic_ostream & ) const
 
@@ -879,7 +879,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   template <class AnyParameters>
   GALOSH_INLINE_PARAMETERSMODIFIER_APPLY_MODIFICATIONS
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       applyModifications ( AnyParameters & target_parameters )
       {
         /// Set the parameters of another object iff they've been changed in this one
@@ -892,25 +892,25 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
          **/
         #undef GALOSH_DEF_OPT
         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) target_parameters. NAME = this->parameters. NAME
-        #include "ProfuseTestOptions.hpp" // copy changed parameters
+        #include "ProfillicSimulationOptions.hpp" // copy changed parameters
 
       } // applyModifications( Parameters & )
 
-  ////// Class galosh::ProfuseTest ////
+  ////// Class galosh::ProfillicSimulation ////
   template <class ResidueType,
             class ProbabilityType,
             class ScoreType,
             class MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
-    ProfuseTest (
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
+    ProfillicSimulation (
     ) :
       m_parameters(),
       m_random( static_cast<uint32_t>( std::time( NULL ) ) )
     {
       if( m_parameters.debug >= DEBUG_All ) {
-        cout << "[debug] ProfuseTest::<init>()" << endl;
+        cout << "[debug] ProfillicSimulation::<init>()" << endl;
       } // End if DEBUG_All
       // Do nothing else
     } // <init>()
@@ -921,11 +921,11 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
   /**
    * Construct a profuse test object, using the given command-line arguments.
    */  
-  ProfuseTest ( const int argc, char ** const argv ) :
+  ProfillicSimulation ( const int argc, char ** const argv ) :
       m_parameters(),
       m_random( static_cast<uint32_t>( std::time( NULL ) ) )
   {
@@ -937,7 +937,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       generic.add_options()
         ( "version,v", "print version string" )
         ( "help,h", "produce help message" )
-        ( "config,c", po::value<string>( &config_file )->default_value( "ProfuseTest.cfg" ),
+        ( "config,c", po::value<string>( &config_file )->default_value( "ProfillicSimulation.cfg" ),
           "name of a file of a configuration." )
         ;
       
@@ -1001,7 +1001,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       }
       
       if( m_parameters.m_galosh_options_map.count( "version" ) ) {
-        cout << "ProfuseTest, version 1.2\n";
+        cout << "ProfillicSimulation, version 1.2\n";
         return;
       }
       
@@ -1040,18 +1040,18 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_INIT
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
     /**
      * Construct a profuse test object, using the provided seed.
      */  
-    ProfuseTest (
+    ProfillicSimulation (
       uint32_t const seed
     ) :
       m_parameters(),
       m_random( seed )
     {
       if( m_parameters.debug >= DEBUG_All ) {
-        cout << "[debug] ProfuseTest::<init>( uint32_t )" << endl;
+        cout << "[debug] ProfillicSimulation::<init>( uint32_t )" << endl;
       } // End if DEBUG_All
       // Do nothing else
     } // <init>( uint32_t )
@@ -1063,7 +1063,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class SequenceResidueType>
   GALOSH_INLINE_TRAIN
   void
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
+  ProfillicSimulation<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
     start ()
     {
       bool be_verbose = ( m_parameters.verbosity > VERBOSITY_Low );
@@ -1852,7 +1852,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
       // Results
       string run_unique_id =
-        ( "v" + boost::lexical_cast<string>( m_parameters.saveFileVersion ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_ProfuseTest2" );
+        ( "v" + boost::lexical_cast<string>( m_parameters.saveFileVersion ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_ProfillicSimulation" );
       fs::path dirname =
         ( static_cast<fs::path>( m_parameters.saveResultsParentDirectory ) /
           run_unique_id );
@@ -3524,18 +3524,18 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                             tests[ test_id ].parametersModifier.applyModifications( trainer.m_parameters );
                             
                             // TODO: REMOVE
-                            cout << "trainer debug level is " << trainer.m_parameters.debug << endl;
-                            if( tests[ test_id ].parametersModifier.isModified_debug ) {
-                              cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.debug << endl;
-                            } else {
-                              cout << "it should be unmodified (" << m_parameters.debug << ")" << endl;
-                            }
-                            cout << "trainer verbosity level is " << trainer.m_parameters.verbosity << endl;
-                            if( tests[ test_id ].parametersModifier.isModified_verbosity ) {
-                              cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.verbosity << endl;
-                            } else {
-                              cout << "it should be unmodified (" << m_parameters.verbosity << ")" << endl;
-                            }
+                            //cout << "trainer debug level is " << trainer.m_parameters.debug << endl;
+                            //if( tests[ test_id ].parametersModifier.isModified_debug ) {
+                            //  cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.debug << endl;
+                            //} else {
+                            //  cout << "it should be unmodified (" << m_parameters.debug << ")" << endl;
+                            //}
+                            //cout << "trainer verbosity level is " << trainer.m_parameters.verbosity << endl;
+                            //if( tests[ test_id ].parametersModifier.isModified_verbosity ) {
+                            //  cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.verbosity << endl;
+                            //} else {
+                            //  cout << "it should be unmodified (" << m_parameters.verbosity << ")" << endl;
+                            //}
                             
                             if( be_verbose && true ) {
                               cout << "Now (before training the " << tests[ test_id ].name << " profile), the profile tree is:" << endl;

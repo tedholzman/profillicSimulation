@@ -8,11 +8,11 @@ use-project /HMMoC-BFloat-Algebra : ./HMMoC-BFloat-Algebra ;
 
 
 exe profillicSimulation_AA
-    : [ obj ProfuseTest2_obj : ProfuseTest2.cpp
+    : [ obj ProfillicSimulation_obj : ProfillicSimulation.cpp
         : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>__PROFUSE_USE_AMINOS  <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
 
 exe profillicSimulation_DNA
-    : [ obj ProfuseTest2_obj : ProfuseTest2.cpp
+    : [ obj ProfillicSimulation_obj : ProfillicSimulation.cpp
         : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
 
 

@@ -1,9 +1,9 @@
 /**
- * \file ProfuseTestOptions.hpp
+ * \file ProfillicSimulationOptions.hpp
  * \author Ted Holzman (tholzman@scharp.org)
  * \par Library:
- * Galosh ProfuseTest
- * \brief Options for ProfuseTest
+ * Galosh ProfillicSimulation
+ * \brief Options for ProfillicSimulation
  * \copyright &copy; 2008, 2011, 2012 by Paul T. Edlefsen, Fred Hutchinson Cancer
  *    Research Center.
  *  All rights reserved.
@@ -45,7 +45,7 @@ GALOSH_DEF_OPT(saveResultsParentDirectory,string,".","Parent directory name");
 
 
 ///File prefixes and suffixes, and output options
-GALOSH_DEF_OPT(resultsFilePrefix,string,"ProfuseTest.","Prefix for main results");
+GALOSH_DEF_OPT(resultsFilePrefix,string,"ProfillicSimulation.","Prefix for main results");
 GALOSH_DEF_OPT(tabFileSuffix,string,".tab","Suffix for tab-delimited output");
 GALOSH_DEF_OPT(parametersFileSuffix,string,".Parameters.xml","Suffix for parameters file");
 GALOSH_DEF_OPT(saveTrueProfileTrees,bool,true,"Shall we save 'true' Profile Trees?");

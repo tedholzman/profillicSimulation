@@ -52,10 +52,19 @@ using std::endl;
 #include "muscle/textfile.h"
 #endif // __HAVE_MUSCLE
 
+
+
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/version.hpp>
+
+#include "boost/filesystem.hpp"
+
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+#include "CommandlineParameters.hpp"
 
 namespace galosh {
 
@@ -104,49 +113,31 @@ template <class ResidueType,
         // save/load base class information
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_trainer_parameters_t );
 
-        ar & BOOST_SERIALIZATION_NVP( shareProfilePositions );
-        ar & BOOST_SERIALIZATION_NVP( shareProfilePositions_percentChangeTo0Threshold );
-        ar & BOOST_SERIALIZATION_NVP( childSequenceMixtureThreshold );
+        /**
+         * ProfileTrainer Members to be serialized
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP( NAME )
+        #include "ProfileTreeTrainerOptions.hpp"  /// serialize ProfileTrainer parameters
+
       } // serialize( Archive &, const unsigned int )
 
     public:
   
-      /// PARAMETERS
-      /**
-       * After training a subfamily profile with all positions differing from
-       * its parent profile, should we try to retrain after identifying the
-       * most closely similar profile positions and forcing the child profile
-       * to use the parent profile at those positions?
-       *
-       * @see shareProfilePositions_percentChangeTo0Threshold
-       */
-      bool shareProfilePositions;
-  #define DEFAULT_shareProfilePositions false
+      /// PARAMETER definitions are now found in ProfileTrainerOptions.hpp
+      /// however pointer types cannot be initialized from the command line.
+      /// \todo They probably don't belong in "parameters".  Maybe members
+      /// of surrounding class?
 
       /**
-       * After training a subfamily profile with all positions differing from
-       * its parent profile, we try to retrain after identifying the most
-       * closely similar profile positions and forcing the child profile to use
-       * the parent profile at those positions.  We do this until the score
-       * after removing a position drops below some threshold.
-       *
-       * This is the threshold for the percent by which the score has changed
-       * from the original (all-positions-different) profile.
-       *
-       * @see shareProfilePositions
-       */
-      double shareProfilePositions_percentChangeTo0Threshold;
-  #define DEFAULT_shareProfilePositions_percentChangeTo0Threshold -50
+       * Define ProfileTrainer::Parameters "members".  These are tightly tied to the options.
+       *    TAH 9/13
+       **/
+      #undef GALOSH_DEF_OPT
+      #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) TYPE NAME
+      #include "ProfileTreeTrainerOptions.hpp"  /// declare Parameters members specific to ProfileTreeTrainer
 
-      /**
-       * We have to make a decision about whether a sequence belongs to the
-       * child profile or the parent profile before recursively breaking the
-       * profile into more subfamilies.  If the sequence subfamily mixture
-       * parameter exceeds this threshold, we say that the sequence belongs to
-       * the child profile.
-       */
-      double childSequenceMixtureThreshold;
-  #define DEFAULT_childSequenceMixtureThreshold .5
 
       Parameters ();
       virtual ~Parameters () {};
@@ -215,48 +206,23 @@ template <class ResidueType,
         // save/load base class information.  This will serialize the
         // parameters too.
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( base_parameters_modifier_t );
+        // Serialize the ProfileTrainer::ParameterModifierTemplate specific isModified_<member>s TAH 9/13
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP(isModified_##NAME)
+        #include "ProfileTreeTrainerOptions.hpp"  //archive ProfileTreeTrainer::ParameterModifierTemplate isModified_<member>s
 
-        // Serialize the new isModified_ stuff
-        ar & BOOST_SERIALIZATION_NVP( isModified_shareProfilePositions );
-        ar & BOOST_SERIALIZATION_NVP( isModified_shareProfilePositions_percentChangeTo0Threshold );
-        ar & BOOST_SERIALIZATION_NVP( isModified_childSequenceMixtureThreshold );
       } // serialize( Archive &, const unsigned int )
 
     public:
   
       /// isModified flags for Parameters
       /**
-       * After training a subfamily profile with all positions differing from
-       * its parent profile, should we try to retrain after identifying the
-       * most closely similar profile positions and forcing the child profile
-       * to use the parent profile at those positions?
-       *
-       * @see shareProfilePositions_percentChangeTo0Threshold
-       */
-      bool isModified_shareProfilePositions;
-
-      /**
-       * After training a subfamily profile with all positions differing from
-       * its parent profile, we try to retrain after identifying the most
-       * closely similar profile positions and forcing the child profile to use
-       * the parent profile at those positions.  We do this until the score
-       * after removing a position drops below some threshold.
-       *
-       * This is the threshold for the percent by which the score has changed
-       * from the original (all-positions-different) profile.
-       *
-       * @see shareProfilePositions
-       */
-      bool isModified_shareProfilePositions_percentChangeTo0Threshold;
-
-      /**
-       * We have to make a decision about whether a sequence belongs to the
-       * child profile or the parent profile before recursively breaking the
-       * profile into more subfamilies.  If the sequence subfamily mixture
-       * parameter exceeds this threshold, we say that the sequence belongs to
-       * the child profile.
-       */
-      bool isModified_childSequenceMixtureThreshold;
+       * Declare isModified_<member>s for isModified_<member>s of ProfileTrainer::ParameterModifierTemplate
+       * TAH 9/13
+       **/
+      #undef GALOSH_DEF_OPT
+      #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) bool isModified_##NAME
+      #include "ProfileTreeTrainerOptions.hpp"  // Declare isModified<member>s for ProfileTreeTrainer::ParametersModifierTemplate
 
       ParametersModifierTemplate ();
     
@@ -295,7 +261,7 @@ template <class ResidueType,
         ParametersModifierTemplate const& parameters_modifier
       )
       {
-        writeParametersModifier( os );
+        parameters_modifier.writeParametersModifier( os );
 
         return os;
       } // friend operator<< ( basic_ostream &, ParametersModifierTemplate const& )
@@ -1819,7 +1785,7 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
         Parameters ()
       {
-        if( DEFAULT_debug >= DEBUG_All ) {
+        if( profile_trainer_parameters_t::parameters.debug >= DEBUG_All ) {
           cout << "[debug] ProfileTreeTrainer::Parameters::<init>()" << endl;
         } // End if DEBUG_All
         resetToDefaults();
@@ -1896,9 +1862,11 @@ template <class ResidueType,
         AnyParameters const & copy_from
       )
       {
-        shareProfilePositions = copy_from.shareProfilePositions;
-        shareProfilePositions_percentChangeTo0Threshold = copy_from.shareProfilePositions_percentChangeTo0Threshold;
-        childSequenceMixtureThreshold = copy_from.childSequenceMixtureThreshold;
+    /// TAH 9/13
+    #undef GALOSH_DEF_OPT
+    #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = copy_from. NAME
+    #include "ProfileTreeTrainerOptions.hpp"  /// copy all ProfileTreeTrainer::Parameters members
+
       } // copyFromNonVirtualDontDelegate( AnyParameters const & )
 
   template <class ResidueType,
@@ -1925,13 +1893,15 @@ template <class ResidueType,
       resetToDefaults ()
       {
         ProfileTrainer<ProfileTreeRoot<ResidueType, ProbabilityType>, ScoreType, MatrixValueType, SequenceResidueType, InternalNodeType>::Parameters::resetToDefaults();
-        // TODO: Why isn't the compiler finding "debug" in galosh::Parameters?
-        //if( debug >= DEBUG_All ) {
-        //  cout << "[debug] ProfileTreeTrainer::Parameters::resetToDefaults()" << endl;
-        //} // End if DEBUG_All
-        shareProfilePositions = DEFAULT_shareProfilePositions;
-        shareProfilePositions_percentChangeTo0Threshold = DEFAULT_shareProfilePositions_percentChangeTo0Threshold;
-        childSequenceMixtureThreshold = DEFAULT_childSequenceMixtureThreshold;
+       
+        if( Parameters::debug >= DEBUG_All ) {
+          cout << "[debug] ProfileTreeTrainer::Parameters::resetToDefaults()" << endl;
+        } // End if DEBUG_All
+        /// TAH 9/13
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = this->Parameters::m_galosh_options_map[#NAME].template as<TYPE>()
+        #include "ProfileTreeTrainerOptions.hpp"  /// reset all Parameters members
+                                              /// (ProfileTreeTrainer and through inheritance tree)
       } // resetToDefaults()
 
   template <class ResidueType,
@@ -1947,14 +1917,21 @@ template <class ResidueType,
         std::basic_ostream<CharT,Traits>& os
       ) const
       {
-        //os << static_cast<typename ProfileTrainer<ProfileTreeRoot<ResidueType, ProbabilityType>, ScoreType, MatrixValueType, SequenceResidueType, InternalNodeType>::Parameters>( parameters ) << endl;
         ProfileTrainer<ProfileTreeRoot<ResidueType, ProbabilityType>, ScoreType, MatrixValueType, SequenceResidueType, InternalNodeType>::Parameters::writeParameters( os );
         os << endl;
         
-        os << "[ProfileTreeTrainer]" << endl;
-        os << "shareProfilePositions = " << shareProfilePositions << endl;
-        os << "shareProfilePositions_percentChangeTo0Threshold = " << shareProfilePositions_percentChangeTo0Threshold << endl;
-        os << "childSequenceMixtureThreshold = " << childSequenceMixtureThreshold << endl;
+        //Note: we must comment out [ProfileTreeTrainer] because it means something special to
+        //in configuration files sensu program_options
+        os << "#[ProfileTreeTrainer]" << endl;
+
+        /**
+         * write out all ProfileTreeTrainer specific parameters in the style of a configuration
+         * file, so that program_options parsers can read it back in
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) os << #NAME << " = " << lexical_cast<string>(NAME) << endl
+        #include "ProfileTreeTrainerOptions.hpp"  /// write all ProfileTreeTrainer::Parameters members to os
       } // writeParameters( basic_ostream & ) const
 
   ////// Class galosh::ProfileTreeTrainer::ParametersModifierTemplate ////
@@ -2051,9 +2028,11 @@ template <class ResidueType,
       )
       {
         base_parameters_modifier_t::isModified_copyFromNonVirtual( copy_from );
-        isModified_shareProfilePositions = copy_from.isModified_shareProfilePositions;
-        isModified_shareProfilePositions_percentChangeTo0Threshold = copy_from.isModified_shareProfilePositions_percentChangeTo0Threshold;
-        isModified_childSequenceMixtureThreshold = copy_from.isModified_childSequenceMixtureThreshold;
+        /// TAH 9/13 copy all ProfileTrainer::isModified_<member>s
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = copy_from.isModified_##NAME
+        #include "ProfileTreeTrainerOptions.hpp"  // Copy ProfileTreeTrainer::ParametersModifierTemplate::isModified_<member>s
+
       } // isModified_copyFromNonVirtual( AnyParametersModifierTemplate const & )
 
   template <class ResidueType,
@@ -2082,10 +2061,12 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       isModified_reset ()
       {
+        /// Set all parent ParametersModifierTemplate::isModified_<member>s to false
         base_parameters_modifier_t::isModified_reset();
-        isModified_shareProfilePositions = false;
-        isModified_shareProfilePositions_percentChangeTo0Threshold = false;
-        isModified_childSequenceMixtureThreshold = false;
+        /// TAH 9/13 set all ProfileTrainer::ParametersModifierTemplate::isModified_<member>s to false
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = false;
+        #include "ProfileTreeTrainerOptions.hpp" // Reset ProfileTreeTrainer::ParametersModifierTemplate::isModified_<member>s to false
       } // isModified_reset()
 
   template <class ResidueType,
@@ -2102,20 +2083,20 @@ template <class ResidueType,
         std::basic_ostream<CharT,Traits>& os
       )
       {
-        //base_parameters_modifier_t::operator<<( os, parameters_modifier );
+        // Write out parent parameters if they've been changed
         base_parameters_modifier_t::writeParametersModifier( os );
         os << endl;
 
-        os << "[ProfileTreeTrainer]" << endl;
-        if( isModified_shareProfilePositions ) {
-          os << "shareProfilePositions = " << base_parameters_modifier_t::parameters.shareProfilePositions << endl;
-        }
-        if( isModified_shareProfilePositions_percentChangeTo0Threshold ) {
-          os << "shareProfilePositions_percentChangeTo0Threshold = " << base_parameters_modifier_t::parameters.shareProfilePositions_percentChangeTo0Threshold << endl;
-        }
-        if( isModified_childSequenceMixtureThreshold ) {
-          os << "childSequenceMixtureThreshold = " << base_parameters_modifier_t::parameters.childSequenceMixtureThreshold << endl;
-        }
+        /// TAH 9/13 must comment out tags in square braces for program_options config file parser
+        os << "#[ProfileTreeTrainer]" << endl;
+        /**
+         * write out ProfileTreeTrainer::parameters iff they've been modified
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) os << #NAME << " = " << lexical_cast<string>(galosh::ParametersModifierTemplate<ParametersType>::parameters. NAME)
+        #include "ProfileTreeTrainerOptions.hpp" // write out changed ProfileTreeTrainerParameters::ParametersModifierTemplate parameters
+
       } // writeParametersModifier( basic_ostream & )
 
   template <class ResidueType,
@@ -2130,20 +2111,18 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       applyModifications ( AnyParameters & target_parameters )
       {
+        /// Set the parameters of another object iff they've been changed in this one
         base_parameters_modifier_t::applyModifications( target_parameters );
 
-        if( isModified_shareProfilePositions ) {
-          target_parameters.shareProfilePositions =
-            base_parameters_modifier_t::parameters.shareProfilePositions;
-        }
-        if( isModified_shareProfilePositions_percentChangeTo0Threshold ) {
-          target_parameters.shareProfilePositions_percentChangeTo0Threshold =
-            base_parameters_modifier_t::parameters.shareProfilePositions_percentChangeTo0Threshold;
-        }
-        if( isModified_childSequenceMixtureThreshold ) {
-          target_parameters.childSequenceMixtureThreshold =
-            base_parameters_modifier_t::parameters.childSequenceMixtureThreshold;
-        }
+        /**
+         * Set the parameters of a foreign Parameters object to this Parameter object's values
+         * iff they have changed.
+         *    TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) target_parameters. NAME = this->parameters. NAME
+        #include "ProfileTreeTrainerOptions.hpp" // copy changed parameters
+
       } // applyModifications( AnyParameters & )
 
 } // End namespace galosh

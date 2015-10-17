@@ -32,8 +32,8 @@ using galosh::ProfileTree;
 #include "ProfileTreeTrainer.hpp"
 using galosh::ProfileTreeTrainer;
 
-#include "ProfileGibbs.hpp"
-using galosh::ProfileGibbs;
+//#include "ProfileGibbs.hpp"
+//using galosh::ProfileGibbs;
 
 #include "ProfileTrainer.hpp"
 using galosh::ProfileTrainer;
@@ -79,6 +79,14 @@ namespace fs = boost::filesystem;
 #define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
 #define DEFAULT_VARIABLES_MAP       m_parameters.m_options_map
 
+#include <boost/lexical_cast.hpp>
+#include <boost/program_options.hpp>
+
+/**
+ * \class ProfuseTest
+ * \brief Public / commandline interface to ProfuseTest.
+ *
+ */
 namespace galosh {
 
 template <class ResidueType,
@@ -91,20 +99,23 @@ template <class ResidueType,
     typedef Sequence<SequenceResidueType> SequenceType;
 
     class Parameters :
-       public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
+      //public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
+        public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters
     {
     public:
        po::options_description m_profusetest_options;
 
     private:
-      typedef typename ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_gibbs_parameters_t;
+      //typedef typename ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_gibbs_parameters_t;
+      typedef typename ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_tree_trainer_parameters_t;
       // Boost serialization
       friend class boost::serialization::access;
       template<class Archive>
       void serialize ( Archive & ar, const unsigned int /* file_version */ )
       {
         // save/load base class information
-//        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
+////        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
+//        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_tree_trainer_parameters_t );
 //        ar & m_options_map;
 /**
  * \note This is a hack based on Paul's suggestion that the real use for the serialization
@@ -755,7 +766,8 @@ template <class ResidueType,
        * Conditional Gibbs) to STDOUT during training?
        */
       bool coutConditionalGibbsProfile;
-  #define DEFAULT_coutConditionalGibbsProfile true
+      //  #define DEFAULT_coutConditionalGibbsProfile true
+  #define DEFAULT_coutConditionalGibbsProfile false
 
       /**
        * Also use the best profile found after Gibbs sampling using
@@ -770,7 +782,8 @@ template <class ResidueType,
        * Unconditional Gibbs) to STDOUT during training?
        */
       bool coutUnconditionalGibbsProfile;
-  #define DEFAULT_coutUnconditionalGibbsProfile true
+      //  #define DEFAULT_coutUnconditionalGibbsProfile true
+  #define DEFAULT_coutUnconditionalGibbsProfile false
 
       /**
        * Also use lengthadjust to train the profiles, and calculate forward (etc) scores using it?
@@ -864,9 +877,11 @@ template <class ResidueType,
 
     template <class ParametersType>
     class ParametersModifierTemplate :
-      public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType>
+    //public ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType>
+public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType>
     {
-      typedef typename ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType> base_parameters_modifier_t; 
+      //typedef typename ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType> base_parameters_modifier_t; 
+      typedef typename ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::template ParametersModifierTemplate<ParametersType> base_parameters_modifier_t; 
 
       // Boost serialization
     private:
@@ -1519,7 +1534,8 @@ template <class ResidueType,
       /**
        * The parameters modifier for this test.
        */
-      typename ProfileGibbs<RootType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifier parametersModifier;
+      //typename ProfileGibbs<RootType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifier parametersModifier;
+      typename ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifier parametersModifier;
 
       /**
        * A pointer to the test whose (trained) profile is to be used for the
@@ -1669,7 +1685,7 @@ template <class ResidueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       Parameters ()
       {
-        if( DEFAULT_debug >= DEBUG_All ) {
+        if( profile_tree_trainer_parameters_t::parameters.debug >= DEBUG_All ) {
           cout << "[debug] ProfuseTest::Parameters::<init>()" << endl;
         } // End if DEBUG_All
         resetToDefaults();
@@ -1733,7 +1749,8 @@ template <class ResidueType,
         AnyParameters const & copy_from
       )
       {
-        ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
+        //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
+        ProfileTreeTainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
         //if( copy_from.debug >= DEBUG_All ) {
         //  cout << "[debug] ProfuseTest::Parameters::copyFromNonVirtual( copy_from )" << endl;
         //} // End if DEBUG_All
@@ -1879,7 +1896,8 @@ template <class ResidueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       resetToDefaults ()
       {
-        ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
+        //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
+        ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
         // TODO: Why isn't the compiler finding "debug" in galosh::Parameters?
         //if( debug >= DEBUG_All ) {
         //  cout << "[debug] ProfuseTest::Parameters::resetToDefaults()" << endl;
@@ -2002,7 +2020,8 @@ template <class ResidueType,
       {
         ///  \todo fixyfix ITERATE through m_...whatever
 
-        ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
+        //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
+        ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
         os << endl;
 
         os << "[ProfuseTest]" << endl;

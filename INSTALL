@@ -1,3 +1,47 @@
+profillicSimulation relies on a number of other libraries.  All are open source
+and are easy to install.
+
+Required external libraries:
+---
+BOOST (tested with version 1.59.0)
+Seqan (direct from github)
+
+HMMoC-BFloat-Algebra:
+https://github.com/pedlefsen/HMMoC-BFloat-Algebra
+
+Required galosh libraries:
+---
+prolific (NOT the same thing as "profillic"):  https://github.com/galosh/prolific
+profillic (NOT the same thing as "prolific"):  https://github.com/galosh/profillic
+
+Recommended galosh libraries:
+---
+profuse:  https://github.com/galosh/profuse
+
+### Follows installation instructions for the profillic package, then, do:
+
+git clone https://github.com/tholzman/profillicSimulation.git
+cd profillicSimulation
+=========
+FINALLY, installing profillicSimulation.
+
+ln -s /opt/local/lib boost-lib
+ln -s /opt/local/include boost-include
+ln -s ~/src/from-git/seqan seqan-trunk
+ln -s ../HMMoC-BFloat-Algebra
+ln -s ../prolific
+ln -s ../profillic
+
+## NOTE: I had to add --toolset=darwin because it wasn't guessing it correctly. You can add eg "use darwin ;" to your site-config.jam [or user-config.jam] file.
+# First must make sure you can compile it in the fast-to-compile, slow-to-run "debug" variant, before trying to compile the slow-to-compile "release" variant.
+bjam --clean --toolset=darwin
+bjam dist release --toolset=darwin
+cd ..
+# The above will (slowly) compile the executables, and will copy them to the dist/ subdir.
+
+# You might be interested to check out the bjam (Boost.Build) documentation: http://www.boost.org/boost-build2/doc/html/index.html
+
+
 profillic-hmmer relies on a number of other libraries.  All are open source
 and are easy to install.
 

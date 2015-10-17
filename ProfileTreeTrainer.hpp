@@ -52,8 +52,6 @@ using std::endl;
 #include "muscle/textfile.h"
 #endif // __HAVE_MUSCLE
 
-
-
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
@@ -1785,10 +1783,22 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
         Parameters ()
       {
-        if( profile_trainer_parameters_t::parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfileTreeTrainer::Parameters::<init>()" << endl;
-        } // End if DEBUG_All
-        resetToDefaults();
+         #ifdef DEBUG
+         cout << "[debug] ProfileTrainer::Parameters::<init>()" << endl;
+         cout << "[debug] using ProfileTrainerOptions.hpp" << endl;
+         #endif
+
+         /**
+          *  Describe all options/parameters to the options_description object.  In the main
+          *  routine (whatever it may be) these descriptions will be parsed from the commandline
+          *  and possibly other sources.  This Parameters initializer calls it's parent to get
+          *  the ProlificParameter::Parameters options.
+          **/
+         #undef GALOSH_DEF_OPT
+         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
+         this->galosh::Parameters::m_galosh_options_description.add_options()(#NAME,po::value<TYPE>(&NAME)->default_value(DEFAULTVAL) TMP_EXTRA_STUFF,HELP)
+         #include "ProfileTreeTrainerOptions.hpp"  /// define all the commandline options for this module
+
       } // <init>()
 
       // Copy constructor

@@ -48,7 +48,7 @@ main ( int argc, char **argv )
   typedef bfloat ScoreType; /// Preferred; otherwise logspace, realspace
   typedef bfloat MatrixValueType;
 
-  ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType> profuse_test(argc,argv);
+    ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType> profuse_test(argc,argv);
 
     // TODO: ERE I AM. Working on getting 2 profiles to work...
     // Amendment: *this is the key: train the globals too!  why?!*
@@ -99,14 +99,15 @@ main ( int argc, char **argv )
   profuse_test.m_parameters.proposeInsertingPreAlignThreshold = 0.5;          // = proposeInsertingThreshold    #.35
   profuse_test.m_parameters.proposeInsertingPostAlignThreshold = 0.5;         // = proposeInsertingThreshold    #.35
 
-  // sampler parameters
-  profuse_test.m_parameters.sampleProfilePositions = true;                    // = trainProfilePositions
-  profuse_test.m_parameters.sampleProfileGlobals = true;                      // = trainProfileGlobals          #false
-  profuse_test.m_parameters.numChains = 4;
-  profuse_test.m_parameters.minGibbsIterations = 8000;
-  profuse_test.m_parameters.gibbsIterationsIncrement = 8000;                  // = minGibbsIterations
-  profuse_test.m_parameters.maxGibbsIterations = 8000;
-  profuse_test.m_parameters.burnInFraction = .975;
+  // TODO: PUT BACK WHEN ProfileGibbs IS READY.
+  //// sampler parameters
+  //profuse_test.m_parameters.sampleProfilePositions = true;                    // = trainProfilePositions
+  //profuse_test.m_parameters.sampleProfileGlobals = true;                      // = trainProfileGlobals          #false
+  //profuse_test.m_parameters.numChains = 4;
+  //profuse_test.m_parameters.minGibbsIterations = 8000;
+  //profuse_test.m_parameters.gibbsIterationsIncrement = 8000;                  // = minGibbsIterations
+  //profuse_test.m_parameters.maxGibbsIterations = 8000;
+  //profuse_test.m_parameters.burnInFraction = .975;
 
   // TODO: REMOVE
   //profuse_test.m_random.setSeed( 1304905685 );

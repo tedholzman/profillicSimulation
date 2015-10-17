@@ -9,9 +9,6 @@
  *  All rights reserved.
  *****************************************************************************/
 
-// TODO: I think this is _not_ the final solution - I think the options should somehow be chained together later, but I'm not sure how that's done. - DOPTE
-#include "ProfileTrainerOptions.hpp"
-
 ///Useful for modifying GALOSH_DEF_OPT behavior.  See vector-valued options below
 #ifndef TMP_EXTRA_STUFF
 #define TMP_EXTRA_STUFF BOOST_PP_EMPTY()
@@ -21,12 +18,6 @@
  * \note Note the lack of "protective" \#define symbols in this file.  We may
  * want to include it several times, redefining GALOSH_DEF_OPT as needed.
  */
-
-/**
- * The configuration file contains the non-default, non-command-line options
- *
- */
-GALOSH_DEF_OPT(configFile,string,"ProfuseTest.cfg","File path for the configuration file");
 
 /**
  * The RNG seed..
@@ -522,7 +513,7 @@ GALOSH_DEF_OPT(testBaldiSiegel,bool,true,"Use Baldi / Siegel to train the profil
   */
 GALOSH_DEF_OPT(alsoStartWithEvenPositions,bool,false,"If startWithUniformPositions or startWithPositionsDrawnFromPrior are true, then under normal circumstances numStartingProfiles profiles would be randomly generated; if alsoStartWithEvenPositions is *also* true, then the first starting profile (index 0) will have even positions rather than randomly-generated position emission values.");
 // TODO: REMOVE
-GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated?");
+GALOSH_DEF_OPT(useRabinerScaling,bool,false,"Deprecated.");
 
 /// This is how we're handling vectors.  It is a work-around because vectors are handled specially
 /// by boost::program_options.  It allows the command line to look something like

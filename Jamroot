@@ -1,17 +1,19 @@
 project profillicSimulation
-    : requirements <library>/HMMoC-BFloat-Algebra//libHMMoC-BFloat-Algebra
-    : requirements <warnings>off ;
+    : requirements
+      <library>/HMMoC-BFloat-Algebra//libHMMoC-BFloat-Algebra
+      <warnings>off
+      <toolset>darwin:<cxxflags>-ftemplate-depth=256 ;
 
 use-project /HMMoC-BFloat-Algebra : ./HMMoC-BFloat-Algebra ;
 
 
 exe profillicSimulation_AA
     : [ obj ProfuseTest2_obj : ProfuseTest2.cpp
-        : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/core/include <define>__PROFUSE_USE_AMINOS  <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
+        : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>__PROFUSE_USE_AMINOS  <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
 
 exe profillicSimulation_DNA
     : [ obj ProfuseTest2_obj : ProfuseTest2.cpp
-        : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/core/include <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
+        : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
 
 
 alias profillicSimulation : profillicSimulation_AA profillicSimulation_DNA ;

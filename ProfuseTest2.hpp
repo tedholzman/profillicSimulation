@@ -1,14 +1,38 @@
-/**
- * \file ProfuseTest2.hpp
- * \author D'Oleris Paul Thatcher Edlefsen   paul@galosh.org with some serious modifications
- * by Ted Holzman
- * \par Library:
- * Galosh ProfillicSimulation
- * \brief Simulation tests of profuse system.
- * \copyright &copy; 2008, 2011, 2012 by Paul T. Edlefsen, Fred Hutchinson Cancer
- *    Research Center.
- *  All rights reserved.
- *****************************************************************************/
+/*---------------------------------------------------------------------------##
+##  Library:
+##      galosh::profillicSimulation
+##  File:
+##      ProfuseTest2.hpp
+##  Author:
+##      D'Oleris Paul Thatcher Edlefsen   paul@galosh.org
+##  Description:
+##      Class definition for the ProfuseTest class, which implements the
+##      profillic simulations for evaluating the methods.
+##
+#******************************************************************************
+#*
+#*    This file is part of profillic, a suite of programs for estimating parameters of
+#*    Profile HMMs.  Please see the document CITING, which should have been
+#*    included with this file.  You may use at will, subject to the license
+#*    (Apache v2.0), but *please cite the relevant papers* in your documentation
+#*    and publications associated with uses of this library.  Thank you!
+#*
+#*    Copyright (C) 2009, 2011 by Paul T. Edlefsen, Fred Hutchinson Cancer
+#*    Research Center.
+#*
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *    
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *    
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+#*****************************************************************************/
+
 
 #if     _MSC_VER > 1000
 #pragma once
@@ -17,10 +41,18 @@
 #ifndef __GALOSH_PROFUSETEST_HPP__
 #define __GALOSH_PROFUSETEST_HPP__
 
+#include "Profillic.hpp"
+
 #include "Parameters.hpp"
 using galosh::Parameters;
 using galosh::DebugLevel;
 using galosh::VerbosityLevel;
+
+#include "DynamicProgramming.hpp"
+using galosh::DynamicProgramming;
+
+#include "ProlificParameters.hpp"
+using galosh::ProlificParameters;
 
 #include "Profile.hpp"
 using galosh::ProfileTreeRoot;
@@ -44,14 +76,13 @@ using galosh::Sequence;
 #include "Random.hpp"
 using galosh::Random;
 
-#include "DynamicProgramming.hpp"
-using galosh::DynamicProgramming;
-
 #include <string>
 using std::string;
 #include <iostream>
 using std::cout;
 using std::endl;
+//#include <cmath> // for isnan( double )
+//using std::isnan; // doesn't work !  why?
 #include <ctime>
 using std::clock_t;
 using std::clock;
@@ -66,21 +97,12 @@ using std::clock;
 
 #include "boost/filesystem.hpp"
 
-#include <boost/bind.hpp>
-//#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/join.hpp>
-
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 #include "CommandlineParameters.hpp"
-/// TAH 6/12 predefining DEFAULT_OPTIONS_DESCRIPION and DEFAULT_VARIABLES_MAP will
-/// replace those values in the CommandlineParameters macros
-#define DEFAULT_OPTIONS_DESCRIPTION m_profusetest_options
-#define DEFAULT_VARIABLES_MAP       m_parameters.m_options_map
 
 #include <boost/lexical_cast.hpp>
-#include <boost/program_options.hpp>
 
 /**
  * \class ProfuseTest
@@ -114,704 +136,28 @@ template <class ResidueType,
       void serialize ( Archive & ar, const unsigned int /* file_version */ )
       {
         // save/load base class information
-////        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
-//        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_tree_trainer_parameters_t );
-//        ar & m_options_map;
-/**
- * \note This is a hack based on Paul's suggestion that the real use for the serialization
- * is for making a permanent file copy of parameter values, not for deserialization.
- * The "correct" way to do this would be to serialize (and potentially deserialize) the
- * the variables_map object (m_options_map) within the Parameters object.
- * Unfortunately, the variables_map object ultimately stores objects of type boost:any,
- * which are not serializable in the general case. However, since we tend to store only
- * doubles, unsigned ints and strings, it may be serializable for these particular cases.
- * That counts as a \todo for the current time.
- */
+//        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_gibbs_parameters_t );
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( profile_tree_trainer_parameters_t );
 
-//#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) \
-//        ar & boost::serialization::make_nvp(#NAME, ((galosh::Parameters)(*this)).m_options_map[#NAME].as<TYPE>())
-//        #include "ProfuseTestOptions.hpp"
-//#undef GALOSH_DEF_OPT
-      } // serialize Parameters
+        /**
+         * ProfuseTest Members to be serialized
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP( NAME )
+        #include "ProfuseTestOptions.hpp"  /// serialize ProfuseTest parameters
+
+      } // serialize( Archive &, const unsigned int )
 
     public:
   
-      /// PARAMETERS
-
-      // TODO: REMOVE. TESTING.
-      string configFile;
-      uint32_t seed;
-      bool useRabinerScaling;
-
-      bool saveResultsToFile;
-  #define DEFAULT_saveResultsToFile true
-
-      string saveResultsParentDirectory;
-  #define DEFAULT_saveResultsParentDirectory "."
-
-      string resultsFilePrefix;
-  #define DEFAULT_resultsFilePrefix "ProfuseTest."
-
-      string tabFileSuffix;
-  #define DEFAULT_tabFileSuffix ".tab"
-
-      string parametersFileSuffix;
-  #define DEFAULT_parametersFileSuffix ".Parameters.xml"
-
-      bool saveTrueProfileTrees;
-  #define DEFAULT_saveTrueProfileTrees true
-
-      string trueProfileTreeFileSuffix;
-  #define DEFAULT_trueProfileTreeFileSuffix ".true.ProfileTree.xml"
-
-      bool saveStartingProfiles;
-  #define DEFAULT_saveStartingProfiles true
-
-      string startingProfileTreeFileSuffix;
-  #define DEFAULT_startingProfileTreeFileSuffix ".starting.ProfileTree.xml"
-
-      bool saveTestProfiles;
-  #define DEFAULT_saveTestProfiles true
-
-      string testProfileTreeFileSuffix;
-  #define DEFAULT_testProfileTreeFileSuffix ".ProfileTree.xml"
-
-      bool savePatternSequences;
-  #define DEFAULT_savePatternSequences true
-
-      string patternSequencesFileSuffix;
-  #define DEFAULT_patternSequencesFileSuffix ".pattern_sequences.fasta"
-
-      bool saveTests;
-  #define DEFAULT_saveTests false
-
-      string testsFileSuffix;
-  #define DEFAULT_testsFileSuffix ".tests"
-
-      bool saveTrainingSequences;
-  #define DEFAULT_saveTrainingSequences true
-
-      string trainingSequencesFileSuffix;
-  #define DEFAULT_trainingSequencesFileSuffix ".training_sequences.fasta"
-
-      bool saveTestingSequences;
-  #define DEFAULT_saveTestingSequences true
-
-      string testingSequencesFileSuffix;
-  #define DEFAULT_testingSequencesFileSuffix ".testing_sequences.fasta"
-
-      bool saveTrueTrainingAlignments;
-  #define DEFAULT_saveTrueTrainingAlignments true
-
-      string trainingTrueAlignmentsFileSuffix;
-  #define DEFAULT_trainingTrueAlignmentsFileSuffix ".training_alignments.fasta"
-
-      bool saveTrueTestingAlignments;
-  #define DEFAULT_saveTrueTestingAlignments true
-
-      string trueTestingAlignmentsFileSuffix;
-  #define DEFAULT_trueTestingAlignmentsFileSuffix ".testing_alignments.fasta"
-
-
-      // 1 was the beginning
-      // 2 is after I modified the conditional_then_unconditional_root stuff to use the globals from the conditional, but the position-specific values from the starting profile.
-      // 3 is after I added unconditional_with_fixed_starting_globals
-      // 4 is after I added unconditional_with_fixed_starting_globals_then_with_fixed_positions
-      // 5 is after I added startWithUniformGlobals
-      // 6 is after I added startWithUniformGlobals_scalar
-      // 7 is after I added cout[Test] params
-      // 8 is after I added startWithUniformPositions, startWithPositionsDrawnFromPrior, etc.
-      // 9 is after I added convert_tab_output_to_log_double
-      // 10 is after I added CPU time
-      uint32_t saveFileVersion;
-  #define DEFAULT_saveFileVersion 10
-
-      uint32_t numProfiles;
-  #define DEFAULT_numProfiles 1
-
       /**
-       * When making the pattern sequence (and the true root profile from it),
-       * use this length.
-       *
-       */
-      vector<uint32_t> profileLengths;
-#define DEFAULT_profileLengths vector<uint32_t>()
-
-      /**
-       * When numProfiles > 1, what fraction of the positions of each child
-       * should be shared with its parent?
-       */
-      double sharedPositionRate;
-  #define DEFAULT_sharedPositionRate 1.0
-
-      /**
-       * Use this number of sequences when training.
-       *
-       */
-      vector<uint32_t> numTrainingSequencesPerProfiles;
-#define DEFAULT_numTrainingSequencesPerProfiles vector<uint32_t>()
-
-      uint32_t numTestingSequencesPerProfile;
-  #define DEFAULT_numTestingSequencesPerProfile 20
-
-      /**
-       * When making the true root profile from the pattern sequence, use this
-       * probability for the pattern sequence base at each position, and divide
-       * the remaining probability evenly among the remaining bases.
-       *
-       */
-      vector<double> conservationRates;
-#define DEFAULT_conservationRates vector<double>()
-
-      /**
-       * Lock the indel parameters of the true profile to be the same for
-       * insertions as for deletions?  This makes the expectedInsertionsCounts,
-       * expectedInsertionLengthAsProfileLengthFractions, and
-       * minExpectedInsertionLength unused, since the corresponding deletion
-       * values will be used instead.  It also reduces the number of tests by
-       * reducing the number of possible combinations (since deletions and
-       * insertions will go in lock step).
-       */
-      bool useDeletionsForInsertionsParameters;
-  #define DEFAULT_useDeletionsForInsertionsParameters true
-
-      /**
-       * The deletionOpen value of the true profile will be set to (
-       * expectedDeletionsCount / profileLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionOpen value
-       * of the true profile will also be set to ( expectedDeletionsCount /
-       * profileLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> expectedDeletionsCounts;
-#define DEFAULT_expectedDeletionsCounts vector<double>()
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the insertionOpen
-       * value of the true profile will be set to ( expectedInsertionsCount /
-       * profileLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> expectedInsertionsCounts;
-  #define DEFAULT_expectedInsertionsCounts vector<double>()
-
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFraction *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionExtension
-       * value of the true profile will also be set to be the minimum of ( 1.0
-       * / ( expectedDeletionLengthAsProfileLengthFraction * profileLength ) )
-       * and ( 1.0 / minExpectedDeletionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> expectedDeletionLengthAsProfileLengthFractions;
-  #define DEFAULT_expectedDeletionLengthAsProfileLengthFractions vector<double>()
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the
-       * insertionExtension value of the true profile will be the minimum of (
-       * 1.0 / ( expectedInsertionLengthAsProfileLengthFraction * profileLength
-       * ) ) and ( 1.0 / minExpectedInsertionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      vector<double> expectedInsertionLengthAsProfileLengthFractions;
-  #define DEFAULT_expectedInsertionLengthAsProfileLengthFractions vector<double>()
-
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFraction *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).  If
-       * useDeletionsForInsertionsParameters is true, the insertionExtension
-       * value of the true profile will also be the minimum of ( 1.0 / (
-       * expectedDeletionLengthAsProfileLengthFraction * profileLength ) ) and
-       * ( 1.0 / minExpectedDeletionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      double minExpectedDeletionLength;
-  #define DEFAULT_minExpectedDeletionLength 1.25
-
-      /**
-       * If useDeletionsForInsertionsParameters is false, the
-       * insertionExtension value of the true profile will be the minimum of (
-       * 1.0 / ( expectedInsertionLengthAsProfileLengthFraction * profileLength
-       * ) ) and ( 1.0 / minExpectedInsertionLength ).
-       *
-       * @see useDeletionsForInsertionsParameters
-       */
-      double minExpectedInsertionLength;
-  #define DEFAULT_minExpectedInsertionLength 1.25
-
-      /**
-       * The preAlignInsertion value of the true profile.
-       */
-      double preAlignInsertion;
-  #define DEFAULT_preAlignInsertion .01
-
-      /**
-       * The postAlignInsertion value of the true profile.
-       */
-      double postAlignInsertion;
-  #define DEFAULT_postAlignInsertion .01
-
-      /**
-       * The effective number of sequences "observed" a priori.  Note that we
-       * use a different prior strength for main-model transitions: see
-       * priorStrength_internal_transitions.
-       */
-      float priorStrength;
-  #define DEFAULT_priorStrength 1.0f
-
-      /**
-       * The effective number of sequences "observed" a priori, for main-model
-       * transitions.
-       */
-      float priorStrength_internal_transitions;
-  #define DEFAULT_priorStrength_internal_transitions 10.0f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoM;
-  #define DEFAULT_priorMtoM .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoI;
-  #define DEFAULT_priorMtoI .025f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorMtoD;
-  #define DEFAULT_priorMtoD .025f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorItoM;
-  #define DEFAULT_priorItoM .05f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorItoI;
-  #define DEFAULT_priorItoI .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorDtoM;
-  #define DEFAULT_priorDtoM .95f
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      float priorDtoD;
-  #define DEFAULT_priorDtoD .05f
-
-      /**
-       * Additionally report the overall mean of all chains found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       */
-      bool reportGibbsMean;
-  #define DEFAULT_reportGibbsMean false
-
-      /**
-       * Additionally report the mode found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       *
-       * Note that it takes some extra time to store the mode (this turns on
-       * saveGibbsMode in the ProfileGibbs class).
-       */
-      bool reportGibbsMode;
-  #define DEFAULT_reportGibbsMode false
-
-      /**
-       * We do the whole thing a number of different times, starting over with
-       * a new pattern sequence.
-       */
-      uint32_t numTrueProfiles;
-  #define DEFAULT_numTrueProfiles 4
-
-      /**
-       * For each true root profile, we run the trainers from a number of
-       * different starting profiles.  This is that number.
-       */
-      uint32_t numStartingProfiles;
-  #define DEFAULT_numStartingProfiles 4
-
-      /**
-       * If startWithGlobalsDrawnFromPrior is not true, and
-       * if startWithUniformGlobals is true, then we set the global values of
-       * the startingProfile to random values between 0 and
-       * min(startWithUniformGlobals_scalar times the true
-       * values,startWithUniformGlobals_maxXtoY).  If it is false, we start
-       * with the known, true globals.
-       *
-       * @see startWithUniformGlobals_scalar
-       */
-      bool startWithUniformGlobals;
-  #define DEFAULT_startWithUniformGlobals false
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_scalar;
-  #define DEFAULT_startWithUniformGlobals_scalar 2.0
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxNtoN;
-  #define DEFAULT_startWithUniformGlobals_maxNtoN .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxBtoD;
-  #define DEFAULT_startWithUniformGlobals_maxBtoD .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxMtoI;
-  #define DEFAULT_startWithUniformGlobals_maxMtoI .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxMtoD;
-  #define DEFAULT_startWithUniformGlobals_maxMtoD .2
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxItoI;
-  #define DEFAULT_startWithUniformGlobals_maxItoI .5
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxDtoD;
-  #define DEFAULT_startWithUniformGlobals_maxDtoD .5
-
-      /**
-       * @see startWithUniformGlobals
-       */
-      double startWithUniformGlobals_maxCtoC;
-  #define DEFAULT_startWithUniformGlobals_maxCtoC .2
-
-      /**
-       * If startWithUniformPositions is true, then we set the
-       * position-specific values of the startingProfile to random values
-       * between 0 and 1.  If it is false, we start with the known, true
-       * parameter values.  Note that if startWithPositionsDrawnFromPrior is
-       * also true, then the first half of the starting profiles will start
-       * with positions drawn from the prior and the second half will start
-       * with uniform() positions (possibly excluding the index-0 starting
-       * profile, if alsoStartWithEvenPositions is true).
-       *
-       * @see startWithPositionsDrawnFromPrior
-       * @see alsoStartWithEvenPositions
-       */
-      bool startWithUniformPositions;
-  #define DEFAULT_startWithUniformPositions false
-
-      /**
-       * If startWithGlobalsDrawnFromPrior is true, the
-       * global values of the starting profile will be drawn from the prior.
-       *
-       * @see startWithUniformGlobals
-       */
-      bool startWithGlobalsDrawnFromPrior;
-  #define DEFAULT_startWithGlobalsDrawnFromPrior false
-
-      /**
-       * If startWithPositionsDrawnFromPrior is true, the
-       * position-specific values of the starting profile will be drawn from
-       * the prior... but see the notes in startWithUniformPositions.
-       *
-       * @see startWithUniformPositions
-       * @see alsoStartWithEvenPositions
-       */
-      bool startWithPositionsDrawnFromPrior;
-  #define DEFAULT_startWithPositionsDrawnFromPrior false
-
-      /**
-       * Calculate the viterbi scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool testViterbi;
-  #define DEFAULT_testViterbi true
-
-      /**
-       * Write the viterbi scores to STDOUT?
-       */
-      bool coutViterbi;
-  #define DEFAULT_coutViterbi false
-
-      /**
-       * Calculate the truepath scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool testTruepath;
-  #define DEFAULT_testTruepath true
-
-      /**
-       * Write the truepath scores to STDOUT?
-       */
-      bool coutTruepath;
-  #define DEFAULT_coutTruepath false
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * true profile?
-       */
-      bool calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-  #define DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToTrue true
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * starting profile?
-       */
-      bool calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-  #define DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToStarting false
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * conditional profile?
-       */
-      bool coutDistances;
-  #define DEFAULT_coutDistances true
-
-      /**
-       * Calculate SKL profile-profile alignments between each trained profile
-       * and the true profile?
-       */
-      bool calculateProfileProfileAlignments;
-  #define DEFAULT_calculateProfileProfileAlignments true
-
-      /**
-       * The cost of a gap open when performing SKL profile-profile alignements.
-       */
-      double profileProfileIndelOpenCost;
-  #define DEFAULT_profileProfileIndelOpenCost .25
-
-      /**
-       * The cost of a gap extension when performing SKL profile-profile alignements.
-       */
-      double profileProfileIndelExtensionCost;
-  #define DEFAULT_profileProfileIndelExtensionCost .25
-
-      /**
-       * Calculate forward (etc) scores for the true profile, too?
-       */
-      bool testTrueProfile;
-  #define DEFAULT_testTrueProfile true
-
-      /**
-       * Write forward (etc) scores for the true profile to STDOUT
-       * during training?
-       */
-      bool coutTrueProfile;
-  #define DEFAULT_coutTrueProfile true
-
-      /**
-       * Calculate forward (etc) scores for the pre-training profile, too?
-       */
-      bool testStartingProfile;
-  #define DEFAULT_testStartingProfile true
-
-      /**
-       * Write forward (etc) scores for the pre-training profile to STDOUT
-       * during training?
-       */
-      bool coutStartingProfile;
-  #define DEFAULT_coutStartingProfile true
-
-      /**
-       * Also train the unconditional profile, and calculate forward (etc)
-       * scores using it?
-       */
-      bool testUnconditionalProfile;
-  #define DEFAULT_testUnconditionalProfile true
-
-      /**
-       * Write the forward (etc) scores for the unconditional profile to STDOUT
-       * during training?
-       */
-      bool coutUnconditionalProfile;
-  #define DEFAULT_coutUnconditionalProfile true
-
-      /**
-       * Also train the unconditional (with fixed starting globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalWithFixedStartingGlobalsProfile;
-  #define DEFAULT_testUnconditionalWithFixedStartingGlobalsProfile false
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * starting globals) profile to STDOUT during training?
-       */
-      bool coutUnconditionalWithFixedStartingGlobalsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedStartingGlobalsProfile false
-
-      /**
-       * Also train the unconditional (with fixed true globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalWithFixedTrueGlobalsProfile;
-  #define DEFAULT_testUnconditionalWithFixedTrueGlobalsProfile false
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * true globals) profile to STDOUT during training?
-       */
-      bool coutUnconditionalWithFixedTrueGlobalsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedTrueGlobalsProfile false
-
-      /**
-       * Also train the "conditional, then unconditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool testConditionalThenUnconditionalProfile;
-  #define DEFAULT_testConditionalThenUnconditionalProfile false
-
-      /**
-       * Write the forward (etc) scores for the "conditional, then
-       * unconditional" profile to STDOUT during training?
-       */
-      bool coutConditionalThenUnconditionalProfile;
-  #define DEFAULT_coutConditionalThenUnconditionalProfile false
-
-      /**
-       * Also train the "unconditional, then conditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool testUnconditionalThenConditionalProfile;
-  #define DEFAULT_testUnconditionalThenConditionalProfile false
-
-      /**
-       * Write the forward (etc) scores for the "unconditional, then
-       * conditional" profile to STDOUT during training?
-       */
-      bool coutUnconditionalThenConditionalProfile;
-  #define DEFAULT_coutUnconditionalThenConditionalProfile false
-
-      /**
-       * Also train the "unconditional (first with fixed starting globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * starting globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Also train the "unconditional (first with fixed true globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * true globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-  #define DEFAULT_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile false
-
-      /**
-       * Also use the best profile found after Gibbs sampling using Conditional
-       * ("Per Position") Gibbs and calculate forward (etc) scores using it?
-       */
-      bool testConditionalGibbsProfile;
-  #define DEFAULT_testConditionalGibbsProfile false
-
-      /**
-       * Write the forward (etc) scores for the best profile found (for
-       * Conditional Gibbs) to STDOUT during training?
-       */
-      bool coutConditionalGibbsProfile;
-      //  #define DEFAULT_coutConditionalGibbsProfile true
-  #define DEFAULT_coutConditionalGibbsProfile false
-
-      /**
-       * Also use the best profile found after Gibbs sampling using
-       * Unconditional ("Simple") Gibbs and calculate forward (etc) scores
-       * using it?
-       */
-      bool testUnconditionalGibbsProfile;
-  #define DEFAULT_testUnconditionalGibbsProfile false
-
-      /**
-       * Write the forward (etc) scores for the best profile found profile (for
-       * Unconditional Gibbs) to STDOUT during training?
-       */
-      bool coutUnconditionalGibbsProfile;
-      //  #define DEFAULT_coutUnconditionalGibbsProfile true
-  #define DEFAULT_coutUnconditionalGibbsProfile false
-
-      /**
-       * Also use lengthadjust to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testLengthadjust;
-#define DEFAULT_testLengthadjust false
-
-      /**
-       * Also use Baldi to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testBaldi;
-#define DEFAULT_testBaldi false
-
-      /**
-       * Also use Baldi / Siegel to train the profiles, and calculate forward (etc) scores using it?
-       */
-      bool testBaldiSiegel;
-#define DEFAULT_testBaldiSiegel false
-
-      /**
-       * If startWithUniformPositions or startWithPositionsDrawnFromPrior are
-       * true, then under normal circumstances numStartingProfiles profiles
-       * would be randomly generated; if alsoStartWithEvenPositions is *also*
-       * true, then the first starting profile (index 0) will have even
-       * positions rather than randomly-generated position emission values.
-       */
-      bool alsoStartWithEvenPositions;
-#define DEFAULT_alsoStartWithEvenPositions false
+       * Define ProfuseTest::Parameters "members".  These are tightly tied to the options.
+       *    TAH 9/13
+       **/
+      #undef GALOSH_DEF_OPT
+      #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) TYPE NAME
+      #include "ProfuseTestOptions.hpp"  /// declare Parameters members specific to ProfuseTest
 
       Parameters ();
       virtual ~Parameters () {};
@@ -893,521 +239,23 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         // parameters too.
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP( base_parameters_modifier_t );
 
-        // Serialize the new isModified_ stuff
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveResultsToFile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveResultsParentDirectory );
-        ar & BOOST_SERIALIZATION_NVP( isModified_resultsFilePrefix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_tabFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_parametersFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTrueProfileTrees );
-        ar & BOOST_SERIALIZATION_NVP( isModified_trueProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveStartingProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startingProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTestProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testProfileTreeFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_savePatternSequences );
-        ar & BOOST_SERIALIZATION_NVP( isModified_patternSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTests );
-        ar & BOOST_SERIALIZATION_NVP( isModified_patternSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTrainingSequences );
-        ar & BOOST_SERIALIZATION_NVP( isModified_trainingSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTestingSequences );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testingSequencesFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTrueTrainingAlignments );
-        ar & BOOST_SERIALIZATION_NVP( isModified_trainingTrueAlignmentsFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveTrueTestingAlignments );
-        ar & BOOST_SERIALIZATION_NVP( isModified_trueTestingAlignmentsFileSuffix );
-        ar & BOOST_SERIALIZATION_NVP( isModified_saveFileVersion );
-        ar & BOOST_SERIALIZATION_NVP( isModified_numProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_profileLengths );
-        ar & BOOST_SERIALIZATION_NVP( isModified_sharedPositionRate );
-        ar & BOOST_SERIALIZATION_NVP( isModified_numTrainingSequencesPerProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_numTestingSequencesPerProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_conservationRates );
-        ar & BOOST_SERIALIZATION_NVP( isModified_useDeletionsForInsertionsParameters );
-        ar & BOOST_SERIALIZATION_NVP( isModified_expectedDeletionsCounts );
-        ar & BOOST_SERIALIZATION_NVP( isModified_expectedInsertionsCounts );
-        ar & BOOST_SERIALIZATION_NVP( isModified_expectedDeletionLengthAsProfileLengthFractions );
-        ar & BOOST_SERIALIZATION_NVP( isModified_expectedInsertionLengthAsProfileLengthFractions );
-        ar & BOOST_SERIALIZATION_NVP( isModified_minExpectedDeletionLength );
-        ar & BOOST_SERIALIZATION_NVP( isModified_minExpectedInsertionLength );
-        ar & BOOST_SERIALIZATION_NVP( isModified_preAlignInsertion );
-        ar & BOOST_SERIALIZATION_NVP( isModified_postAlignInsertion );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorStrength );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorStrength_internal_transitions );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorMtoM );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorMtoI );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorMtoD );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorItoM );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorItoI );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorDtoM );
-        ar & BOOST_SERIALIZATION_NVP( isModified_priorDtoD );
-        ar & BOOST_SERIALIZATION_NVP( isModified_reportGibbsMean );
-        ar & BOOST_SERIALIZATION_NVP( isModified_reportGibbsMode );
-        ar & BOOST_SERIALIZATION_NVP( isModified_numTrueProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_numStartingProfiles );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_scalar );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxNtoN );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxBtoD );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxMtoI );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxMtoD );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxItoI );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxDtoD );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformGlobals_maxCtoC );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithUniformPositions );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithGlobalsDrawnFromPrior );
-        ar & BOOST_SERIALIZATION_NVP( isModified_startWithPositionsDrawnFromPrior );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testViterbi );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutViterbi );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testTruepath );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutTruepath );
-        ar & BOOST_SERIALIZATION_NVP( isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue );
-        ar & BOOST_SERIALIZATION_NVP( isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutDistances );
-        ar & BOOST_SERIALIZATION_NVP( isModified_calculateProfileProfileAlignments );
-        ar & BOOST_SERIALIZATION_NVP( isModified_profileProfileIndelOpenCost );
-        ar & BOOST_SERIALIZATION_NVP( isModified_profileProfileIndelExtensionCost );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testTrueProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutTrueProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testStartingProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutStartingProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalWithFixedStartingGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalWithFixedStartingGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalWithFixedTrueGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalWithFixedTrueGlobalsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testConditionalThenUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutConditionalThenUnconditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalThenConditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalThenConditionalProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testConditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutConditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testUnconditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_coutUnconditionalGibbsProfile );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testLengthadjust );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testBaldi );
-        ar & BOOST_SERIALIZATION_NVP( isModified_testBaldiSiegel );
-        ar & BOOST_SERIALIZATION_NVP( isModified_alsoStartWithEvenPositions );
+        // Serialize the ProfuseTest::ParameterModifierTemplate specific isModified_<member>s TAH 9/13
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) ar & BOOST_SERIALIZATION_NVP(isModified_##NAME)
+        #include "ProfuseTestOptions.hpp"  //archive ProfuseTest::ParameterModifierTemplate isModified_<member>s
+
       } // serialize( Archive &, const unsigned int )
 
     public:
   
       /// isModified flags for Parameters
-      bool isModified_saveResultsToFile;
-
-      bool isModified_saveResultsParentDirectory;
-
-      bool isModified_resultsFilePrefix;
-
-      bool isModified_tabFileSuffix;
-
-      bool isModified_parametersFileSuffix;
-
-      bool isModified_saveTrueProfileTrees;
-
-      bool isModified_trueProfileTreeFileSuffix;
-
-      bool isModified_saveStartingProfiles;
-
-      bool isModified_startingProfileTreeFileSuffix;
-
-      bool isModified_saveTestProfiles;
-
-      bool isModified_testProfileTreeFileSuffix;
-
-      bool isModified_savePatternSequences;
-
-      bool isModified_patternSequencesFileSuffix;
-
-      bool isModified_saveTests;
-
-      bool isModified_testsFileSuffix;
-
-      bool isModified_saveTrainingSequences;
-
-      bool isModified_trainingSequencesFileSuffix;
-
-      bool isModified_saveTestingSequences;
-
-      bool isModified_testingSequencesFileSuffix;
-
-      bool isModified_saveTrueTrainingAlignments;
-
-      bool isModified_trainingTrueAlignmentsFileSuffix;
-
-      bool isModified_saveTrueTestingAlignments;
-
-      bool isModified_trueTestingAlignmentsFileSuffix;
-
-      bool isModified_saveFileVersion;
-
-      bool isModified_numProfiles;
-
-      bool isModified_profileLengths;
-
       /**
-       * When numProfiles > 1, what fraction of the positions of each child
-       * should be shared with its parent?
-       */
-      bool isModified_sharedPositionRate;
-
-      bool isModified_numTrainingSequencesPerProfiles;
-
-      bool isModified_numTestingSequencesPerProfile;
-
-      /**
-       * When making the true root profile from the pattern sequence, use this
-       * probability for the pattern sequence base at each position, and divide
-       * the remaining probability evenly among the remaining bases.
-       */
-      bool isModified_conservationRates;
-
-      /**
-       * Lock the indel parameters of the true profile to be the same for
-       * insertions as for deletions?  This makes the expectedInsertionsCounts,
-       * expectedInsertionLengthAsProfileLengthFractions, and
-       * minExpectedInsertionLength unused, since the corresponding deletion
-       * values will be used instead.  It also reduces the number of tests by
-       * reducing the number of possible combinations (since deletions and
-       * insertions will go in lock step).
-       */
-      bool isModified_useDeletionsForInsertionsParameters;
-
-      /**
-       * The deletionOpen value of the true profile will be set to (
-       * expectedDeletionsCounts / profileLength ).
-       */
-      bool isModified_expectedDeletionsCounts;
-
-      /**
-       * The insertionOpen value of the true profile will be set to (
-       * expectedInsertionsCounts / profileLength ).
-       */
-      bool isModified_expectedInsertionsCounts;
-
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFractions *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).
-       */
-      bool isModified_expectedDeletionLengthAsProfileLengthFractions;
-
-      /**
-       * The insertionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedInsertionLengthAsProfileLengthFractions *
-       * profileLength ) ) and ( 1.0 / minExpectedInsertionLength ).
-       */
-      bool isModified_expectedInsertionLengthAsProfileLengthFractions;
-
-      /**
-       * The deletionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedDeletionLengthAsProfileLengthFractions *
-       * profileLength ) ) and ( 1.0 / minExpectedDeletionLength ).
-       */
-      bool isModified_minExpectedDeletionLength;
-
-      /**
-       * The insertionExtension value of the true profile will be the minimum of
-       * ( 1.0 / ( expectedInsertionLengthAsProfileLengthFractions *
-       * profileLength ) ) and ( 1.0 / minExpectedInsertionLength ).
-       */
-      bool isModified_minExpectedInsertionLength;
-
-      /**
-       * The preAlignInsertion value of the true profile.
-       */
-      bool isModified_preAlignInsertion;
-
-      /**
-       * The postAlignInsertion value of the true profile.
-       */
-      bool isModified_postAlignInsertion;
-
-      /**
-       * The effective number of sequences "observed" a priori.
-       */
-      bool isModified_priorStrength;
-
-      /**
-       * The effective number of sequences "observed" a priori.
-       */
-      bool isModified_priorStrength_internal_transitions;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorMtoM;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorMtoI;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * M->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorMtoD;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorItoM;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * I->I transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorItoI;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->M transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorDtoM;
-
-      /**
-       * The prior contribution (per "a priori sequence": see priorStrength) of
-       * D->D transitions.  This will be multiplied by the profile length and
-       * by the priorStrength when setting up the global prior.
-       */
-      bool isModified_priorDtoD;
-
-      /**
-       * Additionally report the overall mean of all chains found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       */
-      bool isModified_reportGibbsMean;
-
-      /**
-       * Additionally report the mode found while
-       * performing Gibbs sampling?  The best profile is always reported, which
-       * may be the overall mean, the mode, or the mean of one of the chains.
-       *
-       * Note that it takes some extra time to store the mode (this turns on
-       * saveGibbsMode in the ProfileGibbs class).
-       */
-      bool isModified_reportGibbsMode;
-
-      /**
-       * We do the whole thing a number of different times, starting over with
-       * a new pattern sequence.
-       */
-      bool isModified_numTrueProfiles;
-
-      /**
-       * For each true root profile, we run the trainers from a number of
-       * different starting profiles.  This is that number.
-       */
-      bool isModified_numStartingProfiles;
-
-      bool isModified_startWithUniformGlobals;
-
-      bool isModified_startWithUniformGlobals_scalar;
-
-      bool isModified_startWithUniformGlobals_maxNtoN;
-
-      bool isModified_startWithUniformGlobals_maxBtoD;
-
-      bool isModified_startWithUniformGlobals_maxMtoI;
-
-      bool isModified_startWithUniformGlobals_maxMtoD;
-
-      bool isModified_startWithUniformGlobals_maxItoI;
-
-      bool isModified_startWithUniformGlobals_maxDtoD;
-
-      bool isModified_startWithUniformGlobals_maxCtoC;
-
-      bool isModified_startWithUniformPositions;
-
-      bool isModified_startWithGlobalsDrawnFromPrior;
-
-      bool isModified_startWithPositionsDrawnFromPrior;
-
-      /**
-       * Calculate the viterbi scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool isModified_testViterbi;
-
-      /**
-       * Write the viterbi scores to STDOUT?
-       */
-      bool isModified_coutViterbi;
-
-      /**
-       * Calculate the truepath scores after training each profile?  Note that
-       * this is in addition to the forward scores, which we always calculate.
-       */
-      bool isModified_testTruepath;
-
-      /**
-       * Write the truepath scores to STDOUT?
-       */
-      bool isModified_coutTruepath;
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * true profile?
-       */
-      bool isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-
-      /**
-       * Calculate the SKL distance between the training profiles and the
-       * starting profile?
-       */
-      bool isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-
-      /**
-       * Write the SKL distances to STDOUT?
-       */
-      bool isModified_coutDistances;
-
-      bool isModified_calculateProfileProfileAlignments;
-
-      bool isModified_profileProfileIndelOpenCost;
-
-      bool isModified_profileProfileIndelExtensionCost;
-
-      /**
-       * Calculate forward (etc) scores for the true profile, too?
-       */
-      bool isModified_testTrueProfile;
-
-      /**
-       * Write forward (etc) scores for the true profile to STDOUT
-       * during training?
-       */
-      bool isModified_coutTrueProfile;
-
-      /**
-       * Calculate forward (etc) scores for the pre-training profile, too?
-       */
-      bool isModified_testStartingProfile;
-
-      /**
-       * Write forward (etc) scores for the pre-training profile to STDOUT
-       * during training?
-       */
-      bool isModified_coutStartingProfile;
-
-      /**
-       * Also train the unconditional profile, and calculate forward (etc)
-       * scores using it?
-       */
-      bool isModified_testUnconditionalProfile;
-
-      /**
-       * Write the forward (etc) scores for the unconditional profile to STDOUT
-       * during training?
-       */
-      bool isModified_coutUnconditionalProfile;
-
-      /**
-       * Also train the unconditional (with fixed starting globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool isModified_testUnconditionalWithFixedStartingGlobalsProfile;
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * starting globals) profile to STDOUT during training?
-       */
-      bool isModified_coutUnconditionalWithFixedStartingGlobalsProfile;
-
-      /**
-       * Also train the unconditional (with fixed true globals) profile,
-       * and calculate forward (etc) scores using it?
-       */
-      bool isModified_testUnconditionalWithFixedTrueGlobalsProfile;
-
-      /**
-       * Write the forward (etc) scores for the unconditional (with fixed
-       * true globals) profile to STDOUT during training?
-       */
-      bool isModified_coutUnconditionalWithFixedTrueGlobalsProfile;
-
-      /**
-       * Also train the "conditional, then unconditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool isModified_testConditionalThenUnconditionalProfile;
-
-      /**
-       * Write the forward (etc) scores for the "conditional, then
-       * unconditional" profile to STDOUT during training?
-       */
-      bool isModified_coutConditionalThenUnconditionalProfile;
-
-      /**
-       * Also train the "unconditional, then conditional" profile, and
-       * calculate forward (etc) scores using it?
-       */
-      bool isModified_testUnconditionalThenConditionalProfile;
-
-      /**
-       * Write the forward (etc) scores for the "unconditional, then
-       * conditional" profile to STDOUT during training?
-       */
-      bool isModified_coutUnconditionalThenConditionalProfile;
-
-      /**
-       * Also train the "unconditional (first with fixed starting globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * starting globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-
-      /**
-       * Also train the "unconditional (first with fixed true globals, then
-       * with fixed positions)" profile, and calculate forward (etc) scores
-       * using it?
-       */
-      bool isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-
-      /**
-       * Write the forward (etc) scores for the unconditional (first with fixed
-       * true globals, then with fixed positions) profile to STDOUT during
-       * training?
-       */
-      bool isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-
-      bool isModified_testConditionalGibbsProfile;
-      bool isModified_coutConditionalGibbsProfile;
-      bool isModified_testUnconditionalGibbsProfile;
-      bool isModified_coutUnconditionalGibbsProfile;
-
-      bool isModified_testLengthadjust;
-
-      bool isModified_testBaldi;
-
-      bool isModified_testBaldiSiegel;
-
-      bool isModified_alsoStartWithEvenPositions;
+       * Declare isModified_<member>s for isModified_<member>s of ProfileTrainer::ParameterModifierTemplate
+       * TAH 9/13
+       **/
+      #undef GALOSH_DEF_OPT
+      #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) bool isModified_##NAME
+      #include "ProfuseTestOptions.hpp"  // Declare isModified<member>s for ProfuseTest::ParametersModifierTemplate
 
       ParametersModifierTemplate ();
     
@@ -1685,17 +533,22 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       Parameters ()
       {
-        if( profile_tree_trainer_parameters_t::parameters.debug >= DEBUG_All ) {
-          cout << "[debug] ProfuseTest::Parameters::<init>()" << endl;
-        } // End if DEBUG_All
-        resetToDefaults();
-#undef GALOSH_DEF_OPT
+         #ifdef DEBUG
+         cout << "[debug] ProfuseTest::Parameters::<init>()" << endl;
+         cout << "[debug] using ProfuseTestOptions.hpp" << endl;
+         #endif
+         /**
+          *  Describe all options/parameters to the options_description object.  In the main
+          *  routine (whatever it may be) these descriptions will be parsed from the commandline
+          *  and possibly other sources.  This Parameters initializer calls it's parent to get
+          *  the ProlificParameter::Parameters options.
+          **/
+         #undef GALOSH_DEF_OPT
 #define PROFUSETEST_DEFAULT_TMP_ARRAY_TO_VECTOR
-#define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
-        DEFAULT_OPTIONS_DESCRIPTION.add_options()(#NAME,po::value<TYPE>()->default_value(DEFAULTVAL)->notifier( boost::bind(&( Parameters::SET_##NAME ), this, _1) ) TMP_EXTRA_STUFF,HELP)
-        //DEFAULT_OPTIONS_DESCRIPTION.add_options()(#NAME,po::value<TYPE>()->default_value(DEFAULTVAL) TMP_EXTRA_STUFF,HELP)
-        #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
-#undef GALOSH_DEF_OPT
+         #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP)          \
+         this->galosh::Parameters::m_galosh_options_description.add_options()(#NAME,po::value<TYPE>(&NAME)->default_value(DEFAULTVAL) TMP_EXTRA_STUFF,HELP)
+         #include "ProfuseTestOptions.hpp"  /// define all the commandline options for this module
+
       } // <init>()
 
   template <class ResidueType,
@@ -1750,7 +603,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       )
       {
         //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
-        ProfileTreeTainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
+        ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::copyFromNonVirtual( copy_from );
         //if( copy_from.debug >= DEBUG_All ) {
         //  cout << "[debug] ProfuseTest::Parameters::copyFromNonVirtual( copy_from )" << endl;
         //} // End if DEBUG_All
@@ -1770,106 +623,11 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         AnyParameters const & copy_from
       )
       {
-        saveResultsToFile =                            copy_from.saveResultsToFile;
-        saveResultsParentDirectory =                           copy_from.saveResultsParentDirectory;
-        resultsFilePrefix =                            copy_from.resultsFilePrefix;
-        tabFileSuffix =                            copy_from.tabFileSuffix;
-        parametersFileSuffix =                            copy_from.parametersFileSuffix;
-        saveTrueProfileTrees =                            copy_from.saveTrueProfileTrees;
-        trueProfileTreeFileSuffix =                            copy_from.trueProfileTreeFileSuffix;
-        saveStartingProfiles =                            copy_from.saveStartingProfiles;
-        startingProfileTreeFileSuffix =                            copy_from.startingProfileTreeFileSuffix;
-        saveTestProfiles =                            copy_from.saveTestProfiles;
-        testProfileTreeFileSuffix =                            copy_from.testProfileTreeFileSuffix;
-        savePatternSequences =                            copy_from.savePatternSequences;
-        patternSequencesFileSuffix =                            copy_from.patternSequencesFileSuffix;
-        saveTests =                            copy_from.saveTests;
-        testsFileSuffix =                            copy_from.testsFileSuffix;
-        saveTrainingSequences =                            copy_from.saveTrainingSequences;
-        trainingSequencesFileSuffix =                            copy_from.trainingSequencesFileSuffix;
-        saveTestingSequences =                            copy_from.saveTestingSequences;
-        testingSequencesFileSuffix =                            copy_from.testingSequencesFileSuffix;
-        saveTrueTrainingAlignments =                            copy_from.saveTrueTrainingAlignments;
-        trainingTrueAlignmentsFileSuffix =                            copy_from.trainingTrueAlignmentsFileSuffix;
-        saveTrueTestingAlignments =                            copy_from.saveTrueTestingAlignments;
-        trueTestingAlignmentsFileSuffix =                            copy_from.trueTestingAlignmentsFileSuffix;
-        saveFileVersion =                              copy_from.saveFileVersion;
-        numProfiles =                                  copy_from.numProfiles;
-        profileLengths =                                copy_from.profileLengths;
-        sharedPositionRate =                           copy_from.sharedPositionRate;
-        numTrainingSequencesPerProfiles =               copy_from.numTrainingSequencesPerProfiles;
-        numTestingSequencesPerProfile =                   copy_from.numTestingSequencesPerProfile;
-        conservationRates =                             copy_from.conservationRates;
-        useDeletionsForInsertionsParameters =                             copy_from.useDeletionsForInsertionsParameters;
-        expectedDeletionsCounts =                          copy_from.expectedDeletionsCounts;
-        expectedInsertionsCounts =                          copy_from.expectedInsertionsCounts;
-        expectedDeletionLengthAsProfileLengthFractions =                          copy_from.expectedDeletionLengthAsProfileLengthFractions;
-        expectedInsertionLengthAsProfileLengthFractions =                          copy_from.expectedInsertionLengthAsProfileLengthFractions;
-        minExpectedDeletionLength =                          copy_from.minExpectedDeletionLength;
-        minExpectedInsertionLength =                          copy_from.minExpectedInsertionLength;
-        preAlignInsertion =                          copy_from.preAlignInsertion;
-        postAlignInsertion =                          copy_from.postAlignInsertion;
-        priorStrength =                          copy_from.priorStrength;
-        priorStrength_internal_transitions =                          copy_from.priorStrength_internal_transitions;
-        priorMtoM =                          copy_from.priorMtoM;
-        priorMtoI =                          copy_from.priorMtoI;
-        priorMtoD =                          copy_from.priorMtoD;
-        priorItoM =                          copy_from.priorItoM;
-        priorItoI =                          copy_from.priorItoI;
-        priorDtoM =                          copy_from.priorDtoM;
-        priorDtoD =                          copy_from.priorDtoD;
-        reportGibbsMean =                          copy_from.reportGibbsMean;
-        reportGibbsMode =                          copy_from.reportGibbsMode;
-        numTrueProfiles =                          copy_from.numTrueProfiles;
-        numStartingProfiles =                          copy_from.numStartingProfiles;
-        startWithUniformGlobals =                          copy_from.startWithUniformGlobals;
-        startWithUniformGlobals_scalar =                          copy_from.startWithUniformGlobals_scalar;
-        startWithUniformGlobals_maxNtoN =                          copy_from.startWithUniformGlobals_maxNtoN;
-        startWithUniformGlobals_maxBtoD =                          copy_from.startWithUniformGlobals_maxBtoD;
-        startWithUniformGlobals_maxMtoI =                          copy_from.startWithUniformGlobals_maxMtoI;
-        startWithUniformGlobals_maxMtoD =                          copy_from.startWithUniformGlobals_maxMtoD;
-        startWithUniformGlobals_maxItoI =                          copy_from.startWithUniformGlobals_maxItoI;
-        startWithUniformGlobals_maxDtoD =                          copy_from.startWithUniformGlobals_maxDtoD;
-        startWithUniformGlobals_maxCtoC =                          copy_from.startWithUniformGlobals_maxCtoC;
-        startWithUniformPositions =                          copy_from.startWithUniformPositions;
-        startWithGlobalsDrawnFromPrior =                          copy_from.startWithGlobalsDrawnFromPrior;
-        startWithPositionsDrawnFromPrior =                          copy_from.startWithPositionsDrawnFromPrior;
-        testViterbi =                                   copy_from.testViterbi;
-        coutViterbi =                                   copy_from.coutViterbi;
-        testTruepath =                                   copy_from.testTruepath;
-        coutTruepath =                                   copy_from.coutTruepath;
-        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        copy_from.calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        coutDistances =     copy_from.coutDistances;
-        calculateProfileProfileAlignments =   copy_from.calculateProfileProfileAlignments;
-        profileProfileIndelOpenCost =   copy_from.profileProfileIndelOpenCost;
-        profileProfileIndelExtensionCost =   copy_from.profileProfileIndelExtensionCost;
-        testTrueProfile =                          copy_from.testTrueProfile;
-        coutTrueProfile =                          copy_from.coutTrueProfile;
-        testStartingProfile =                          copy_from.testStartingProfile;
-        coutStartingProfile =                          copy_from.coutStartingProfile;
-        testUnconditionalProfile =                     copy_from.testUnconditionalProfile;
-        coutUnconditionalProfile =                     copy_from.coutUnconditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.testUnconditionalWithFixedStartingGlobalsProfile;
-        coutUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.coutUnconditionalWithFixedStartingGlobalsProfile;
-        testUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.testUnconditionalWithFixedTrueGlobalsProfile;
-        coutUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.coutUnconditionalWithFixedTrueGlobalsProfile;
-        testConditionalThenUnconditionalProfile =      copy_from.testConditionalThenUnconditionalProfile;
-        coutConditionalThenUnconditionalProfile =      copy_from.coutConditionalThenUnconditionalProfile;
-        testUnconditionalThenConditionalProfile =      copy_from.testUnconditionalThenConditionalProfile;
-        coutUnconditionalThenConditionalProfile =      copy_from.coutUnconditionalThenConditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        testConditionalGibbsProfile =                     copy_from.testConditionalGibbsProfile;
-        coutConditionalGibbsProfile =                     copy_from.coutConditionalGibbsProfile;
-        testUnconditionalGibbsProfile =                     copy_from.testUnconditionalGibbsProfile;
-        coutUnconditionalGibbsProfile =                     copy_from.coutUnconditionalGibbsProfile;
-        testLengthadjust = copy_from.testLengthadjust;
-        testBaldi = copy_from.testBaldi;
-        testBaldiSiegel = copy_from.testBaldiSiegel;
-        alsoStartWithEvenPositions = copy_from.alsoStartWithEvenPositions;
+    /// TAH 9/13
+    #undef GALOSH_DEF_OPT
+    #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = copy_from. NAME
+    #include "ProfuseTestOptions.hpp"  /// copy all ProfuseTest::Parameters members
+
       } // copyFromNonVirtualDontDelegate( AnyParameters const & )
 
 
@@ -1898,111 +656,16 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       {
         //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
         ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::resetToDefaults();
-        // TODO: Why isn't the compiler finding "debug" in galosh::Parameters?
-        //if( debug >= DEBUG_All ) {
-        //  cout << "[debug] ProfuseTest::Parameters::resetToDefaults()" << endl;
-        //} // End if DEBUG_All
+        #ifdef DEBUG
+          cout << "[debug] ProfuseTest::Parameters::resetToDefaults()" << endl;
+        #endif
 
-        saveResultsToFile =                            DEFAULT_saveResultsToFile;
-        saveResultsParentDirectory =                           DEFAULT_saveResultsParentDirectory;
-        resultsFilePrefix =                            DEFAULT_resultsFilePrefix;
-        tabFileSuffix =                            DEFAULT_tabFileSuffix;
-        parametersFileSuffix =                            DEFAULT_parametersFileSuffix;
-        saveTrueProfileTrees =                            DEFAULT_saveTrueProfileTrees;
-        trueProfileTreeFileSuffix =                            DEFAULT_trueProfileTreeFileSuffix;
-        saveStartingProfiles =                            DEFAULT_saveStartingProfiles;
-        startingProfileTreeFileSuffix =                            DEFAULT_startingProfileTreeFileSuffix;
-        saveTestProfiles =                            DEFAULT_saveTestProfiles;
-        testProfileTreeFileSuffix =                            DEFAULT_testProfileTreeFileSuffix;
-        savePatternSequences =                            DEFAULT_savePatternSequences;
-        patternSequencesFileSuffix =                            DEFAULT_patternSequencesFileSuffix;
-        saveTests =                            DEFAULT_saveTests;
-        testsFileSuffix =                            DEFAULT_testsFileSuffix;
-        saveTrainingSequences =                            DEFAULT_saveTrainingSequences;
-        trainingSequencesFileSuffix =                            DEFAULT_trainingSequencesFileSuffix;
-        saveTestingSequences =                            DEFAULT_saveTestingSequences;
-        testingSequencesFileSuffix =                            DEFAULT_testingSequencesFileSuffix;
-        saveTrueTrainingAlignments =                            DEFAULT_saveTrueTrainingAlignments;
-        trainingTrueAlignmentsFileSuffix =                            DEFAULT_trainingTrueAlignmentsFileSuffix;
-        saveTrueTestingAlignments =                            DEFAULT_saveTrueTestingAlignments;
-        trueTestingAlignmentsFileSuffix =                            DEFAULT_trueTestingAlignmentsFileSuffix;
-        saveFileVersion =                              DEFAULT_saveFileVersion;
-        numProfiles =                                  DEFAULT_numProfiles;
-        profileLengths =                                DEFAULT_profileLengths;
-        sharedPositionRate =                           DEFAULT_sharedPositionRate;
-        numTrainingSequencesPerProfiles =               DEFAULT_numTrainingSequencesPerProfiles;
-        numTestingSequencesPerProfile =                   DEFAULT_numTestingSequencesPerProfile;
-        conservationRates =                             DEFAULT_conservationRates;
-        useDeletionsForInsertionsParameters =                             DEFAULT_useDeletionsForInsertionsParameters;
-        expectedDeletionsCounts =                          DEFAULT_expectedDeletionsCounts;
-        expectedInsertionsCounts =                          DEFAULT_expectedInsertionsCounts;
-        expectedDeletionLengthAsProfileLengthFractions =                          DEFAULT_expectedDeletionLengthAsProfileLengthFractions;
-        expectedInsertionLengthAsProfileLengthFractions =                          DEFAULT_expectedInsertionLengthAsProfileLengthFractions;
-        minExpectedDeletionLength =                          DEFAULT_minExpectedDeletionLength;
-        minExpectedInsertionLength =                          DEFAULT_minExpectedInsertionLength;
-        preAlignInsertion =                          DEFAULT_preAlignInsertion;
-        postAlignInsertion =                          DEFAULT_postAlignInsertion;
-        priorStrength =                          DEFAULT_priorStrength;
-        priorStrength_internal_transitions =                          DEFAULT_priorStrength_internal_transitions;
-        priorMtoM =                          DEFAULT_priorMtoM;
-        priorMtoI =                          DEFAULT_priorMtoI;
-        priorMtoD =                          DEFAULT_priorMtoD;
-        priorItoM =                          DEFAULT_priorItoM;
-        priorItoI =                          DEFAULT_priorItoI;
-        priorDtoM =                          DEFAULT_priorDtoM;
-        priorDtoD =                          DEFAULT_priorDtoD;
-        reportGibbsMean =                          DEFAULT_reportGibbsMean;
-        reportGibbsMode =                          DEFAULT_reportGibbsMode;
-        numTrueProfiles =                          DEFAULT_numTrueProfiles;
-        numStartingProfiles =                          DEFAULT_numStartingProfiles;
-        startWithUniformGlobals =                          DEFAULT_startWithUniformGlobals;
-        startWithUniformGlobals_scalar =                          DEFAULT_startWithUniformGlobals_scalar;
-        startWithUniformGlobals_maxNtoN =                          DEFAULT_startWithUniformGlobals_maxNtoN;
-        startWithUniformGlobals_maxBtoD =                          DEFAULT_startWithUniformGlobals_maxBtoD;
-        startWithUniformGlobals_maxMtoI =                          DEFAULT_startWithUniformGlobals_maxMtoI;
-        startWithUniformGlobals_maxMtoD =                          DEFAULT_startWithUniformGlobals_maxMtoD;
-        startWithUniformGlobals_maxItoI =                          DEFAULT_startWithUniformGlobals_maxItoI;
-        startWithUniformGlobals_maxDtoD =                          DEFAULT_startWithUniformGlobals_maxDtoD;
-        startWithUniformGlobals_maxCtoC =                          DEFAULT_startWithUniformGlobals_maxCtoC;
-        startWithUniformPositions =                          DEFAULT_startWithUniformPositions;
-        startWithGlobalsDrawnFromPrior =                          DEFAULT_startWithGlobalsDrawnFromPrior;
-        startWithPositionsDrawnFromPrior =                          DEFAULT_startWithPositionsDrawnFromPrior;
-        testViterbi =                                   DEFAULT_testViterbi;
-        coutViterbi =                                   DEFAULT_coutViterbi;
-        testTruepath =                                   DEFAULT_testTruepath;
-        coutTruepath =                                   DEFAULT_coutTruepath;
-        calculateSymmeterizedKullbackLeiblerDistancesToTrue =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        calculateSymmeterizedKullbackLeiblerDistancesToStarting =        DEFAULT_calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        coutDistances =     DEFAULT_coutDistances;
-        calculateProfileProfileAlignments =   DEFAULT_calculateProfileProfileAlignments;
-        profileProfileIndelOpenCost =   DEFAULT_profileProfileIndelOpenCost;
-        profileProfileIndelExtensionCost =   DEFAULT_profileProfileIndelExtensionCost;
-        testTrueProfile =                          DEFAULT_testTrueProfile;
-        coutTrueProfile =                          DEFAULT_coutTrueProfile;
-        testStartingProfile =                          DEFAULT_testStartingProfile;
-        coutStartingProfile =                          DEFAULT_coutStartingProfile;
-        testUnconditionalProfile =                     DEFAULT_testUnconditionalProfile;
-        coutUnconditionalProfile =                     DEFAULT_coutUnconditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedStartingGlobalsProfile;
-        coutUnconditionalWithFixedStartingGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedStartingGlobalsProfile;
-        testUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_testUnconditionalWithFixedTrueGlobalsProfile;
-        coutUnconditionalWithFixedTrueGlobalsProfile =                     DEFAULT_coutUnconditionalWithFixedTrueGlobalsProfile;
-        testConditionalThenUnconditionalProfile =      DEFAULT_testConditionalThenUnconditionalProfile;
-        coutConditionalThenUnconditionalProfile =      DEFAULT_coutConditionalThenUnconditionalProfile;
-        testUnconditionalThenConditionalProfile =      DEFAULT_testUnconditionalThenConditionalProfile;
-        coutUnconditionalThenConditionalProfile =      DEFAULT_coutUnconditionalThenConditionalProfile;
-        testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  DEFAULT_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        testConditionalGibbsProfile =                     DEFAULT_testConditionalGibbsProfile;
-        coutConditionalGibbsProfile =                     DEFAULT_coutConditionalGibbsProfile;
-        testUnconditionalGibbsProfile =                     DEFAULT_testUnconditionalGibbsProfile;
-        coutUnconditionalGibbsProfile =                     DEFAULT_coutUnconditionalGibbsProfile;
-        testLengthadjust = DEFAULT_testLengthadjust;
-        testBaldi = DEFAULT_testBaldi;
-        testBaldiSiegel = DEFAULT_testBaldiSiegel;
-        alsoStartWithEvenPositions = DEFAULT_alsoStartWithEvenPositions;
+        /// TAH 9/13
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) NAME = this->Parameters::m_galosh_options_map[#NAME].template as<TYPE>()
+        #include "ProfuseTestOptions.hpp"  /// reset all Parameters members
+                                              /// (ProfuseTest and through inheritance tree)
+
       } // resetToDefaults()
 
   template <class ResidueType,
@@ -2018,196 +681,23 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         std::basic_ostream<CharT,Traits>& os
       ) const
       {
-        ///  \todo fixyfix ITERATE through m_...whatever
-
         //ProfileGibbs<ProfileTreeRoot<ResidueType, ProbabilityType>,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
         ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters::writeParameters( os );
         os << endl;
 
-        os << "[ProfuseTest]" << endl;
+        //Note: we must comment out [ProfuseTest] because it means something special to
+        //in configuration files sensu program_options
+        os << "#[ProfuseTest]" << endl;
 
-        os << "saveResultsToFile = " <<                           saveResultsToFile << endl;
-        os << "saveResultsParentDirectory = " <<                  saveResultsParentDirectory << endl;
-        os << "resultsFilePrefix = " <<                          resultsFilePrefix << endl;
-        os << "tabFileSuffix = " <<                          tabFileSuffix << endl;
-        os << "parametersFileSuffix = " <<                          parametersFileSuffix << endl;
-        os << "saveTrueProfileTrees = " <<                          saveTrueProfileTrees << endl;
-        os << "trueProfileTreeFileSuffix = " <<                          trueProfileTreeFileSuffix << endl;
-        os << "saveStartingProfiles = " <<                          saveStartingProfiles << endl;
-        os << "startingProfileTreeFileSuffix = " <<                          startingProfileTreeFileSuffix << endl;
-        os << "saveTestProfiles = " <<                          saveTestProfiles << endl;
-        os << "testProfileTreeFileSuffix = " <<                          testProfileTreeFileSuffix << endl;
-        os << "savePatternSequences = " <<                          savePatternSequences << endl;
-        os << "patternSequencesFileSuffix = " <<                          patternSequencesFileSuffix << endl;
-        os << "saveTests = " <<                          saveTests << endl;
-        os << "testsFileSuffix = " <<                          testsFileSuffix << endl;
-        os << "saveTrainingSequences = " <<                          saveTrainingSequences << endl;
-        os << "trainingSequencesFileSuffix = " <<                          trainingSequencesFileSuffix << endl;
-        os << "saveTestingSequences = " <<                          saveTestingSequences << endl;
-        os << "testingSequencesFileSuffix = " <<                          testingSequencesFileSuffix << endl;
-        os << "saveTrueTrainingAlignments = " <<                          saveTrueTrainingAlignments << endl;
-        os << "trainingTrueAlignmentsFileSuffix = " <<                          trainingTrueAlignmentsFileSuffix << endl;
-        os << "saveTrueTestingAlignments = " <<                          saveTrueTestingAlignments << endl;
-        os << "trueTestingAlignmentsFileSuffix = " <<                          trueTestingAlignmentsFileSuffix << endl;
-        os << "saveFileVersion = " <<                             saveFileVersion << endl;
-        os << "numProfiles = " <<                                 numProfiles << endl;
+        /**
+         * write out all ProfuseTest specific parameters in the style of a configuration
+         * file, so that program_options parsers can read it back in
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) os << #NAME << " = " << lexical_cast<string>(NAME) << endl
+        #include "ProfuseTestOptions.hpp"  /// write all ProfuseTest::Parameters members to os
 
-        if( profileLengths.size() == 0 ) {
-          os << "profileLengths = NULL" << endl;
-        } else {
-          os << "profileLengths = { ";
-          for( uint32_t pl_i = 0; pl_i < profileLengths.size(); pl_i++ ) {
-            if( pl_i > 0 ) {
-              os << ", ";
-            }
-            os << profileLengths[ pl_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if profileLengths == NULL .. else ..
-        os << "sharedPositionRate = " <<                          sharedPositionRate << endl;
-        if( numTrainingSequencesPerProfiles.size() == 0 ) {
-          os << "numTrainingSequencesPerProfiles = NULL" << endl;
-              } else {
-          os << "numTrainingSequencesPerProfiles = { ";
-          for( uint32_t pl_i = 0; pl_i < numTrainingSequencesPerProfiles.size(); pl_i++ ) {
-            if( pl_i > 0 ) {
-              os << ", ";
-            }
-            os << numTrainingSequencesPerProfiles[ pl_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if numTrainingSequencesPerProfiles == NULL .. else ..
-        os << "numTestingSequencesPerProfile = " <<                  numTestingSequencesPerProfile << endl;
-        if( profileLengths.size() > 0 ) {
-          os << "profileLengths = NULL" << endl;
-              } else {
-          os << "profileLengths = { ";
-          for( uint32_t pl_i = 0; pl_i < profileLengths.size(); pl_i++ ) {
-            if( pl_i > 0 ) {
-              os << ", ";
-            }
-            os << profileLengths[ pl_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if profileLengths == NULL .. else ..
-
-        if( expectedDeletionsCounts.size() == 0 ) {
-          os << "expectedDeletionsCounts = NULL" << endl;
-              } else {
-          os << "expectedDeletionsCounts = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedDeletionsCounts.size(); cr_i++ ) {
-            if( cr_i > 0 ) {
-              os << ", ";
-            }
-            os << expectedDeletionsCounts[ cr_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if expectedDeletionsCounts == NULL .. else ..
-
-        if( expectedInsertionsCounts.size() == 0 ) {
-          os << "expectedInsertionsCounts = NULL" << endl;
-              } else {
-          os << "expectedInsertionsCounts = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedInsertionsCounts.size(); cr_i++ ) {
-            if( cr_i > 0 ) {
-              os << ", ";
-            }
-            os << expectedInsertionsCounts[ cr_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if expectedInsertionsCounts == NULL .. else ..
-
-        if( expectedDeletionLengthAsProfileLengthFractions.size() == 0 ) {
-          os << "expectedDeletionLengthAsProfileLengthFractions = NULL" << endl;
-              } else {
-          os << "expectedDeletionLengthAsProfileLengthFractions = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedDeletionLengthAsProfileLengthFractions.size(); cr_i++ ) {
-            if( cr_i > 0 ) {
-              os << ", ";
-            }
-            os << expectedDeletionLengthAsProfileLengthFractions[ cr_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-              } // End if expectedDeletionLengthAsProfileLengthFractions == NULL .. else ..
-
-        if( expectedInsertionLengthAsProfileLengthFractions.size() == 0 ) {
-          os << "expectedInsertionLengthAsProfileLengthFractions = NULL" << endl;
-              } else {
-          os << "expectedInsertionLengthAsProfileLengthFractions = { ";
-          for( uint32_t cr_i = 0; cr_i < expectedInsertionLengthAsProfileLengthFractions.size(); cr_i++ ) {
-            if( cr_i > 0 ) {
-              os << ", ";
-            }
-            os << expectedInsertionLengthAsProfileLengthFractions[ cr_i ];
-          } // End foreach conservation rate..
-          os << "}" << endl;
-        } // End if expectedInsertionLengthAsProfileLengthFractions == NULL .. else ..
-
-        os << "minExpectedDeletionLength = " <<                         minExpectedDeletionLength << endl;
-        os << "minExpectedInsertionLength = " <<                         minExpectedInsertionLength << endl;
-        os << "preAlignInsertion = " <<                         preAlignInsertion << endl;
-        os << "postAlignInsertion = " <<                         postAlignInsertion << endl;
-        os << "priorStrength = " <<                         priorStrength << endl;
-        os << "priorStrength_internal_transitions = " <<                         priorStrength_internal_transitions << endl;
-        os << "priorMtoM = " <<                         priorMtoM << endl;
-        os << "priorMtoI = " <<                         priorMtoI << endl;
-        os << "priorMtoD = " <<                         priorMtoD << endl;
-        os << "priorItoM = " <<                         priorItoM << endl;
-        os << "priorItoI = " <<                         priorItoI << endl;
-        os << "priorDtoM = " <<                         priorDtoM << endl;
-        os << "priorDtoD = " <<                         priorDtoD << endl;
-        os << "reportGibbsMean = " <<                         reportGibbsMean << endl;
-        os << "reportGibbsMode = " <<                         reportGibbsMode << endl;
-        os << "numTrueProfiles = " <<                         numTrueProfiles << endl;
-        os << "numStartingProfiles = " <<                         numStartingProfiles << endl;
-        os << "startWithUniformGlobals = " <<                         startWithUniformGlobals << endl;
-        os << "startWithUniformGlobals_scalar = " <<                         startWithUniformGlobals_scalar << endl;
-        os << "startWithUniformGlobals_maxNtoN = " <<                         startWithUniformGlobals_maxNtoN << endl;
-        os << "startWithUniformGlobals_maxBtoD = " <<                         startWithUniformGlobals_maxBtoD << endl;
-        os << "startWithUniformGlobals_maxMtoI = " <<                         startWithUniformGlobals_maxMtoI << endl;
-        os << "startWithUniformGlobals_maxMtoD = " <<                         startWithUniformGlobals_maxMtoD << endl;
-        os << "startWithUniformGlobals_maxItoI = " <<                         startWithUniformGlobals_maxItoI << endl;
-        os << "startWithUniformGlobals_maxDtoD = " <<                         startWithUniformGlobals_maxDtoD << endl;
-        os << "startWithUniformGlobals_maxCtoC = " <<                         startWithUniformGlobals_maxCtoC << endl;
-        os << "startWithUniformPositions = " <<                         startWithUniformPositions << endl;
-        os << "startWithGlobalsDrawnFromPrior = " <<                         startWithGlobalsDrawnFromPrior << endl;
-        os << "startWithPositionsDrawnFromPrior = " <<                         startWithPositionsDrawnFromPrior << endl;
-        os << "testViterbi = " <<                                  testViterbi << endl;
-        os << "coutViterbi = " <<                                  coutViterbi << endl;
-        os << "testTruepath = " <<                                  testTruepath << endl;
-        os << "coutTruepath = " <<                                  coutTruepath << endl;
-        os << "calculateSymmeterizedKullbackLeiblerDistancesToTrue = " <<       calculateSymmeterizedKullbackLeiblerDistancesToTrue << endl;
-        os << "calculateSymmeterizedKullbackLeiblerDistancesToStarting = " <<       calculateSymmeterizedKullbackLeiblerDistancesToStarting << endl;
-        os << "coutDistances = " <<    coutDistances << endl;
-        os << "calculateProfileProfileAlignments = " <<  calculateProfileProfileAlignments << endl;
-        os << "profileProfileIndelOpenCost = " <<  profileProfileIndelOpenCost << endl;
-        os << "profileProfileIndelExtensionCost = " <<  profileProfileIndelExtensionCost << endl;
-        os << "testTrueProfile = " <<                         testTrueProfile << endl;
-        os << "coutTrueProfile = " <<                         coutTrueProfile << endl;
-        os << "testStartingProfile = " <<                         testStartingProfile << endl;
-        os << "coutStartingProfile = " <<                         coutStartingProfile << endl;
-        os << "testUnconditionalProfile = " <<                    testUnconditionalProfile << endl;
-        os << "coutUnconditionalProfile = " <<                    coutUnconditionalProfile << endl;
-        os << "testUnconditionalWithFixedStartingGlobalsProfile = " <<                    testUnconditionalWithFixedStartingGlobalsProfile << endl;
-        os << "coutUnconditionalWithFixedStartingGlobalsProfile = " <<                    coutUnconditionalWithFixedStartingGlobalsProfile << endl;
-        os << "testUnconditionalWithFixedTrueGlobalsProfile = " <<                    testUnconditionalWithFixedTrueGlobalsProfile << endl;
-        os << "coutUnconditionalWithFixedTrueGlobalsProfile = " <<                    coutUnconditionalWithFixedTrueGlobalsProfile << endl;
-        os << "testConditionalThenUnconditionalProfile = " <<     testConditionalThenUnconditionalProfile << endl;
-        os << "coutConditionalThenUnconditionalProfile = " <<     coutConditionalThenUnconditionalProfile << endl;
-        os << "testUnconditionalThenConditionalProfile = " <<     testUnconditionalThenConditionalProfile << endl;
-        os << "coutUnconditionalThenConditionalProfile = " <<     coutUnconditionalThenConditionalProfile << endl;
-        os << "testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        os << "coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        os << "testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        os << "coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        os << "testConditionalGibbsProfile = " <<                    testConditionalGibbsProfile << endl;
-        os << "coutConditionalGibbsProfile = " <<                    coutConditionalGibbsProfile << endl;
-        os << "testUnconditionalGibbsProfile = " <<                    testUnconditionalGibbsProfile << endl;
-        os << "coutUnconditionalGibbsProfile = " <<                    coutUnconditionalGibbsProfile << endl;
-        os << "testLengthadjust = " << testLengthadjust << endl;
-        os << "testBaldi = " << testBaldi << endl;
-        os << "testBaldiSiegel = " << testBaldiSiegel << endl;
-        os << "alsoStartWithEvenPositions = " << alsoStartWithEvenPositions << endl;
       } // writeParameters ( basic_ostream & )
 
   ////// Class galosh::ProfuseTest::ParametersModifierTemplate ////
@@ -2305,108 +795,14 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         AnyParametersModifierTemplate const & copy_from
       )
       {
+        /// Copy all parent isModified_<member>s
         base_parameters_modifier_t::isModified_copyFromNonVirtual( copy_from );
 
-        isModified_saveResultsToFile =                            copy_from.isModified_saveResultsToFile;
-        isModified_saveResultsParentDirectory =                           copy_from.isModified_saveResultsParentDirectory;
-        isModified_resultsFilePrefix =                           copy_from.isModified_resultsFilePrefix;
-        isModified_tabFileSuffix =                           copy_from.isModified_tabFileSuffix;
-        isModified_parametersFileSuffix =                           copy_from.isModified_parametersFileSuffix;
-        isModified_saveTrueProfileTrees =                           copy_from.isModified_saveTrueProfileTrees;
-        isModified_trueProfileTreeFileSuffix =                           copy_from.isModified_trueProfileTreeFileSuffix;
-        isModified_saveStartingProfiles =                           copy_from.isModified_saveStartingProfiles;
-        isModified_startingProfileTreeFileSuffix =                           copy_from.isModified_startingProfileTreeFileSuffix;
-        isModified_saveTestProfiles =                           copy_from.isModified_saveTestProfiles;
-        isModified_testProfileTreeFileSuffix =                           copy_from.isModified_testProfileTreeFileSuffix;
-        isModified_savePatternSequences =                           copy_from.isModified_savePatternSequences;
-        isModified_patternSequencesFileSuffix =                           copy_from.isModified_patternSequencesFileSuffix;
-        isModified_saveTests =                           copy_from.isModified_saveTests;
-        isModified_testsFileSuffix =                           copy_from.isModified_testsFileSuffix;
-        isModified_saveTrainingSequences =                           copy_from.isModified_saveTrainingSequences;
-        isModified_trainingSequencesFileSuffix =                           copy_from.isModified_trainingSequencesFileSuffix;
-        isModified_saveTestingSequences =                           copy_from.isModified_saveTestingSequences;
-        isModified_testingSequencesFileSuffix =                           copy_from.isModified_testingSequencesFileSuffix;
-        isModified_saveTrueTrainingAlignments =                           copy_from.isModified_saveTrueTrainingAlignments;
-        isModified_trainingTrueAlignmentsFileSuffix =                           copy_from.isModified_trainingTrueAlignmentsFileSuffix;
-        isModified_saveTrueTestingAlignments =                           copy_from.isModified_saveTrueTestingAlignments;
-        isModified_trueTestingAlignmentsFileSuffix =                           copy_from.isModified_trueTestingAlignmentsFileSuffix;
-        isModified_saveFileVersion =                              copy_from.isModified_saveFileVersion;
-        isModified_numProfiles =                                  copy_from.isModified_numProfiles;
-        isModified_profileLengths =                                copy_from.isModified_profileLengths;
-        isModified_sharedPositionRate =                           copy_from.isModified_sharedPositionRate;
-        isModified_numTrainingSequencesPerProfiles =               copy_from.isModified_numTrainingSequencesPerProfiles;
-        isModified_numTestingSequencesPerProfile =                   copy_from.isModified_numTestingSequencesPerProfile;
-        isModified_conservationRates =                             copy_from.isModified_conservationRates;
-        isModified_useDeletionsForInsertionsParameters =                             copy_from.isModified_useDeletionsForInsertionsParameters;
-        isModified_expectedDeletionsCounts =                          copy_from.isModified_expectedDeletionsCounts;
-        isModified_expectedInsertionsCounts =                          copy_from.isModified_expectedInsertionsCounts;
-        isModified_expectedDeletionLengthAsProfileLengthFractions =                          copy_from.isModified_expectedDeletionLengthAsProfileLengthFractions;
-        isModified_expectedInsertionLengthAsProfileLengthFractions =                          copy_from.isModified_expectedInsertionLengthAsProfileLengthFractions;
-        isModified_minExpectedDeletionLength =                          copy_from.isModified_minExpectedDeletionLength;
-        isModified_minExpectedInsertionLength =                          copy_from.isModified_minExpectedInsertionLength;
-        isModified_preAlignInsertion =                          copy_from.isModified_preAlignInsertion;
-        isModified_postAlignInsertion =                          copy_from.isModified_postAlignInsertion;
-        isModified_priorStrength =                          copy_from.isModified_priorStrength;
-        isModified_priorStrength_internal_transitions =                          copy_from.isModified_priorStrength_internal_transitions;
-        isModified_priorMtoM =                          copy_from.isModified_priorMtoM;
-        isModified_priorMtoI =                          copy_from.isModified_priorMtoI;
-        isModified_priorMtoD =                          copy_from.isModified_priorMtoD;
-        isModified_priorItoM =                          copy_from.isModified_priorItoM;
-        isModified_priorItoI =                          copy_from.isModified_priorItoI;
-        isModified_priorDtoM =                          copy_from.isModified_priorDtoM;
-        isModified_priorDtoD =                          copy_from.isModified_priorDtoD;
-        isModified_reportGibbsMean =                          copy_from.isModified_reportGibbsMean;
-        isModified_reportGibbsMode =                          copy_from.isModified_reportGibbsMode;
-        isModified_numTrueProfiles =                          copy_from.isModified_numTrueProfiles;
-        isModified_numStartingProfiles =                          copy_from.isModified_numStartingProfiles;
-        isModified_startWithUniformGlobals =                          copy_from.isModified_startWithUniformGlobals;
-        isModified_startWithUniformGlobals_scalar =                          copy_from.isModified_startWithUniformGlobals_scalar;
-        isModified_startWithUniformGlobals_maxNtoN =                          copy_from.isModified_startWithUniformGlobals_maxNtoN;
-        isModified_startWithUniformGlobals_maxBtoD =                          copy_from.isModified_startWithUniformGlobals_maxBtoD;
-        isModified_startWithUniformGlobals_maxMtoI =                          copy_from.isModified_startWithUniformGlobals_maxMtoI;
-        isModified_startWithUniformGlobals_maxMtoD =                          copy_from.isModified_startWithUniformGlobals_maxMtoD;
-        isModified_startWithUniformGlobals_maxItoI =                          copy_from.isModified_startWithUniformGlobals_maxItoI;
-        isModified_startWithUniformGlobals_maxDtoD =                          copy_from.isModified_startWithUniformGlobals_maxDtoD;
-        isModified_startWithUniformGlobals_maxCtoC =                          copy_from.isModified_startWithUniformGlobals_maxCtoC;
-        isModified_startWithUniformPositions =                          copy_from.isModified_startWithUniformPositions;
-        isModified_startWithGlobalsDrawnFromPrior =                          copy_from.isModified_startWithGlobalsDrawnFromPrior;
-        isModified_startWithPositionsDrawnFromPrior =                          copy_from.isModified_startWithPositionsDrawnFromPrior;
-        isModified_testViterbi =                                   copy_from.isModified_testViterbi;
-        isModified_coutViterbi =                                   copy_from.isModified_coutViterbi;
-        isModified_testTruepath =                                   copy_from.isModified_testTruepath;
-        isModified_coutTruepath =                                   copy_from.isModified_coutTruepath;
-        isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue =        copy_from.isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting =        copy_from.isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        isModified_coutDistances =     copy_from.isModified_coutDistances;
-        isModified_calculateProfileProfileAlignments =   copy_from.isModified_calculateProfileProfileAlignments;
-        isModified_profileProfileIndelOpenCost =   copy_from.isModified_profileProfileIndelOpenCost;
-        isModified_profileProfileIndelExtensionCost =   copy_from.isModified_profileProfileIndelExtensionCost;
-        isModified_testTrueProfile =                          copy_from.isModified_testTrueProfile;
-        isModified_coutTrueProfile =                          copy_from.isModified_coutTrueProfile;
-        isModified_testStartingProfile =                          copy_from.isModified_testStartingProfile;
-        isModified_coutStartingProfile =                          copy_from.isModified_coutStartingProfile;
-        isModified_testUnconditionalProfile =                     copy_from.isModified_testUnconditionalProfile;
-        isModified_coutUnconditionalProfile =                     copy_from.isModified_coutUnconditionalProfile;
-        isModified_testUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.isModified_testUnconditionalWithFixedStartingGlobalsProfile;
-        isModified_coutUnconditionalWithFixedStartingGlobalsProfile =                     copy_from.isModified_coutUnconditionalWithFixedStartingGlobalsProfile;
-        isModified_testUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.isModified_testUnconditionalWithFixedTrueGlobalsProfile;
-        isModified_coutUnconditionalWithFixedTrueGlobalsProfile =                     copy_from.isModified_coutUnconditionalWithFixedTrueGlobalsProfile;
-        isModified_testConditionalThenUnconditionalProfile =      copy_from.isModified_testConditionalThenUnconditionalProfile;
-        isModified_coutConditionalThenUnconditionalProfile =      copy_from.isModified_coutConditionalThenUnconditionalProfile;
-        isModified_testUnconditionalThenConditionalProfile =      copy_from.isModified_testUnconditionalThenConditionalProfile;
-        isModified_coutUnconditionalThenConditionalProfile =      copy_from.isModified_coutUnconditionalThenConditionalProfile;
-        isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =  copy_from.isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =  copy_from.isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        isModified_testConditionalGibbsProfile =                     copy_from.isModified_testConditionalGibbsProfile;
-        isModified_coutConditionalGibbsProfile =                     copy_from.isModified_coutConditionalGibbsProfile;
-        isModified_testUnconditionalGibbsProfile =                     copy_from.isModified_testUnconditionalGibbsProfile;
-        isModified_coutUnconditionalGibbsProfile =                     copy_from.isModified_coutUnconditionalGibbsProfile;
-        isModified_testLengthadjust = copy_from.isModified_testLengthadjust;
-        isModified_testBaldi = copy_from.isModified_testBaldi;
-        isModified_testBaldiSiegel = copy_from.isModified_testBaldiSiegel;
-        isModified_alsoStartWithEvenPositions = copy_from.isModified_alsoStartWithEvenPositions;
+        /// TAH 9/13 copy all ProfuseTest::isModified_<member>s
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = copy_from.isModified_##NAME
+        #include "ProfuseTestOptions.hpp"  // Copy ProfuseTest::ParametersModifierTemplate::isModified_<member>s
+
       } // isModified_copyFromNonVirtual( AnyParametersModifierTemplate const & )
 
   template <class ResidueType,
@@ -2435,108 +831,13 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       isModified_reset ()
       {
+        /// Set all parent ParametersModifierTemplate::isModified_<member>s to false
         base_parameters_modifier_t::isModified_reset();
+        /// TAH 9/13 set all ProfuseTest::ParametersModifierTemplate::isModified_<member>s to false
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) isModified_##NAME = false;
+        #include "ProfuseTestOptions.hpp" // Reset ProfuseTest::ParametersModifierTemplate::isModified_<member>s to false
 
-        isModified_saveResultsToFile = false;
-        isModified_saveResultsParentDirectory = false;
-        isModified_resultsFilePrefix = false;
-        isModified_tabFileSuffix = false;
-        isModified_parametersFileSuffix = false;
-        isModified_saveTrueProfileTrees = false;
-        isModified_trueProfileTreeFileSuffix = false;
-        isModified_saveStartingProfiles = false;
-        isModified_startingProfileTreeFileSuffix = false;
-        isModified_saveTestProfiles = false;
-        isModified_testProfileTreeFileSuffix = false;
-        isModified_savePatternSequences = false;
-        isModified_patternSequencesFileSuffix = false;
-        isModified_saveTests = false;
-        isModified_patternSequencesFileSuffix = false;
-        isModified_saveTrainingSequences = false;
-        isModified_trainingSequencesFileSuffix = false;
-        isModified_saveTestingSequences = false;
-        isModified_testingSequencesFileSuffix = false;
-        isModified_saveTrueTrainingAlignments = false;
-        isModified_trainingTrueAlignmentsFileSuffix = false;
-        isModified_saveTrueTestingAlignments = false;
-        isModified_trueTestingAlignmentsFileSuffix = false;
-        isModified_saveFileVersion = false;
-        isModified_numProfiles = false;
-        isModified_profileLengths = false;
-        isModified_sharedPositionRate = false;
-        isModified_numTrainingSequencesPerProfiles = false;
-        isModified_numTestingSequencesPerProfile = false;
-        isModified_conservationRates = false;
-        isModified_useDeletionsForInsertionsParameters = false;
-        isModified_expectedDeletionsCounts = false;
-        isModified_expectedInsertionsCounts = false;
-        isModified_expectedDeletionLengthAsProfileLengthFractions = false;
-        isModified_expectedInsertionLengthAsProfileLengthFractions = false;
-        isModified_minExpectedDeletionLength = false;
-        isModified_minExpectedInsertionLength = false;
-        isModified_preAlignInsertion = false;
-        isModified_postAlignInsertion = false;
-        isModified_priorStrength = false;
-        isModified_priorStrength_internal_transitions = false;
-        isModified_priorMtoM = false;
-        isModified_priorMtoI = false;
-        isModified_priorMtoD = false;
-        isModified_priorItoM = false;
-        isModified_priorItoI = false;
-        isModified_priorDtoM = false;
-        isModified_priorDtoD = false;
-        isModified_reportGibbsMean = false;
-        isModified_reportGibbsMode = false;
-        isModified_numTrueProfiles = false;
-        isModified_numStartingProfiles = false;
-        isModified_startWithUniformGlobals = false;
-        isModified_startWithUniformGlobals_scalar = false;
-        isModified_startWithUniformGlobals_maxNtoN =  false;
-        isModified_startWithUniformGlobals_maxBtoD =  false;
-        isModified_startWithUniformGlobals_maxMtoI =  false;
-        isModified_startWithUniformGlobals_maxMtoD =  false;
-        isModified_startWithUniformGlobals_maxItoI =  false;
-        isModified_startWithUniformGlobals_maxDtoD =  false;
-        isModified_startWithUniformGlobals_maxCtoC =  false;
-        isModified_startWithUniformPositions =        false;
-        isModified_startWithGlobalsDrawnFromPrior =   false;
-        isModified_startWithPositionsDrawnFromPrior = false;
-        isModified_testViterbi = false;
-        isModified_coutViterbi = false;
-        isModified_testTruepath = false;
-        isModified_coutTruepath = false;
-        isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue = false;
-        isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting = false;
-        isModified_coutDistances = false;
-        isModified_calculateProfileProfileAlignments = false;
-        isModified_profileProfileIndelOpenCost = false;
-        isModified_profileProfileIndelExtensionCost = false;
-        isModified_testTrueProfile = false;
-        isModified_coutTrueProfile = false;
-        isModified_testStartingProfile = false;
-        isModified_coutStartingProfile = false;
-        isModified_testUnconditionalProfile = false;
-        isModified_coutUnconditionalProfile = false;
-        isModified_testUnconditionalWithFixedStartingGlobalsProfile = false;
-        isModified_coutUnconditionalWithFixedStartingGlobalsProfile = false;
-        isModified_testUnconditionalWithFixedTrueGlobalsProfile = false;
-        isModified_coutUnconditionalWithFixedTrueGlobalsProfile = false;
-        isModified_testConditionalThenUnconditionalProfile = false;
-        isModified_coutConditionalThenUnconditionalProfile = false;
-        isModified_testUnconditionalThenConditionalProfile = false;
-        isModified_coutUnconditionalThenConditionalProfile = false;
-        isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = false;
-        isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = false;
-        isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = false;
-        isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = false;
-        isModified_testConditionalGibbsProfile = false;
-        isModified_coutConditionalGibbsProfile = false;
-        isModified_testUnconditionalGibbsProfile = false;
-        isModified_coutUnconditionalGibbsProfile = false;
-        isModified_testLengthadjust = false;
-        isModified_testBaldi = false;
-        isModified_testBaldiSiegel = false;
-        isModified_alsoStartWithEvenPositions = false;
       } // isModified_reset()
 
   template <typename ResidueType,
@@ -2553,385 +854,19 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         std::basic_ostream<CharT,Traits>& os
       ) const
       {
-        //base_parameters_modifier_t::operator<<( os, parameters_modifier );
         base_parameters_modifier_t::writeParametersModifier( os );
         os << endl;
 
-        os << "[ProfuseTest]" << endl;
-        if( isModified_saveResultsToFile ) {
-          os << "saveResultsToFile = " <<                           base_parameters_modifier_t::parameters.saveResultsToFile << endl;
-        }
-        if( isModified_saveResultsParentDirectory ) {
-          os << "saveResultsParentDirectory = " <<                          base_parameters_modifier_t::parameters.saveResultsParentDirectory << endl;
-        }
-        if( isModified_resultsFilePrefix ) {
-          os << "resultsFilePrefix = " <<                          base_parameters_modifier_t::parameters.resultsFilePrefix << endl;
-        }
-        if( isModified_tabFileSuffix ) {
-          os << "tabFileSuffix = " <<                          base_parameters_modifier_t::parameters.tabFileSuffix << endl;
-        }
-        if( isModified_parametersFileSuffix ) {
-          os << "parametersFileSuffix = " <<                          base_parameters_modifier_t::parameters.parametersFileSuffix << endl;
-        }
-        if( isModified_saveTrueProfileTrees ) {
-          os << "saveTrueProfileTrees = " <<                          base_parameters_modifier_t::parameters.saveTrueProfileTrees << endl;
-        }
-        if( isModified_trueProfileTreeFileSuffix ) {
-          os << "trueProfileTreeFileSuffix = " <<                          base_parameters_modifier_t::parameters.trueProfileTreeFileSuffix << endl;
-        }
-        if( isModified_saveTrueProfileTrees ) {
-          os << "saveStartingProfiles = " <<                          base_parameters_modifier_t::parameters.saveStartingProfiles << endl;
-        }
-        if( isModified_startingProfileTreeFileSuffix ) {
-          os << "startingProfileTreeFileSuffix = " <<                          base_parameters_modifier_t::parameters.startingProfileTreeFileSuffix << endl;
-        }
-        if( isModified_saveTestProfiles ) {
-          os << "saveTestProfiles = " <<                          base_parameters_modifier_t::parameters.saveTestProfiles << endl;
-        }
-        if( isModified_testProfileTreeFileSuffix ) {
-          os << "testProfileTreeFileSuffix = " <<                          base_parameters_modifier_t::parameters.testProfileTreeFileSuffix << endl;
-        }
-        if( isModified_savePatternSequences ) {
-          os << "savePatternSequences = " <<                          base_parameters_modifier_t::parameters.savePatternSequences << endl;
-        }
-        if( isModified_testsFileSuffix ) {
-          os << "testsFileSuffix = " <<                          base_parameters_modifier_t::parameters.patternSequencesFileSuffix << endl;
-        }
-        if( isModified_saveTests ) {
-          os << "saveTests = " <<                          base_parameters_modifier_t::parameters.saveTests << endl;
-        }
-        if( isModified_patternSequencesFileSuffix ) {
-          os << "testsFileSuffix = " <<                          base_parameters_modifier_t::parameters.testsFileSuffix << endl;
-        }
-        if( isModified_saveTrainingSequences ) {
-          os << "saveTrainingSequences = " <<                          base_parameters_modifier_t::parameters.saveTrainingSequences << endl;
-        }
-        if( isModified_trainingSequencesFileSuffix ) {
-          os << "trainingSequencesFileSuffix = " <<                          base_parameters_modifier_t::parameters.trainingSequencesFileSuffix << endl;
-        }
-        if( isModified_saveTestingSequences ) {
-          os << "saveTestingSequences = " <<                          base_parameters_modifier_t::parameters.saveTestingSequences << endl;
-        }
-        if( isModified_testingSequencesFileSuffix ) {
-          os << "testingSequencesFileSuffix = " <<                          base_parameters_modifier_t::parameters.testingSequencesFileSuffix << endl;
-        }
-        if( isModified_saveTrueTrainingAlignments ) {
-          os << "saveTrueTrainingAlignments = " <<                          base_parameters_modifier_t::parameters.saveTrueTrainingAlignments << endl;
-        }
-        if( isModified_trainingTrueAlignmentsFileSuffix ) {
-          os << "trainingTrueAlignmentsFileSuffix = " <<                          base_parameters_modifier_t::parameters.trainingTrueAlignmentsFileSuffix << endl;
-        }
-        if( isModified_saveTrueTestingAlignments ) {
-          os << "saveTrueTestingAlignments = " <<                          base_parameters_modifier_t::parameters.saveTrueTestingAlignments << endl;
-        }
-        if( isModified_trueTestingAlignmentsFileSuffix ) {
-          os << "trueTestingAlignmentsFileSuffix = " <<                          base_parameters_modifier_t::parameters.trueTestingAlignmentsFileSuffix << endl;
-        }
-        if( isModified_saveFileVersion ) {
-          os << "saveFileVersion = " <<                             base_parameters_modifier_t::parameters.saveFileVersion << endl;
-        }
-        if( isModified_numProfiles ) {
-          os << "numProfiles = " <<                                 base_parameters_modifier_t::parameters.numProfiles << endl;
-        }
-        if( isModified_profileLengths ) {
-          if( base_parameters_modifier_t::parameters.profileLengths == NULL ) {
-            os << "profileLengths = NULL" << endl;
-          } else {
-            os << "profileLengths = { ";
-            for( uint32_t pl_i = 0; pl_i < base_parameters_modifier_t::parameters.profileLengths->size(); pl_i++ ) {
-              if( pl_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.profileLengths )[ pl_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if profileLengths == NULL .. else ..
-        }
-        if( isModified_sharedPositionRate ) {
-          os << "sharedPositionRate = " <<                          base_parameters_modifier_t::parameters.sharedPositionRate << endl;
-        }
-        if( isModified_numTrainingSequencesPerProfiles ) {
-          if( base_parameters_modifier_t::parameters.numTrainingSequencesPerProfiles == NULL ) {
-            os << "numTrainingSequencesPerProfiles = NULL" << endl;
-          } else {
-            os << "numTrainingSequencesPerProfiles = { ";
-            for( uint32_t pl_i = 0; pl_i < base_parameters_modifier_t::parameters.numTrainingSequencesPerProfiles->size(); pl_i++ ) {
-              if( pl_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.numTrainingSequencesPerProfiles )[ pl_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if numTrainingSequencesPerProfiles == NULL .. else ..
-        }
-        if( isModified_numTestingSequencesPerProfile ) {
-          os << "numTestingSequencesPerProfile = " <<                  base_parameters_modifier_t::parameters.numTestingSequencesPerProfile << endl;
-        }
-        if( isModified_conservationRates ) {
-          if( base_parameters_modifier_t::parameters.conservationRates == NULL ) {
-            os << "conservationRates = NULL" << endl;
-          } else {
-            os << "conservationRates = { ";
-            for( uint32_t cr_i = 0; cr_i < base_parameters_modifier_t::parameters.conservationRates->size(); cr_i++ ) {
-              if( cr_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.conservationRates )[ cr_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if conservationRates == NULL .. else ..
-        }
-        if( isModified_expectedDeletionsCounts ) {
-          if( base_parameters_modifier_t::parameters.expectedDeletionsCounts == NULL ) {
-            os << "expectedDeletionsCounts = NULL" << endl;
-          } else {
-            os << "expectedDeletionsCounts = { ";
-            for( uint32_t cr_i = 0; cr_i < base_parameters_modifier_t::parameters.expectedDeletionsCounts->size(); cr_i++ ) {
-              if( cr_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.expectedDeletionsCounts )[ cr_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if expectedDeletionsCounts == NULL .. else ..
-        }
-        if( isModified_expectedInsertionsCounts ) {
-          if( base_parameters_modifier_t::parameters.expectedInsertionsCounts == NULL ) {
-            os << "expectedInsertionsCounts = NULL" << endl;
-          } else {
-            os << "expectedInsertionsCounts = { ";
-            for( uint32_t cr_i = 0; cr_i < base_parameters_modifier_t::parameters.expectedInsertionsCounts->size(); cr_i++ ) {
-              if( cr_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.expectedInsertionsCounts )[ cr_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if expectedInsertionsCounts == NULL .. else ..
-        }
-        if( isModified_expectedDeletionLengthAsProfileLengthFractions ) {
-          if( base_parameters_modifier_t::parameters.expectedDeletionLengthAsProfileLengthFractions == NULL ) {
-            os << "expectedDeletionLengthAsProfileLengthFractions = NULL" << endl;
-          } else {
-            os << "expectedDeletionLengthAsProfileLengthFractions = { ";
-            for( uint32_t cr_i = 0; cr_i < base_parameters_modifier_t::parameters.expectedDeletionLengthAsProfileLengthFractions->size(); cr_i++ ) {
-              if( cr_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.expectedDeletionLengthAsProfileLengthFractions )[ cr_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if expectedDeletionLengthAsProfileLengthFractions == NULL .. else ..
-        }
-        if( isModified_expectedInsertionLengthAsProfileLengthFractions ) {
-          if( base_parameters_modifier_t::parameters.expectedInsertionLengthAsProfileLengthFractions == NULL ) {
-            os << "expectedInsertionLengthAsProfileLengthFractions = NULL" << endl;
-          } else {
-            os << "expectedInsertionLengthAsProfileLengthFractions = { ";
-            for( uint32_t cr_i = 0; cr_i < base_parameters_modifier_t::parameters.expectedInsertionLengthAsProfileLengthFractions->size(); cr_i++ ) {
-              if( cr_i > 0 ) {
-                os << ", ";
-              }
-              os << ( *base_parameters_modifier_t::parameters.expectedInsertionLengthAsProfileLengthFractions )[ cr_i ];
-            } // End foreach conservation rate..
-            os << "}" << endl;
-          } // End if expectedInsertionLengthAsProfileLengthFractions == NULL .. else ..
-        }
-        if( isModified_minExpectedDeletionLength ) {
-          os << "minExpectedDeletionLength = " <<                         base_parameters_modifier_t::parameters.minExpectedDeletionLength << endl;
-        }
-        if( isModified_minExpectedInsertionLength ) {
-          os << "minExpectedInsertionLength = " <<                         base_parameters_modifier_t::parameters.minExpectedInsertionLength << endl;
-        }
-        if( isModified_preAlignInsertion ) {
-          os << "preAlignInsertion = " <<                         base_parameters_modifier_t::parameters.preAlignInsertion << endl;
-        }
-        if( isModified_postAlignInsertion ) {
-          os << "postAlignInsertion = " <<                         base_parameters_modifier_t::parameters.postAlignInsertion << endl;
-        }
-        if( isModified_priorStrength ) {
-          os << "priorStrength = " <<                         base_parameters_modifier_t::parameters.priorStrength << endl;
-        }
-        if( isModified_priorStrength_internal_transitions ) {
-          os << "priorStrength_internal_transitions = " <<                         base_parameters_modifier_t::parameters.priorStrength_internal_transitions << endl;
-        }
-        if( isModified_priorMtoM ) {
-          os << "priorMtoM = " <<                         base_parameters_modifier_t::parameters.priorMtoM << endl;
-        }
-        if( isModified_priorMtoI ) {
-          os << "priorMtoI = " <<                         base_parameters_modifier_t::parameters.priorMtoI << endl;
-        }
-        if( isModified_priorMtoD ) {
-          os << "priorMtoD = " <<                         base_parameters_modifier_t::parameters.priorMtoD << endl;
-        }
-        if( isModified_priorItoM ) {
-          os << "priorItoM = " <<                         base_parameters_modifier_t::parameters.priorItoM << endl;
-        }
-        if( isModified_priorItoI ) {
-          os << "priorItoI = " <<                         base_parameters_modifier_t::parameters.priorItoI << endl;
-        }
-        if( isModified_priorDtoM ) {
-          os << "priorDtoM = " <<                         base_parameters_modifier_t::parameters.priorDtoM << endl;
-        }
-        if( isModified_priorDtoD ) {
-          os << "priorDtoD = " <<                         base_parameters_modifier_t::parameters.priorDtoD << endl;
-        }
-        if( isModified_reportGibbsMean ) {
-          os << "reportGibbsMean = " <<                         base_parameters_modifier_t::parameters.reportGibbsMean << endl;
-        }
-        if( isModified_reportGibbsMode ) {
-          os << "reportGibbsMode = " <<                         base_parameters_modifier_t::parameters.reportGibbsMode << endl;
-        }
-        if( isModified_numTrueProfiles ) {
-          os << "numTrueProfiles = " <<                         base_parameters_modifier_t::parameters.numTrueProfiles << endl;
-        }
-        if( isModified_numStartingProfiles ) {
-          os << "numStartingProfiles = " <<                         base_parameters_modifier_t::parameters.numStartingProfiles << endl;
-        }
-        if( isModified_startWithUniformGlobals ) {
-          os << "startWithUniformGlobals = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals << endl;
-        }
-        if( isModified_startWithUniformGlobals_scalar ) {
-          os << "startWithUniformGlobals_scalar = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_scalar << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxNtoN ) {
-          os << "startWithUniformGlobals_maxNtoN = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxNtoN << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxBtoD ) {
-          os << "startWithUniformGlobals_maxBtoD = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxBtoD << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxMtoI ) {
-          os << "startWithUniformGlobals_maxMtoI = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxMtoI << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxMtoD ) {
-          os << "startWithUniformGlobals_maxMtoD = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxMtoD << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxItoI ) {
-          os << "startWithUniformGlobals_maxItoI = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxItoI << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxDtoD ) {
-          os << "startWithUniformGlobals_maxDtoD = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxDtoD << endl;
-        }
-        if( isModified_startWithUniformGlobals_maxCtoC ) {
-          os << "startWithUniformGlobals_maxCtoC = " <<                         base_parameters_modifier_t::parameters.startWithUniformGlobals_maxCtoC << endl;
-        }
-        if( isModified_startWithUniformPositions ) {
-          os << "startWithUniformPositions = " <<                         base_parameters_modifier_t::parameters.startWithUniformPositions << endl;
-        }
-        if( isModified_startWithGlobalsDrawnFromPrior ) {
-          os << "startWithGlobalsDrawnFromPrior = " <<                         base_parameters_modifier_t::parameters.startWithGlobalsDrawnFromPrior << endl;
-        }
-        if( isModified_startWithPositionsDrawnFromPrior ) {
-          os << "startWithPositionsDrawnFromPrior = " <<                         base_parameters_modifier_t::parameters.startWithPositionsDrawnFromPrior << endl;
-        }
-        if( isModified_testViterbi ) {
-          os << "testViterbi = " <<                                  base_parameters_modifier_t::parameters.testViterbi << endl;
-        }
-        if( isModified_coutViterbi ) {
-          os << "coutViterbi = " <<                                  base_parameters_modifier_t::parameters.coutViterbi << endl;
-        }
-        if( isModified_testTruepath ) {
-          os << "testTruepath = " <<                                  base_parameters_modifier_t::parameters.testTruepath << endl;
-        }
-        if( isModified_coutTruepath ) {
-          os << "coutTruepath = " <<                                  base_parameters_modifier_t::parameters.coutTruepath << endl;
-        }
-        if( isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue ) {
-          os << "calculateSymmeterizedKullbackLeiblerDistancesToTrue = " <<       base_parameters_modifier_t::parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue << endl;
-        }
-        if( isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting ) {
-          os << "calculateSymmeterizedKullbackLeiblerDistancesToStarting = " <<       base_parameters_modifier_t::parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting << endl;
-        }
-        if( isModified_coutDistances ) {
-          os << "coutDistances = " <<    base_parameters_modifier_t::parameters.coutDistances << endl;
-        }
-        if( isModified_calculateProfileProfileAlignments ) {
-          os << "calculateProfileProfileAlignments = " <<  base_parameters_modifier_t::parameters.calculateProfileProfileAlignments << endl;
-        }
-        if( isModified_profileProfileIndelOpenCost ) {
-          os << "profileProfileIndelOpenCost = " <<  base_parameters_modifier_t::parameters.profileProfileIndelOpenCost << endl;
-        }
-        if( isModified_profileProfileIndelExtensionCost ) {
-          os << "profileProfileIndelExtensionCost = " <<  base_parameters_modifier_t::parameters.profileProfileIndelExtensionCost << endl;
-        }
-        if( isModified_testTrueProfile ) {
-          os << "testTrueProfile = " <<                         base_parameters_modifier_t::parameters.testTrueProfile << endl;
-        }
-        if( isModified_coutTrueProfile ) {
-          os << "coutTrueProfile = " <<                         base_parameters_modifier_t::parameters.coutTrueProfile << endl;
-        }
-        if( isModified_testStartingProfile ) {
-          os << "testStartingProfile = " <<                         base_parameters_modifier_t::parameters.testStartingProfile << endl;
-        }
-        if( isModified_coutStartingProfile ) {
-          os << "coutStartingProfile = " <<                         base_parameters_modifier_t::parameters.coutStartingProfile << endl;
-        }
-        if( isModified_testUnconditionalProfile ) {
-          os << "testUnconditionalProfile = " <<                    base_parameters_modifier_t::parameters.testUnconditionalProfile << endl;
-        }
-        if( isModified_coutUnconditionalProfile ) {
-          os << "coutUnconditionalProfile = " <<                    base_parameters_modifier_t::parameters.coutUnconditionalProfile << endl;
-        }
-        if( isModified_testUnconditionalWithFixedStartingGlobalsProfile ) {
-          os << "testUnconditionalWithFixedStartingGlobalsProfile = " <<                    base_parameters_modifier_t::parameters.testUnconditionalWithFixedStartingGlobalsProfile << endl;
-        }
-        if( isModified_coutUnconditionalWithFixedStartingGlobalsProfile ) {
-          os << "coutUnconditionalWithFixedStartingGlobalsProfile = " <<                    base_parameters_modifier_t::parameters.coutUnconditionalWithFixedStartingGlobalsProfile << endl;
-        }
-        if( isModified_testUnconditionalWithFixedTrueGlobalsProfile ) {
-          os << "testUnconditionalWithFixedTrueGlobalsProfile = " <<                    base_parameters_modifier_t::parameters.testUnconditionalWithFixedTrueGlobalsProfile << endl;
-        }
-        if( isModified_coutUnconditionalWithFixedTrueGlobalsProfile ) {
-          os << "coutUnconditionalWithFixedTrueGlobalsProfile = " <<                    base_parameters_modifier_t::parameters.coutUnconditionalWithFixedTrueGlobalsProfile << endl;
-        }
-        if( isModified_testConditionalThenUnconditionalProfile ) {
-          os << "testConditionalThenUnconditionalProfile = " <<     base_parameters_modifier_t::parameters.testConditionalThenUnconditionalProfile << endl;
-        }
-        if( isModified_coutConditionalThenUnconditionalProfile ) {
-          os << "coutConditionalThenUnconditionalProfile = " <<     base_parameters_modifier_t::parameters.coutConditionalThenUnconditionalProfile << endl;
-        }
-        if( isModified_testUnconditionalThenConditionalProfile ) {
-          os << "testUnconditionalThenConditionalProfile = " <<     base_parameters_modifier_t::parameters.testUnconditionalThenConditionalProfile << endl;
-        }
-        if( isModified_coutUnconditionalThenConditionalProfile ) {
-          os << "coutUnconditionalThenConditionalProfile = " <<     base_parameters_modifier_t::parameters.coutUnconditionalThenConditionalProfile << endl;
-        }
-        if( isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
-          os << "testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << base_parameters_modifier_t::parameters.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        }
-        if( isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
-          os << "coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile = " << base_parameters_modifier_t::parameters.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile << endl;
-        }
-        if( isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
-          os << "testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << base_parameters_modifier_t::parameters.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        }
-        if( isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
-          os << "coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile = " << base_parameters_modifier_t::parameters.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile << endl;
-        }
-        if( isModified_testConditionalGibbsProfile ) {
-          os << "testConditionalGibbsProfile = " <<                    base_parameters_modifier_t::parameters.testConditionalGibbsProfile << endl;
-        }
-        if( isModified_coutConditionalGibbsProfile ) {
-          os << "coutConditionalGibbsProfile = " <<                    base_parameters_modifier_t::parameters.coutConditionalGibbsProfile << endl;
-        }
-        if( isModified_testUnconditionalGibbsProfile ) {
-          os << "testUnconditionalGibbsProfile = " <<                    base_parameters_modifier_t::parameters.testUnconditionalGibbsProfile << endl;
-        }
-        if( isModified_coutUnconditionalGibbsProfile ) {
-          os << "coutUnconditionalGibbsProfile = " <<                    base_parameters_modifier_t::parameters.coutUnconditionalGibbsProfile << endl;
-        }
-        if( isModified_testLengthadjust ) {
-          os << "testLengthadjust = " << base_parameters_modifier_t::parameters.testLengthadjust << endl;
-        }
-        if( isModified_testBaldi ) {
-          os << "testBaldi = " << base_parameters_modifier_t::parameters.testBaldi << endl;
-        }
-        if( isModified_testBaldiSiegel ) {
-          os << "testBaldiSiegel = " << base_parameters_modifier_t::parameters.testBaldiSiegel << endl;
-        }
-        if( isModified_alsoStartWithEvenPositions ) {
-          os << "alsoStartWithEvenPositions = " << base_parameters_modifier_t::parameters.alsoStartWithEvenPositions << endl;
-        }
+        /// TAH 9/13 must comment out tags in square braces for program_options config file parser
+        os << "#[ProfuseTest]" << endl;
+        /**
+         * write out ProfuseTest::parameters iff they've been modified
+         *   TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) os << #NAME << " = " << lexical_cast<string>(galosh::ParametersModifierTemplate<ParametersType>::parameters. NAME)
+        #include "ProfuseTestOptions.hpp" // write out changed ProfuseTestParameters::ParametersModifierTemplate parameters
+
       } // writeParametersModifier ( basic_ostream & ) const
 
 
@@ -2947,405 +882,18 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       applyModifications ( AnyParameters & target_parameters )
       {
+        /// Set the parameters of another object iff they've been changed in this one
         base_parameters_modifier_t::applyModifications( target_parameters );
 
-        if( isModified_saveResultsToFile ) {
-          target_parameters.saveResultsToFile =
-            base_parameters_modifier_t::parameters.saveResultsToFile;
-        }
-        if( isModified_saveResultsParentDirectory ) {
-          target_parameters.saveResultsParentDirectory =
-            base_parameters_modifier_t::parameters.saveResultsParentDirectory;
-        }
-        if( isModified_resultsFilePrefix ) {
-          target_parameters.resultsFilePrefix =
-            base_parameters_modifier_t::parameters.resultsFilePrefix;
-        }
-        if( isModified_tabFileSuffix ) {
-          target_parameters.tabFileSuffix =
-            base_parameters_modifier_t::parameters.tabFileSuffix;
-        }
-        if( isModified_parametersFileSuffix ) {
-          target_parameters.parametersFileSuffix =
-            base_parameters_modifier_t::parameters.parametersFileSuffix;
-        }
-        if( isModified_saveTrueProfileTrees ) {
-          target_parameters.saveTrueProfileTrees =
-            base_parameters_modifier_t::parameters.saveTrueProfileTrees;
-        }
-        if( isModified_trueProfileTreeFileSuffix ) {
-          target_parameters.trueProfileTreeFileSuffix =
-            base_parameters_modifier_t::parameters.trueProfileTreeFileSuffix;
-        }
-        if( isModified_saveStartingProfiles ) {
-          target_parameters.saveStartingProfiles =
-            base_parameters_modifier_t::parameters.saveStartingProfiles;
-        }
-        if( isModified_startingProfileTreeFileSuffix ) {
-          target_parameters.startingProfileTreeFileSuffix =
-            base_parameters_modifier_t::parameters.startingProfileTreeFileSuffix;
-        }
-        if( isModified_saveTestProfiles ) {
-          target_parameters.saveTestProfiles =
-            base_parameters_modifier_t::parameters.saveTestProfiles;
-        }
-        if( isModified_testProfileTreeFileSuffix ) {
-          target_parameters.testProfileTreeFileSuffix =
-            base_parameters_modifier_t::parameters.testProfileTreeFileSuffix;
-        }
-        if( isModified_savePatternSequences ) {
-          target_parameters.savePatternSequences =
-            base_parameters_modifier_t::parameters.savePatternSequences;
-        }
-        if( isModified_patternSequencesFileSuffix ) {
-          target_parameters.patternSequencesFileSuffix =
-            base_parameters_modifier_t::parameters.testsFileSuffix;
-        }
-        if( isModified_saveTests ) {
-          target_parameters.saveTests =
-            base_parameters_modifier_t::parameters.saveTests;
-        }
-        if( isModified_testsFileSuffix ) {
-          target_parameters.testsFileSuffix =
-            base_parameters_modifier_t::parameters.testsFileSuffix;
-        }
-        if( isModified_saveTrainingSequences ) {
-          target_parameters.saveTrainingSequences =
-            base_parameters_modifier_t::parameters.saveTrainingSequences;
-        }
-        if( isModified_trainingSequencesFileSuffix ) {
-          target_parameters.trainingSequencesFileSuffix =
-            base_parameters_modifier_t::parameters.trainingSequencesFileSuffix;
-        }
-        if( isModified_saveTestingSequences ) {
-          target_parameters.saveTestingSequences =
-            base_parameters_modifier_t::parameters.saveTestingSequences;
-        }
-        if( isModified_testingSequencesFileSuffix ) {
-          target_parameters.testingSequencesFileSuffix =
-            base_parameters_modifier_t::parameters.testingSequencesFileSuffix;
-        }
-        if( isModified_saveTrueTrainingAlignments ) {
-          target_parameters.saveTrueTrainingAlignments =
-            base_parameters_modifier_t::parameters.saveTrueTrainingAlignments;
-        }
-        if( isModified_trainingTrueAlignmentsFileSuffix ) {
-          target_parameters.trainingTrueAlignmentsFileSuffix =
-            base_parameters_modifier_t::parameters.trainingTrueAlignmentsFileSuffix;
-        }
-        if( isModified_saveTrueTestingAlignments ) {
-          target_parameters.saveTrueTestingAlignments =
-            base_parameters_modifier_t::parameters.saveTrueTestingAlignments;
-        }
-        if( isModified_trueTestingAlignmentsFileSuffix ) {
-          target_parameters.trueTestingAlignmentsFileSuffix =
-            base_parameters_modifier_t::parameters.trueTestingAlignmentsFileSuffix;
-        }
-        if( isModified_saveFileVersion ) {
-          target_parameters.saveFileVersion =
-            base_parameters_modifier_t::parameters.saveFileVersion;
-        }
-        if( isModified_numProfiles ) {
-          target_parameters.numProfiles =
-            base_parameters_modifier_t::parameters.numProfiles;
-        }
-        if( isModified_profileLengths ) {
-          target_parameters.profileLengths =
-            base_parameters_modifier_t::parameters.profileLengths;
-        }
-        if( isModified_sharedPositionRate ) {
-          target_parameters.sharedPositionRate =
-            base_parameters_modifier_t::parameters.sharedPositionRate;
-        }
-        if( isModified_numTrainingSequencesPerProfiles ) {
-          target_parameters.numTrainingSequencesPerProfiles =
-            base_parameters_modifier_t::parameters.numTrainingSequencesPerProfiles;
-        }
-        if( isModified_numTestingSequencesPerProfile ) {
-          target_parameters.numTestingSequencesPerProfile =
-            base_parameters_modifier_t::parameters.numTestingSequencesPerProfile;
-        }
-        if( isModified_conservationRates ) {
-          target_parameters.conservationRates =
-            base_parameters_modifier_t::parameters.conservationRates;
-        }
-        if( isModified_expectedDeletionsCounts ) {
-          target_parameters.expectedDeletionsCounts =
-            base_parameters_modifier_t::parameters.expectedDeletionsCounts;
-        }
-        if( isModified_expectedInsertionsCounts ) {
-          target_parameters.expectedInsertionsCounts =
-            base_parameters_modifier_t::parameters.expectedInsertionsCounts;
-        }
-        if( isModified_expectedDeletionLengthAsProfileLengthFractions ) {
-          target_parameters.expectedDeletionLengthAsProfileLengthFractions =
-            base_parameters_modifier_t::parameters.expectedDeletionLengthAsProfileLengthFractions;
-        }
-        if( isModified_expectedInsertionLengthAsProfileLengthFractions ) {
-          target_parameters.expectedInsertionLengthAsProfileLengthFractions =
-            base_parameters_modifier_t::parameters.expectedInsertionLengthAsProfileLengthFractions;
-        }
-        if( isModified_minExpectedDeletionLength ) {
-          target_parameters.minExpectedDeletionLength =
-            base_parameters_modifier_t::parameters.minExpectedDeletionLength;
-        }
-        if( isModified_minExpectedInsertionLength ) {
-          target_parameters.minExpectedInsertionLength =
-            base_parameters_modifier_t::parameters.minExpectedInsertionLength;
-        }
-        if( isModified_preAlignInsertion ) {
-          target_parameters.preAlignInsertion =
-            base_parameters_modifier_t::parameters.preAlignInsertion;
-        }
-        if( isModified_postAlignInsertion ) {
-          target_parameters.postAlignInsertion =
-            base_parameters_modifier_t::parameters.postAlignInsertion;
-        }
-        if( isModified_priorStrength ) {
-          target_parameters.priorStrength =
-            base_parameters_modifier_t::parameters.priorStrength;
-        }
-        if( isModified_priorStrength_internal_transitions ) {
-          target_parameters.priorStrength_internal_transitions =
-            base_parameters_modifier_t::parameters.priorStrength_internal_transitions;
-        }
-        if( isModified_priorMtoM ) {
-          target_parameters.priorMtoM =
-            base_parameters_modifier_t::parameters.priorMtoM;
-        }
-        if( isModified_priorMtoI ) {
-          target_parameters.priorMtoI =
-            base_parameters_modifier_t::parameters.priorMtoI;
-        }
-        if( isModified_priorMtoD ) {
-          target_parameters.priorMtoD =
-            base_parameters_modifier_t::parameters.priorMtoD;
-        }
-        if( isModified_priorItoM ) {
-          target_parameters.priorItoM =
-            base_parameters_modifier_t::parameters.priorItoM;
-        }
-        if( isModified_priorItoI ) {
-          target_parameters.priorItoI =
-            base_parameters_modifier_t::parameters.priorItoI;
-        }
-        if( isModified_priorDtoM ) {
-          target_parameters.priorDtoM =
-            base_parameters_modifier_t::parameters.priorDtoM;
-        }
-        if( isModified_priorDtoD ) {
-          target_parameters.priorDtoD =
-            base_parameters_modifier_t::parameters.priorDtoD;
-        }
-        if( isModified_reportGibbsMean ) {
-          target_parameters.reportGibbsMean =
-            base_parameters_modifier_t::parameters.reportGibbsMean;
-        }
-        if( isModified_reportGibbsMode ) {
-          target_parameters.reportGibbsMode =
-            base_parameters_modifier_t::parameters.reportGibbsMode;
-        }
-        if( isModified_numTrueProfiles ) {
-          target_parameters.numTrueProfiles =
-            base_parameters_modifier_t::parameters.numTrueProfiles;
-        }
-        if( isModified_numStartingProfiles ) {
-          target_parameters.numStartingProfiles =
-            base_parameters_modifier_t::parameters.numStartingProfiles;
-        }
-        if( isModified_startWithUniformGlobals ) {
-          target_parameters.startWithUniformGlobals =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals;
-        }
-        if( isModified_startWithUniformGlobals_scalar ) {
-          target_parameters.startWithUniformGlobals_scalar =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_scalar;
-        }
-        if( isModified_startWithUniformGlobals_maxNtoN ) {
-          target_parameters.startWithUniformGlobals_maxNtoN =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxNtoN;
-        }
-        if( isModified_startWithUniformGlobals_maxBtoD ) {
-          target_parameters.startWithUniformGlobals_maxBtoD =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxBtoD;
-        }
-        if( isModified_startWithUniformGlobals_maxMtoI ) {
-          target_parameters.startWithUniformGlobals_maxMtoI =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxMtoI;
-        }
-        if( isModified_startWithUniformGlobals_maxMtoD ) {
-          target_parameters.startWithUniformGlobals_maxMtoD =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxMtoD;
-        }
-        if( isModified_startWithUniformGlobals_maxItoI ) {
-          target_parameters.startWithUniformGlobals_maxItoI =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxItoI;
-        }
-        if( isModified_startWithUniformGlobals_maxDtoD ) {
-          target_parameters.startWithUniformGlobals_maxDtoD =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxDtoD;
-        }
-        if( isModified_startWithUniformGlobals_maxCtoC ) {
-          target_parameters.startWithUniformGlobals_maxCtoC =
-            base_parameters_modifier_t::parameters.startWithUniformGlobals_maxCtoC;
-        }
-        if( isModified_startWithUniformPositions ) {
-          target_parameters.startWithUniformPositions =
-            base_parameters_modifier_t::parameters.startWithUniformPositions;
-        }
-        if( isModified_startWithGlobalsDrawnFromPrior ) {
-          target_parameters.startWithGlobalsDrawnFromPrior =
-            base_parameters_modifier_t::parameters.startWithGlobalsDrawnFromPrior;
-        }
-        if( isModified_startWithPositionsDrawnFromPrior ) {
-          target_parameters.startWithPositionsDrawnFromPrior =
-            base_parameters_modifier_t::parameters.startWithPositionsDrawnFromPrior;
-        }
-        if( isModified_testViterbi ) {
-          target_parameters.testViterbi =
-            base_parameters_modifier_t::parameters.testViterbi;
-        }
-        if( isModified_coutViterbi ) {
-          target_parameters.coutViterbi =
-            base_parameters_modifier_t::parameters.coutViterbi;
-        }
-        if( isModified_testTruepath ) {
-          target_parameters.testTruepath =
-            base_parameters_modifier_t::parameters.testTruepath;
-        }
-        if( isModified_coutTruepath ) {
-          target_parameters.coutTruepath =
-            base_parameters_modifier_t::parameters.coutTruepath;
-        }
-        if( isModified_calculateSymmeterizedKullbackLeiblerDistancesToTrue ) {
-          target_parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue =
-            base_parameters_modifier_t::parameters.calculateSymmeterizedKullbackLeiblerDistancesToTrue;
-        }
-        if( isModified_calculateSymmeterizedKullbackLeiblerDistancesToStarting ) {
-          target_parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting =
-            base_parameters_modifier_t::parameters.calculateSymmeterizedKullbackLeiblerDistancesToStarting;
-        }
-        if( isModified_coutDistances ) {
-          target_parameters.coutDistances =
-            base_parameters_modifier_t::parameters.coutDistances;
-        }
-        if( isModified_calculateProfileProfileAlignments ) {
-          target_parameters.calculateProfileProfileAlignments =
-            base_parameters_modifier_t::parameters.calculateProfileProfileAlignments;
-        }
-        if( isModified_profileProfileIndelOpenCost ) {
-          target_parameters.profileProfileIndelOpenCost =
-            base_parameters_modifier_t::parameters.profileProfileIndelOpenCost;
-        }
-        if( isModified_profileProfileIndelExtensionCost ) {
-          target_parameters.profileProfileIndelExtensionCost =
-            base_parameters_modifier_t::parameters.profileProfileIndelExtensionCost;
-        }
-        if( isModified_testTrueProfile ) {
-          target_parameters.testTrueProfile =
-            base_parameters_modifier_t::parameters.testTrueProfile;
-        }
-        if( isModified_coutTrueProfile ) {
-          target_parameters.coutTrueProfile =
-            base_parameters_modifier_t::parameters.coutTrueProfile;
-        }
-        if( isModified_testStartingProfile ) {
-          target_parameters.testStartingProfile =
-            base_parameters_modifier_t::parameters.testStartingProfile;
-        }
-        if( isModified_coutStartingProfile ) {
-          target_parameters.coutStartingProfile =
-            base_parameters_modifier_t::parameters.coutStartingProfile;
-        }
-        if( isModified_testUnconditionalProfile ) {
-          target_parameters.testUnconditionalProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalProfile;
-        }
-        if( isModified_coutUnconditionalProfile ) {
-          target_parameters.coutUnconditionalProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalProfile;
-        }
-        if( isModified_testUnconditionalWithFixedStartingGlobalsProfile ) {
-          target_parameters.testUnconditionalWithFixedStartingGlobalsProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalWithFixedStartingGlobalsProfile;
-        }
-        if( isModified_coutUnconditionalWithFixedStartingGlobalsProfile ) {
-          target_parameters.coutUnconditionalWithFixedStartingGlobalsProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalWithFixedStartingGlobalsProfile;
-        }
-        if( isModified_testUnconditionalWithFixedTrueGlobalsProfile ) {
-          target_parameters.testUnconditionalWithFixedTrueGlobalsProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalWithFixedTrueGlobalsProfile;
-        }
-        if( isModified_coutUnconditionalWithFixedTrueGlobalsProfile ) {
-          target_parameters.coutUnconditionalWithFixedStartingGlobalsProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalWithFixedStartingGlobalsProfile;
-        }
-        if( isModified_testConditionalThenUnconditionalProfile ) {
-          target_parameters.testConditionalThenUnconditionalProfile =
-            base_parameters_modifier_t::parameters.testConditionalThenUnconditionalProfile;
-        }
-        if( isModified_coutConditionalThenUnconditionalProfile ) {
-          target_parameters.coutConditionalThenUnconditionalProfile =
-            base_parameters_modifier_t::parameters.coutConditionalThenUnconditionalProfile;
-        }
-        if( isModified_testUnconditionalThenConditionalProfile ) {
-          target_parameters.testUnconditionalThenConditionalProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalThenConditionalProfile;
-        }
-        if( isModified_coutUnconditionalThenConditionalProfile ) {
-          target_parameters.coutUnconditionalThenConditionalProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalThenConditionalProfile;
-        }
-        if( isModified_testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
-          target_parameters.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        }
-        if( isModified_coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile ) {
-          target_parameters.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalWithFixedStartingGlobalsThenWithFixedPositionsProfile;
-        }
-        if( isModified_testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
-          target_parameters.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        }
-        if( isModified_coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile ) {
-          target_parameters.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalWithFixedTrueGlobalsThenWithFixedPositionsProfile;
-        }
-        if( isModified_testConditionalGibbsProfile ) {
-          target_parameters.testConditionalGibbsProfile =
-            base_parameters_modifier_t::parameters.testConditionalGibbsProfile;
-        }
-        if( isModified_coutConditionalGibbsProfile ) {
-          target_parameters.coutConditionalGibbsProfile =
-            base_parameters_modifier_t::parameters.coutConditionalGibbsProfile;
-        }
-        if( isModified_testUnconditionalGibbsProfile ) {
-          target_parameters.testUnconditionalGibbsProfile =
-            base_parameters_modifier_t::parameters.testUnconditionalGibbsProfile;
-        }
-        if( isModified_coutUnconditionalGibbsProfile ) {
-          target_parameters.coutUnconditionalGibbsProfile =
-            base_parameters_modifier_t::parameters.coutUnconditionalGibbsProfile;
-        }
+        /**
+         * Set the parameters of a foreign Parameters object to this Parameter object's values
+         * iff they have changed.
+         *    TAH 9/13
+         **/
+        #undef GALOSH_DEF_OPT
+        #define GALOSH_DEF_OPT(NAME,TYPE,DEFAULTVAL,HELP) if( isModified_##NAME ) target_parameters. NAME = this->parameters. NAME
+        #include "ProfuseTestOptions.hpp" // copy changed parameters
 
-        if( isModified_testLengthadjust ) {
-          target_parameters.testLengthadjust =
-            base_parameters_modifier_t::parameters.testLengthadjust;
-        }
-        if( isModified_testBaldi ) {
-          target_parameters.testBaldi =
-            base_parameters_modifier_t::parameters.testBaldi;
-        }
-        if( isModified_testBaldiSiegel ) {
-          target_parameters.testBaldiSiegel =
-            base_parameters_modifier_t::parameters.testBaldiSiegel;
-        }
-        if( isModified_alsoStartWithEvenPositions ) {
-          target_parameters.alsoStartWithEvenPositions =
-            base_parameters_modifier_t::parameters.alsoStartWithEvenPositions;
-        }
       } // applyModifications( Parameters & )
 
   ////// Class galosh::ProfuseTest ////
@@ -3381,32 +929,112 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       m_parameters(),
       m_random( static_cast<uint32_t>( std::time( NULL ) ) )
   {
-    m_parameters.m_profusetest_options.add_options()( "help", "This help message." );
-    po::store( po::parse_command_line( argc, argv, m_parameters.m_profusetest_options ), m_parameters.m_options_map );
-    // TODO: REMOVE
-    cout << "Config file is: " << m_parameters.m_options_map[ "configFile" ].as<string>() << endl;
-    ifstream configFile( m_parameters.m_options_map[ "configFile" ].as<string>().c_str() );
-    if( configFile ) {
-      try {
-        po::store( parse_config_file( configFile, m_parameters.m_profusetest_options ), m_parameters.m_options_map );
-      } catch( const std::exception& e ) {
-        std::cerr << std::endl << "ERROR PARSING ProfuseTest CONFIG FILE: " << e.what() << std::endl;
-        exit( 1 );
+    try {
+      string config_file;
+      // Declare a group of options that will be 
+      // allowed only on command line
+      po::options_description generic( "Generic options" );
+      generic.add_options()
+        ( "version,v", "print version string" )
+        ( "help,h", "produce help message" )
+        ( "config,c", po::value<string>( &config_file )->default_value( "ProfuseTest.cfg" ),
+          "name of a file of a configuration." )
+        ;
+      
+      // Declare a group of options that will be 
+      // allowed both on command line and in
+      // config file
+      //po::options_description config( "Configuration" );
+      //config.add_options()
+      //  ;
+      
+      typedef ProfileTreeRoot<ResidueType, ProbabilityType> ProfileType;
+      typedef ProfileTreeRoot<ResidueType, ProbabilityType> InternalNodeType;
+
+      typedef typename ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,SequenceResidueType>::Parameters profile_tree_trainer_parameters_t;
+      profile_tree_trainer_parameters_t params;
+      
+      po::options_description cmdline_options;
+      //cmdline_options.add( generic ).add( params.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
+      cmdline_options.add( generic ).add( params.m_galosh_options_description );
+      
+      po::options_description config_file_options;
+      //config_file_options.add( params.m_galosh_options_description ).add( config ).add( lengthadjust_opts );
+      config_file_options.add( params.m_galosh_options_description );
+      
+      po::options_description visible( "Basic options" );
+      //visible.add( generic ).add( config );
+      visible.add( generic );
+      
+      po::positional_options_description p;
+      p.add( "config", 1 );
+          
+      store( po::command_line_parser( argc, argv ).options( cmdline_options ).positional( p ).run(), params.m_galosh_options_map );
+      notify( params.m_galosh_options_map );
+      
+      // TODO: REMOVE
+      //cout << params << endl;
+      //cout << endl;
+      
+#define USAGE() " " << argv[ 0 ] << " [options] [<config file>]"
+      
+          
+//      cout << "Usage: " << argv[ 0 ] << " <config file>" << endl;
+      
+      // Read in the config file.
+      if( config_file.length() > 0 ) {
+      // TODO: REMOVE
+        cout << "Config file is: " << params.m_galosh_options_map["config"].template as<string>() << endl;
+        ifstream ifs( config_file.c_str() );
+        if( !ifs ) {
+          //if(!params.m_galosh_options_map["config"].defaulted()) {         //TAH 3/13 don't choke if config file was defaulted and is missing
+             cout << "Can't open the config file named \"" << config_file << "\"\n";
+             return;
+             //} 
+        } else {
+          store( parse_config_file( ifs, config_file_options ), params.m_galosh_options_map );
+          notify( params.m_galosh_options_map );
+        }
       }
-      configFile.close();
-    }
-    po::notify( m_parameters.m_options_map );
-    if( m_parameters.m_options_map.count("help") ) {
-      cout << m_parameters.m_profusetest_options << endl;
-      exit( 0 );
-    }
-    if( m_parameters.m_options_map.count("seed") ) {
-      if( m_parameters.seed != 0 ) {
-        m_random.setSeed( m_parameters.seed );
+      
+      if( params.m_galosh_options_map.count( "help" ) > 0 ) {
+        cout << "Usage: " << USAGE() << endl;
+        cout << visible << "\n";
+        return;
       }
+      
+      if( params.m_galosh_options_map.count( "version" ) ) {
+        cout << "ProfuseTest, version 1.2\n";
+        return;
+      }
+      
+      //if( params.m_galosh_options_map.count( "debug" ) ) {
+      //  cout << "[DEBUGGING]\n";
+      //  return;
+      //}
+      
+      // Required options
+      if( params.m_galosh_options_map.count( "config" ) == 0 ) {
+        cout << "Usage: " << USAGE() << endl;
+        return;
+      }
+      
+      if( params.m_galosh_options_map.count( "seed" ) ) {
+        if( m_parameters.seed != 0 ) {
+          m_random.setSeed( m_parameters.seed );
+        }
+      }
+      // TODO: REMOVE
+      //cout << "Hi, ok, done constructing" << endl;
+
+    } catch( std::exception& e ) { /// exceptions thrown by boost stuff (etc)
+      cerr << "error: " << e.what() << endl;
+    } catch( string &err ) {      /// exceptions thrown as strings
+      cerr << "error: " << err << endl;
+    } catch( ... ) {               /// anything else
+      cerr << "Strange unknown exception" << endl;
     }
-    // TODO: REMOVE
-    //cout << "Hi, ok, done constructing" << endl;
+
   } // <init>( const int argc, char ** const argv )
 
   template <class ResidueType,
@@ -3436,12 +1064,12 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
             class ScoreType,
             class MatrixValueType,
             class SequenceResidueType>
-  GALOSH_INLINE_PROFUSETEST_START
+  GALOSH_INLINE_TRAIN
   void
   ProfuseTest<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::
     start ()
     {
-      bool be_verbose = false;//( m_parameters.verbosity >= VERBOSITY_Meta );
+      bool be_verbose = true;//false;//( m_parameters.verbosity >= VERBOSITY_Meta );
 
       typename DynamicProgramming<ResidueType, ProbabilityType, ScoreType, MatrixValueType>::template DirichletMixtureMatchEmissionPrior<float> matchEmissionPrior;
 
@@ -3866,79 +1494,81 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
       tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].parametersModifier.parameters.useUnconditionalBaumWelch = true;
       tests[ TEST_ID_unconditional_with_fixed_true_globals_then_with_fixed_positions ].parametersModifier.isModified_useUnconditionalBaumWelch = true;
 
-      if( m_parameters.testConditionalGibbsProfile ) {
-        tests[ TEST_ID_gibbs_conditional ].name = "cGibbs";
-        tests[ TEST_ID_gibbs_conditional ].isRun = true;
-      } else {
-        tests[ TEST_ID_gibbs_conditional ].isRun = false;
-      }
-      if( m_parameters.coutConditionalGibbsProfile ) {
-        tests[ TEST_ID_gibbs_conditional ].isCout = true;
-      } else {
-        tests[ TEST_ID_gibbs_conditional ].isCout = false;
-      }
-      tests[ TEST_ID_gibbs_conditional ].isGibbs = true;
-      tests[ TEST_ID_gibbs_conditional ].coutLeftBrace = "`";
-      tests[ TEST_ID_gibbs_conditional ].coutRightBrace = "'";
-      // Start with the starting profile globals and positions
-      tests[ TEST_ID_gibbs_conditional ].startingGlobalsTest =
-        NULL;
-      tests[ TEST_ID_gibbs_conditional ].startingPositionsTest =
-        NULL;
-      // Modifiers for conditional gibbs test
-      // inherit these
-      //tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfilePositions = true;
-      //tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfilePositions = true;
-      //if( m_parameters.trainProfileGlobals ) {
-      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfileGlobals = true;
-      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfileGlobals = true;
+      // TODO: PUT BACK WHEN ProfileGibbs IS READY.
+      //if( m_parameters.testConditionalGibbsProfile ) {
+      //  tests[ TEST_ID_gibbs_conditional ].name = "cGibbs";
+      //  tests[ TEST_ID_gibbs_conditional ].isRun = true;
       //} else {
-      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfileGlobals = false;
-      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfileGlobals = false;
+      //  tests[ TEST_ID_gibbs_conditional ].isRun = false;
       //}
-      tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.useUnconditionalGibbs = false;
-      tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
-      if( m_parameters.reportGibbsMode ) {
-        tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.saveGibbsMode = true;
-        tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_saveGibbsMode = true;
-      } // End if reportGibbsMode
-
-      if( m_parameters.testUnconditionalGibbsProfile ) {
-        tests[ TEST_ID_gibbs_unconditional ].name = "uGibbs";
-        tests[ TEST_ID_gibbs_unconditional ].isRun = true;
-      } else {
-        tests[ TEST_ID_gibbs_unconditional ].isRun = false;
-      }
-      if( m_parameters.coutUnconditionalGibbsProfile ) {
-        tests[ TEST_ID_gibbs_unconditional ].isCout = true;
-      } else {
-        tests[ TEST_ID_gibbs_unconditional ].isCout = false;
-      }
-      tests[ TEST_ID_gibbs_unconditional ].isGibbs = true;
-      tests[ TEST_ID_gibbs_unconditional ].coutLeftBrace = "*";
-      tests[ TEST_ID_gibbs_unconditional ].coutRightBrace = "*";
-      // Start with the starting profile globals and positions
-      tests[ TEST_ID_gibbs_unconditional ].startingGlobalsTest =
-        // TODO: Put back: NULL;
-        &tests[ TEST_ID_gibbs_unconditional ]; // true
-      tests[ TEST_ID_gibbs_unconditional ].startingPositionsTest = NULL;
-      // Modifiers for unconditional gibbs test
-      // inherit these, don't modify them.
-      //tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfilePositions = true;
-      //tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfilePositions = true;
-      //if( m_parameters.trainProfileGlobals ) {
-      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfileGlobals = true;
-      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfileGlobals = true;
+      //if( m_parameters.coutConditionalGibbsProfile ) {
+      //  tests[ TEST_ID_gibbs_conditional ].isCout = true;
       //} else {
-      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfileGlobals = false;
-      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfileGlobals = false;
+      //  tests[ TEST_ID_gibbs_conditional ].isCout = false;
       //}
-      tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.useUnconditionalGibbs = true;
-      tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
-      if( m_parameters.reportGibbsMode ) {
-        tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.saveGibbsMode = true;
-        tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_saveGibbsMode = true;
-      } // End if reportGibbsMode
+      //tests[ TEST_ID_gibbs_conditional ].isGibbs = true;
+      //tests[ TEST_ID_gibbs_conditional ].coutLeftBrace = "`";
+      //tests[ TEST_ID_gibbs_conditional ].coutRightBrace = "'";
+      //// Start with the starting profile globals and positions
+      //tests[ TEST_ID_gibbs_conditional ].startingGlobalsTest =
+      //  NULL;
+      //tests[ TEST_ID_gibbs_conditional ].startingPositionsTest =
+      //  NULL;
+      //// Modifiers for conditional gibbs test
+      //// inherit these
+      ////tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfilePositions = true;
+      ////tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfilePositions = true;
+      ////if( m_parameters.trainProfileGlobals ) {
+      ////  tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfileGlobals = true;
+      ////  tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfileGlobals = true;
+      ////} else {
+      ////  tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.sampleProfileGlobals = false;
+      ////  tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_sampleProfileGlobals = false;
+      ////}
+      //
+      //tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.useUnconditionalGibbs = false;
+      //tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
+      //if( m_parameters.reportGibbsMode ) {
+      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.parameters.saveGibbsMode = true;
+      //  tests[ TEST_ID_gibbs_conditional ].parametersModifier.isModified_saveGibbsMode = true;
+      //} // End if reportGibbsMode
+      //
+      //if( m_parameters.testUnconditionalGibbsProfile ) {
+      //  tests[ TEST_ID_gibbs_unconditional ].name = "uGibbs";
+      //  tests[ TEST_ID_gibbs_unconditional ].isRun = true;
+      //} else {
+      //  tests[ TEST_ID_gibbs_unconditional ].isRun = false;
+      //}
+      //if( m_parameters.coutUnconditionalGibbsProfile ) {
+      //  tests[ TEST_ID_gibbs_unconditional ].isCout = true;
+      //} else {
+      //  tests[ TEST_ID_gibbs_unconditional ].isCout = false;
+      //}
+      //tests[ TEST_ID_gibbs_unconditional ].isGibbs = true;
+      //tests[ TEST_ID_gibbs_unconditional ].coutLeftBrace = "*";
+      //tests[ TEST_ID_gibbs_unconditional ].coutRightBrace = "*";
+      //// Start with the starting profile globals and positions
+      //tests[ TEST_ID_gibbs_unconditional ].startingGlobalsTest =
+      //  // TODO: Put back: NULL;
+      //  &tests[ TEST_ID_gibbs_unconditional ]; // true
+      //tests[ TEST_ID_gibbs_unconditional ].startingPositionsTest = NULL;
+      //// Modifiers for unconditional gibbs test
+      //// inherit these, don't modify them.
+      ////tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfilePositions = true;
+      ////tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfilePositions = true;
+      ////if( m_parameters.trainProfileGlobals ) {
+      ////  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfileGlobals = true;
+      ////  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfileGlobals = true;
+      ////} else {
+      ////  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.sampleProfileGlobals = false;
+      ////  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_sampleProfileGlobals = false;
+      ////}
+      //tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.useUnconditionalGibbs = true;
+      //tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_useUnconditionalGibbs = true;
+      //if( m_parameters.reportGibbsMode ) {
+      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.parameters.saveGibbsMode = true;
+      //  tests[ TEST_ID_gibbs_unconditional ].parametersModifier.isModified_saveGibbsMode = true;
+      //} // End if reportGibbsMode
 
       if( m_parameters.testLengthadjust ) {
         tests[ TEST_ID_lengthadjust_conditional ].name = "conditionalLA";
@@ -4364,13 +1994,14 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         // //parameters_oa.close();
         // //parameters_stream.close();
 
-        if( m_parameters.saveTests ) {
-          fs::path tests_filename =
-            ( m_parameters.resultsFilePrefix +
-              run_unique_id +
-              m_parameters.testsFileSuffix );
-              writeXML( tests, ( dirname / tests_filename ).string().c_str() );
-        } // End if saveTests
+        // TODO: PUT BACK.  CAUSING AN INFITE TEMPLATE RECURSION - WHY?
+        //if( m_parameters.saveTests ) {
+        //  fs::path tests_filename =
+        //    ( m_parameters.resultsFilePrefix +
+        //      run_unique_id +
+        //      m_parameters.testsFileSuffix );
+        //      writeXML( tests, ( dirname / tests_filename ).string().c_str() );
+        //} // End if saveTests
 
         fs::path tab_filename =
           ( m_parameters.resultsFilePrefix +
@@ -4707,7 +2338,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the forward score for the corresponding test
        * number for the training set.
        */
-      ScoreType testScore_training_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_training_forward( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4721,7 +2352,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mean is true.
        */
-      ScoreType testScore_training_mean_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_training_mean_forward( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4735,7 +2366,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mode is true.
        */
-      ScoreType testScore_training_mode_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_training_mode_forward( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4744,7 +2375,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the forward score for the corresponding test
        * number for the test set.
        */
-      ScoreType testScore_test_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_test_forward( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4758,7 +2389,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mean is true.
        */
-      ScoreType testScore_test_mean_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_test_mean_forward( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4772,7 +2403,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mode is true.
        */
-      ScoreType testScore_test_mode_forward[ last_test_id + 1 ];
+      vector<ScoreType> testScore_test_mode_forward( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4781,7 +2412,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the viterbi score for the corresponding test
        * number for the training set.
        */
-      ScoreType testScore_training_viterbi[ last_test_id + 1 ];
+      vector<ScoreType> testScore_training_viterbi( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4790,7 +2421,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the viterbi score for the corresponding test
        * number for the test set.
        */
-      ScoreType testScore_test_viterbi[ last_test_id + 1 ];
+      vector<ScoreType> testScore_test_viterbi( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4799,7 +2430,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the truepath score for the corresponding test
        * number for the training set.
        */
-      ScoreType testScore_training_truepath[ last_test_id + 1 ];
+      vector<ScoreType> testScore_training_truepath( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4808,7 +2439,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * test_num ] will hold the truepath score for the corresponding test
        * number for the test set.
        */
-      ScoreType testScore_test_truepath[ last_test_id + 1 ];
+      vector<ScoreType> testScore_test_truepath( last_test_id + 1 );
 
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4817,7 +2448,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        * will hold the profile tree (after training) for the corresponding test
        * number.
        */
-      ProfileTreeType testProfileTree[ last_test_id + 1 ];
+      vector<ProfileTreeType> testProfileTree( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4828,7 +2459,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mean is true.
        */
-      ProfileTreeType testProfileTree_mean[ last_test_id + 1 ];
+      vector<ProfileTreeType> testProfileTree_mean( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -4839,7 +2470,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
        *
        * Only used if parameters.reportGibbs_mode is true.
        */
-      ProfileTreeType testProfileTree_mode[ last_test_id + 1 ];
+      vector<ProfileTreeType> testProfileTree_mode( last_test_id + 1 );
   
       /**
        * For convenience we number the tests from 0 to last_test_id.
@@ -5091,17 +2722,17 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         
                       // First calculate the appropriate indel values.
                       ProbabilityType deletion_open =
-                        INIT_PROBABILITY(ProbabilityType)( expected_deletions_count / profile_length );
+                        ( expected_deletions_count / profile_length );
                       ProbabilityType insertion_open =
                         ( m_parameters.useDeletionsForInsertionsParameters ?
                           deletion_open :
-                          INIT_PROBABILITY(ProbabilityType)( expected_insertions_count / profile_length ) );
+                          ( expected_insertions_count / profile_length ) );
         
                       // [ the EV of a geometric is 1/p, where p is prob of stopping, so if q is the prob of continuing, we want ( 1 - q ) = 1/EV. ]
                       ProbabilityType deletion_extension =
-                        INIT_PROBABILITY(ProbabilityType)( 1.0 - min( ( 1.0 / ( expected_deletion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedDeletionLength ) ) );
+                        ( 1.0 - min( ( 1.0 / ( expected_deletion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedDeletionLength ) ) );
                       ProbabilityType insertion_extension =
-                        ( m_parameters.useDeletionsForInsertionsParameters ? deletion_extension : INIT_PROBABILITY(ProbabilityType)( 1.0 - min( ( 1.0 / ( expected_insertion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedInsertionLength ) ) ) );
+                        ( m_parameters.useDeletionsForInsertionsParameters ? deletion_extension : ( 1.0 - min( ( 1.0 / ( expected_insertion_length_as_profile_length_fraction * profile_length ) ), ( 1.0 / m_parameters.minExpectedInsertionLength ) ) ) );
 
 #ifdef USE_DEL_IN_DEL_OUT
                       // TODO: Make a parameter for this..
@@ -5118,9 +2749,9 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       true_root.even();
 #ifndef DISALLOW_FLANKING_TRANSITIONS
                       true_root[ Transition::fromPreAlign ][ TransitionFromPreAlign::toPreAlign ] =
-                        INIT_PROBABILITY(ProbabilityType)( m_parameters.preAlignInsertion );
+                        ( m_parameters.preAlignInsertion );
                       true_root[ Transition::fromPreAlign ][ TransitionFromPreAlign::toBegin ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1 ) -
+                        ( 1 ) -
                         true_root[ Transition::fromPreAlign ][ TransitionFromPreAlign::toPreAlign ];
 #endif // !DISALLOW_FLANKING_TRANSITIONS
                       true_root[ Transition::fromBegin ][ TransitionFromBegin::toDeletion ] =
@@ -5141,7 +2772,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         true_root[ galosh::Transition::fromDeletionIn ][ galosh::TransitionFromDeletionIn::toDeletionIn ];
 #else
                       true_root[ Transition::fromBegin ][ TransitionFromBegin::toMatch ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1 ) -
+                        ( 1 ) -
                         true_root[ Transition::fromBegin ][ TransitionFromBegin::toDeletion ];
 #endif // USE_DEL_IN_DEL_OUT .. else ..                        
                       true_root[ Transition::fromMatch ][ TransitionFromMatch::toInsertion ] =
@@ -5165,7 +2796,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         true_root[ galosh::Transition::fromDeletionOut ][ galosh::TransitionFromDeletionOut::toDeletionOut ];
 #else
                       true_root[ Transition::fromMatch ][ TransitionFromMatch::toMatch ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1.0 ) -
+                        ( 1.0 ) -
                         (
                          true_root[ Transition::fromMatch ][ TransitionFromMatch::toInsertion ] +
                          true_root[ Transition::fromMatch ][ TransitionFromMatch::toDeletion ]
@@ -5174,24 +2805,24 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       true_root[ Transition::fromInsertion ][ TransitionFromInsertion::toInsertion ] =
                         insertion_extension;
                       true_root[ Transition::fromInsertion ][ TransitionFromInsertion::toMatch ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1.0 ) -
+                        ( 1.0 ) -
                         true_root[ Transition::fromInsertion ][ TransitionFromInsertion::toInsertion ];
                       true_root[ Transition::fromDeletion ][ TransitionFromDeletion::toDeletion ] =
                         deletion_extension;
                       true_root[ Transition::fromDeletion ][ TransitionFromDeletion::toMatch ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1.0 ) -
+                        ( 1.0 ) -
                         true_root[ Transition::fromDeletion ][ TransitionFromDeletion::toDeletion ];
                     
 #ifdef USE_END_DISTRIBUTION
                       // For now we don't use the End distribution ..
-                      //true_root[ Transition::fromEnd ][ TransitionFromEnd::toPostAlign ] = INIT_PROBABILITY(ProbabilityType)( 1 );
-                      //true_root[ Transition::fromEnd ][ TransitionFromEnd::toLoop ] = INIT_PROBABILITY(ProbabilityType)( 0 );
+                      //true_root[ Transition::fromEnd ][ TransitionFromEnd::toPostAlign ] = ( 1 );
+                      //true_root[ Transition::fromEnd ][ TransitionFromEnd::toLoop ] = ( 0 );
 #endif // USE_END_DISTRIBUTION
 #ifndef DISALLOW_FLANKING_TRANSITIONS
                       true_root[ Transition::fromPostAlign ][ TransitionFromPostAlign::toPostAlign ] =
-                        INIT_PROBABILITY(ProbabilityType)( m_parameters.postAlignInsertion );
+                        ( m_parameters.postAlignInsertion );
                       true_root[ Transition::fromPostAlign ][ TransitionFromPostAlign::toTerminal ] =
-                        INIT_PROBABILITY(ProbabilityType)( 1.0 ) -
+                        ( 1.0 ) -
                         true_root[ Transition::fromPostAlign ][ TransitionFromPostAlign::toPostAlign ];
 #endif // DISALLOW_FLANKING_TRANSITIONS
               
@@ -5201,9 +2832,9 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         // NOTE: true_root[ j ][ pattern_sequences[ 0 ][ i ] is the same for all i,j right now.
                   
                         ProbabilityType pattern_trick_value =
-                          ( ( conservation_rate == 1.0 ) ? INIT_PROBABILITY(ProbabilityType)( 1.0 ) :
-                            ( ( INIT_PROBABILITY(ProbabilityType)( 1.0 ) - true_root[ 0 ][ Emission::Match ][ pattern_sequences[ 0 ][ 0 ] ] ) *
-                              ( INIT_PROBABILITY(ProbabilityType)( conservation_rate / ( 1.0 - conservation_rate ) ) ) ) );
+                          ( ( conservation_rate == 1.0 ) ? ( 1.0 ) :
+                            ( ( ( 1.0 ) - true_root[ 0 ][ Emission::Match ][ pattern_sequences[ 0 ][ 0 ] ] ) *
+                              ( ( conservation_rate / ( 1.0 - conservation_rate ) ) ) ) );
                       
                         // r is current remaining value (1 - P(base)), p is target value.
                         //x/(r + x) = p
@@ -5818,11 +3449,12 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
                         // Note that we must set the m_profile value before
                         // training...
-                        ProfileGibbs<RootType, ScoreType, MatrixValueType, SequenceResidueType> sampler(
-                          &m_random,
-                          testProfileTree[ TEST_ID_starting ].getProfileTreeRoot(), // not used except to choose the right template type
-                          training_fasta
-                        );
+                        // TODO: PUT BACK WHEN ProfileGibbs IS READY.
+                        //ProfileGibbs<RootType, ScoreType, MatrixValueType, SequenceResidueType> sampler(
+                        //  &m_random,
+                        //  testProfileTree[ TEST_ID_starting ].getProfileTreeRoot(), // not used except to choose the right template type
+                        //  training_fasta
+                        //);
 
                         // Note that we must set the m_profileTree value before
                         // training...
@@ -5977,57 +3609,58 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                           } // End if tests[ test_id ].startingGlobalsTest == NULL .. else ..
                           if( tests[ test_id ].isGibbs ) {
 
-                            if( !m_parameters.sampleProfilePositions ) {
-                              // Make sure that the profile starts with the
-                              // right position values, since we're expecting
-                              // them to be the true values.
-                              testProfileTree[ test_id ].getProfileTreeRoot()->copyPositions(
-                                *( testProfileTree[ TEST_ID_true ].getProfileTreeRoot() )
-                              );
-                            }
-                            
-                            sampler.m_profile =
-                              testProfileTree[ test_id ].getProfileTreeRoot();
-                            sampler.m_parameters = m_parameters;
-                            
-                            tests[ test_id ].parametersModifier.applyModifications( sampler.m_parameters );
-                            
-                            // TODO: REMOVE
-                            //cout << "sampler verbosity level is " << sampler.m_parameters.verbosity << endl;
-                            //if( tests[ test_id ].parametersModifier.isModified_verbosity ) {
-                            //  cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.verbosity << endl;
-                            //} else {
-                            //  cout << "it should be unmodified (" << m_parameters.verbosity << ")" << endl;
+                            // TODO: PUT BACK WHEN ProfileGibbs IS READY.
+                            //if( !m_parameters.sampleProfilePositions ) {
+                            //  // Make sure that the profile starts with the
+                            //  // right position values, since we're expecting
+                            //  // them to be the true values.
+                            //  testProfileTree[ test_id ].getProfileTreeRoot()->copyPositions(
+                            //    *( testProfileTree[ TEST_ID_true ].getProfileTreeRoot() )
+                            //  );
                             //}
-                            
-                            if( be_verbose ) {
-                              cout << "Now (before sampling the " << tests[ test_id ].name << " profile), the profile tree is:" << endl;
-                              cout << testProfileTree[ test_id ] << endl;
-                            } // End if be_verbose
-
-                            testScore_training_forward[ test_id ] =
-                              sampler.sample();
-                            testIters[ test_id ] = sampler.m_totalIterations;
-
-                            // The sampler puts the best profile it found in
-                            // m_samplingProfile.  Note that this might not be the mode or the overall mean (it could be the mean of one of the chains).
-                            testProfileTree[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_samplingProfile );
-
-                            // Also separately store the overall mean and mode
-                            if( m_parameters.reportGibbsMean ) {
-                              testScore_training_mean_forward[ test_id ] =
-                                sampler.m_averageProfileScore;
-                              testProfileTree_mean[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_averageProfile );
-                            }
-                            if( m_parameters.reportGibbsMode ) {
-                              testScore_training_mode_forward[ test_id ] =
-                                sampler.m_bestProfileScore;
-                              testProfileTree_mode[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_bestProfile );
-                            }
-                            if( be_verbose ) {
-                              cout << "Now (after training/sampling the " << tests[ test_id ].name << " profile), the score is " << testScore_training_forward[ test_id ] << ", and the profile tree is:" << endl;
-                              cout << testProfileTree[ test_id ] << endl;
-                            } // End if be_verbose
+                            //
+                            //sampler.m_profile =
+                            //  testProfileTree[ test_id ].getProfileTreeRoot();
+                            //sampler.m_parameters = m_parameters;
+                            //
+                            //tests[ test_id ].parametersModifier.applyModifications( sampler.m_parameters );
+                            //
+                            //// TODO: REMOVE
+                            ////cout << "sampler verbosity level is " << sampler.m_parameters.verbosity << endl;
+                            ////if( tests[ test_id ].parametersModifier.isModified_verbosity ) {
+                            ////  cout << "it should be modified to " << tests[ test_id ].parametersModifier.parameters.verbosity << endl;
+                            ////} else {
+                            ////  cout << "it should be unmodified (" << m_parameters.verbosity << ")" << endl;
+                            ////}
+                            //
+                            //if( be_verbose ) {
+                            //  cout << "Now (before sampling the " << tests[ test_id ].name << " profile), the profile tree is:" << endl;
+                            //  cout << testProfileTree[ test_id ] << endl;
+                            //} // End if be_verbose
+                            //
+                            //testScore_training_forward[ test_id ] =
+                            //  sampler.sample();
+                            //testIters[ test_id ] = sampler.m_totalIterations;
+                            //
+                            //// The sampler puts the best profile it found in
+                            //// m_samplingProfile.  Note that this might not be the mode or the overall mean (it could be the mean of one of the chains).
+                            //testProfileTree[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_samplingProfile );
+                            //
+                            //// Also separately store the overall mean and mode
+                            //if( m_parameters.reportGibbsMean ) {
+                            //  testScore_training_mean_forward[ test_id ] =
+                            //    sampler.m_averageProfileScore;
+                            //  testProfileTree_mean[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_averageProfile );
+                            //}
+                            //if( m_parameters.reportGibbsMode ) {
+                            //  testScore_training_mode_forward[ test_id ] =
+                            //    sampler.m_bestProfileScore;
+                            //  testProfileTree_mode[ test_id ].getProfileTreeRoot()->copyFrom( sampler.m_bestProfile );
+                            //}
+                            //if( be_verbose ) {
+                            //  cout << "Now (after training/sampling the " << tests[ test_id ].name << " profile), the score is " << testScore_training_forward[ test_id ] << ", and the profile tree is:" << endl;
+                            //  cout << testProfileTree[ test_id ] << endl;
+                            //} // End if be_verbose
 
                           } else { // if isGibbs .. else ..
                             

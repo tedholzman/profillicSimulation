@@ -15,8 +15,9 @@ use Getopt::Std;
 use strict;
 use vars qw( $VERSION $DEBUG $VERBOSE
              $opt_D $opt_V $opt_o $opt_O
-             $opt_t $opt_a $opt_d $opt_l $opt_i $opt_f $opt_v $opt_T $opt_s $opt_z );
-$VERSION = '1.1';
+             $opt_t $opt_a $opt_d $opt_l $opt_i $opt_f $opt_v $opt_T
+             $opt_s $opt_S $opt_z );
+$VERSION = '1.2';
 
 # This means -D, -o, -O, and -V are ok, but nothin' else.
 # opt_D means print debugging output.
@@ -32,8 +33,9 @@ $VERSION = '1.1';
 # opt_v means show the viterbi scores in the output.
 # opt_T means show the testing scores only (not the training scores).
 # opt_s means also calculate and show standard deviations (in addition to means)
-# opt_z means show differences to the true, rather than the actual true, log-prob.
-if( not getopts('DVo:O:tadlifvTsz') ) {
+# opt_S means also calculate and show standard errors (in addition to means)
+# opt_z means show differences to the true, rather than the actual, log-prob.
+if( not getopts('DVo:O:tadlifvTsSz') ) {
   usage();
 }
 
@@ -50,7 +52,8 @@ my $show_viterbi_scores = $opt_v;
 my $show_testing_scores = 1;
 my $show_training_scores = !$opt_T;
 
-my $show_standard_deivations = $opt_s;
+my $show_standard_deviations = $opt_s;
+my $show_standard_errors = $opt_S;
 
 my $diffs_to_true = $opt_z;
 
@@ -219,6 +222,9 @@ while( <TAB_FH> ) {
       ( $#line_values - ( $#column_headers - $true_profile_id_key_column ) );
   }
   $true_profile_id = $line_values[ $true_profile_id_line_column ];
+  if( $DEBUG ) {
+    print "TRUE PROFILE ID: $true_profile_id\n(parsed from element $true_profile_id_line_column of: (", join( ",", @line_values ), ")\n";
+  }
 
   # We store separately the test descriptors corresponding to each set
   # of test parameters, which is *all* of the text in the columns up
@@ -395,8 +401,11 @@ for( my $column_i = ( $true_profile_id_key_column + 1 );
      )
   ) {
     push( @filtered_column_headers, $column_headers[ $column_i ] );
-    if( $show_standard_deivations ) {
+    if( $show_standard_deviations ) {
       push( @filtered_column_headers, 'sd.' . $column_headers[ $column_i ] );
+    }
+    if( $show_standard_errors ) {
+      push( @filtered_column_headers, 'se.' . $column_headers[ $column_i ] );
     }
   }
 } # End foreach $column_i..
@@ -439,7 +448,9 @@ if( $VERBOSE ) { print ".done.\n"; }
 
 my @test_descriptor_stdevs; # At first, sum of squares...
 my @true_profile_stdevs; # At first, sum of squares...
-if( $show_standard_deivations ) {
+my @test_descriptor_stderrs;
+my @true_profile_stderrs;
+if( $show_standard_deviations || $show_standard_errors ) {
 
   if( $VERBOSE ) { print "Calculating standard deviations.."; }
 
@@ -447,8 +458,11 @@ if( $show_standard_deivations ) {
   for( my $test_descriptor_i = 0; $test_descriptor_i <= $#test_descriptors; $test_descriptor_i++ ) {
     $test_descriptor_stdevs[ $test_descriptor_i ] = [];
     $true_profile_stdevs[ $test_descriptor_i ] = [];
+    $test_descriptor_stderrs[ $test_descriptor_i ] = [];
+    $true_profile_stderrs[ $test_descriptor_i ] = [];
     for( my $true_profile_i = 0; $true_profile_i <= $#{ $data[ $test_descriptor_i ] }; $true_profile_i++ ) {
       $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ] = [];
+      $true_profile_stderrs[ $test_descriptor_i ][ $true_profile_i ] = [];
       for( my $starting_profile_i = 0; $starting_profile_i <= $#{ $data[ $test_descriptor_i ]->[ $true_profile_i ] }; $starting_profile_i++ ) {
         for( my $test_result_i = 0; $test_result_i <= $#{ $data[ $test_descriptor_i ]->[ $true_profile_i ]->[ $starting_profile_i ] }; $test_result_i++ ) {
           $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] +=
@@ -460,12 +474,15 @@ if( $show_standard_deivations ) {
             if( $starting_profile_i == 0 ) {
               # Oh, it's the only starting profile for this true profile... so there's no stdev among the starting profiles..
               $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] = undef;
+              $true_profile_stderrs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] = undef;
             } else {
               # If it is the last of the values, divide by the total - 1, then sqrt.
               $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] /=
                 ( scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) - 1 );
               $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] =
                 $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] ** .5;
+              $true_profile_stderrs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] =
+                $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] / ( scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) ** .5 );
             }
             if( $true_profile_i == $#{ $data[ $test_descriptor_i ] } ) {
               $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ] /=
@@ -478,6 +495,16 @@ if( $show_standard_deivations ) {
                 );
               $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ] =
                 $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ] ** .5;
+              $test_descriptor_stderrs[ $test_descriptor_i ]->[ $test_result_i ] =
+                $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ] /
+                (
+                 ## Note that we're assuming that there's the same
+                 ## number of starting profiles for each true profile...
+                 ( scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) *
+                   scalar( @{ $data[ $test_descriptor_i ] } ) )
+                 ** .5
+                );
+
             } # End if this is the last true profile too
           } # End if this is the last starting profile
         } # End foreach $test_result_i
@@ -487,7 +514,7 @@ if( $show_standard_deivations ) {
   
   if( $VERBOSE ) { print ".done.\n"; }
 
-} # End if $show_standard_deivations
+} # End if $show_standard_deviations || $show_standard_errors
 
 if( $VERBOSE ) { print "Writing processed file.."; }
 # Header
@@ -507,8 +534,11 @@ for( my $test_descriptor_i = 0; $test_descriptor_i <= $#test_descriptors; $test_
           # .. and print.
           if( $keep_true_profiles_separated ) {
             print OUTPUT_FH "\t", $true_profile_averages[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ];
-            if( $show_standard_deivations ) {
+            if( $show_standard_deviations ) {
               print OUTPUT_FH "\t", $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ];
+            }
+            if( $show_standard_errors ) {
+              print OUTPUT_FH "\t", $true_profile_stderrs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ];
             }
           }
         }
@@ -522,8 +552,11 @@ for( my $test_descriptor_i = 0; $test_descriptor_i <= $#test_descriptors; $test_
         # .. and print.
         unless( $keep_true_profiles_separated ) {
           print OUTPUT_FH "\t", $test_descriptor_averages[ $test_descriptor_i ]->[ $test_result_i ];
-          if( $show_standard_deivations ) {
+          if( $show_standard_deviations ) {
             print OUTPUT_FH "\t", $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ];
+          }
+          if( $show_standard_errors ) {
+            print OUTPUT_FH "\t", $test_descriptor_stderrs[ $test_descriptor_i ]->[ $test_result_i ];
           }
         }
       }

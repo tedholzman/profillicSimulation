@@ -1864,7 +1864,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         ( "v" + boost::lexical_cast<string>( m_parameters.saveFileVersion ) + "_seed" + boost::lexical_cast<string>( m_random.getSeed() ) + "_ProfillicSimulation" );
       fs::path dirname =
         ( static_cast<fs::path>( m_parameters.saveResultsParentDirectory ) /
-          run_unique_id );
+          ( m_parameters.resultsFilePrefix + "_" + run_unique_id ) );
       std::ofstream tab_stream;
       if( m_parameters.saveResultsToFile ) {
         if( !fs::exists( m_parameters.saveResultsParentDirectory ) ) {
@@ -1887,7 +1887,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         }
         // Parameters file
         fs::path parameters_filename =
-           ( m_parameters.resultsFilePrefix +
+           ( m_parameters.resultsFilePrefix + "_" +
              run_unique_id +
              m_parameters.parametersFileSuffix );
          ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
@@ -1897,14 +1897,14 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
         if( m_parameters.saveTests ) {
           fs::path tests_filename =
-            ( m_parameters.resultsFilePrefix +
+            ( m_parameters.resultsFilePrefix + "_" +
               run_unique_id +
               m_parameters.testsFileSuffix );
               writeXML( tests, ( dirname / tests_filename ).string().c_str() );
         } // End if saveTests
 
         fs::path tab_filename =
-          ( m_parameters.resultsFilePrefix +
+          ( m_parameters.resultsFilePrefix + "_" +
             run_unique_id +
             m_parameters.tabFileSuffix );
         cout << endl << "For filename: " << tab_filename << endl;
@@ -2579,7 +2579,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                     
                       if( m_parameters.saveResultsToFile && m_parameters.savePatternSequences ) {
                         fs::path pattern_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -2786,7 +2786,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                     
                       if( m_parameters.saveResultsToFile && m_parameters.saveTrueProfileTrees ) {
                         fs::path true_profile_tree_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -2821,7 +2821,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       } // End if be_verbose
                       if( m_parameters.saveResultsToFile && m_parameters.saveTrueTrainingAlignments ) {
                         fs::path training_alignments_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -2860,7 +2860,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       } // End if be_verbose
                       if( m_parameters.saveResultsToFile && m_parameters.saveTrueTestingAlignments ) {
                         fs::path test_alignments_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -2904,7 +2904,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         } // End if be_verbose
                         if( m_parameters.saveResultsToFile && m_parameters.saveTrueTrainingAlignments ) {
                           fs::path training_alignments_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( m_parameters.resultsFilePrefix + "_" +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
@@ -2941,7 +2941,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                         } // End if be_verbose
                         if( m_parameters.saveResultsToFile && m_parameters.saveTrueTestingAlignments ) {
                           fs::path test_alignments_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( m_parameters.resultsFilePrefix + "_" +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
@@ -2972,7 +2972,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       } // End if be_verbose
                       if( m_parameters.saveResultsToFile && m_parameters.saveTrainingSequences ) {
                         fs::path training_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -2991,7 +2991,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                       } // End if saveResultsToFile
                       if( m_parameters.saveResultsToFile && m_parameters.saveTestingSequences ) {
                         fs::path test_sequences_filename =
-                          ( m_parameters.resultsFilePrefix +
+                          ( m_parameters.resultsFilePrefix + "_" +
                             run_unique_id +
                             "." + lexical_cast<string>( conservation_rate * 100 ) +
                             "." + lexical_cast<string>( profile_length ) +
@@ -3259,7 +3259,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
                         if( m_parameters.saveResultsToFile && m_parameters.saveStartingProfiles ) {
                           fs::path starting_root_filename =
-                            ( m_parameters.resultsFilePrefix +
+                            ( m_parameters.resultsFilePrefix + "_" +
                               run_unique_id +
                               "." + lexical_cast<string>( conservation_rate * 100 ) +
                               "." + lexical_cast<string>( profile_length ) +
@@ -3568,7 +3568,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
 
                           if( m_parameters.saveResultsToFile && m_parameters.saveTestProfiles ) {
                             fs::path test_root_filename =
-                              ( m_parameters.resultsFilePrefix +
+                              ( m_parameters.resultsFilePrefix + "_" +
                                 run_unique_id +
                                 "." + lexical_cast<string>( conservation_rate * 100 ) +
                                 "." + lexical_cast<string>( profile_length ) +

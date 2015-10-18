@@ -1068,35 +1068,41 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
     {
       bool be_verbose = ( m_parameters.verbosity > VERBOSITY_Low );
 
-      // TODO: REMOVE "true"; DEBUGGING.
-      if( true || ( m_parameters.verbosity > VERBOSITY_High ) ) {
-        // Print out the parameters
+      // TODO: REMOVE?
+      if( m_parameters.debug >= DEBUG_All ) {
+        std::cerr << "Parameters in the m_galosh_options.map" << endl;
         for( const auto& it : ( m_parameters.m_galosh_options_map ) ) {
-          std::cout << it.first.c_str() << " = ";
+          std::cerr << it.first.c_str() << " = ";
           auto& value = it.second.value();
           if( auto v = boost::any_cast<bool>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<double>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<float>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<unsigned int>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<int>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<std::string>(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<myVector<double> >(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else if( auto v = boost::any_cast<myVector<uint32_t> >(&value) ) {
-            std::cout << *v;
+            std::cerr << *v;
           } else {
-            std::cout << "error";
+            std::cerr << "error";
           }
-          std::cout << endl;
+          std::cerr << endl;
         }
-        std::cout << endl;
+        std::cerr << endl;
       } // End if we should print out all of the parameters
+      // The parameters need to be copied from the options map.
+      m_parameters.resetToDefaults();
+      // TODO: REMOVE "true"; DEBUGGING.
+      if( true || ( m_parameters.verbosity > VERBOSITY_High ) ) {
+        std::cout << m_parameters << endl;
+      }
 
       typename DynamicProgramming<ResidueType, ProbabilityType, ScoreType, MatrixValueType>::template DirichletMixtureMatchEmissionPrior<float> matchEmissionPrior;
 
@@ -1883,33 +1889,7 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
              m_parameters.parametersFileSuffix );
          ofstream parameters_stream( ( dirname / parameters_filename ).string().c_str() );
         assert( parameters_stream.good() );
-
-        // Print out the parameters
-        for( const auto& it : ( m_parameters.m_galosh_options_map ) ) {
-          parameters_stream << it.first.c_str() << " = ";
-          auto& value = it.second.value();
-          if( auto v = boost::any_cast<bool>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<double>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<float>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<unsigned int>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<int>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<std::string>(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<myVector<double> >(&value) ) {
-            parameters_stream << *v;
-          } else if( auto v = boost::any_cast<myVector<uint32_t> >(&value) ) {
-            parameters_stream << *v;
-          } else {
-            parameters_stream << "error";
-          }
-          parameters_stream << endl;
-        }
-        parameters_stream << endl;
+        parameters_stream << m_parameters << endl;
         parameters_stream.close();
 
         if( m_parameters.saveTests ) {

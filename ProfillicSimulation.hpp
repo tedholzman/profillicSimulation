@@ -1016,13 +1016,14 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
         return;
       }
       
-      if( m_parameters.m_galosh_options_map.count( "seed" ) ) {
-        if( m_parameters.seed != 0 ) {
-          m_random.setSeed( m_parameters.seed );
-        }
-      }
       // What we've done is set the defaults (the m_galosh_options_map).  Now we need the parameters to reflect them.
       m_parameters.resetToDefaults();
+
+      if( m_parameters.seed != 0 ) {
+        m_random.setSeed( m_parameters.seed );
+      } else {
+        m_parameters.seed = m_random.getSeed();
+      }
 
       // TODO: REMOVE
       //cout << "Hi, ok, done constructing" << endl;

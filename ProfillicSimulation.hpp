@@ -1021,9 +1021,11 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
           m_random.setSeed( m_parameters.seed );
         }
       }
+      // What we've done is set the defaults (the m_galosh_options_map).  Now we need the parameters to reflect them.
+      m_parameters.resetToDefaults();
+
       // TODO: REMOVE
       //cout << "Hi, ok, done constructing" << endl;
-
     } catch( std::exception& e ) { /// exceptions thrown by boost stuff (etc)
       cerr << "error: " << e.what() << endl;
     } catch( string &err ) {      /// exceptions thrown as strings

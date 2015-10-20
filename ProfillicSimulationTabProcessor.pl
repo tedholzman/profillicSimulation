@@ -16,7 +16,7 @@ use strict;
 use vars qw( $VERSION $DEBUG $VERBOSE
              $opt_D $opt_V $opt_o $opt_O
              $opt_t $opt_a $opt_d $opt_l $opt_i $opt_f $opt_v $opt_T
-             $opt_s $opt_S $opt_z );
+             $opt_s $opt_S $opt_z $opt_x $opt_X );
 $VERSION = '1.2';
 
 # This means -D, -o, -O, and -V are ok, but nothin' else.
@@ -35,7 +35,9 @@ $VERSION = '1.2';
 # opt_s means also calculate and show standard deviations (in addition to means)
 # opt_S means also calculate and show standard errors (in addition to means)
 # opt_z means show differences to the true, rather than the actual, log-prob.
-if( not getopts('DVo:O:tadlifvTsSz') ) {
+# opt_x is the lowest starting profile index to use (default 0)
+# opt_X is the highest starting profile index to use (default, the max)
+if( not getopts('DVo:O:tadlifvTsSzx:X:') ) {
   usage();
 }
 
@@ -56,6 +58,9 @@ my $show_standard_deviations = $opt_s;
 my $show_standard_errors = $opt_S;
 
 my $diffs_to_true = $opt_z;
+
+my $use_starting_profile_indices_low = $opt_x || undef;
+my $use_starting_profile_indices_high = $opt_X || undef;
 
 ## By default we show both forward and viterbi scores.
 unless( $show_forward_scores || $show_viterbi_scores ) {
@@ -141,6 +146,8 @@ my ( @test_descriptors, $test_descriptor, $last_test_descriptor );
 my ( $true_profile_id, $true_value, $log10_value );
 my @line_values;
 my @filtered_values;
+my $only_one_true_profile = 1; # True until we see the column 'true_profile_id'
+my $starting_profile_index = 0;
 while( <TAB_FH> ) {
 
   # Chop and Chomp won't remove ^Ms or leading ws.
@@ -163,9 +170,19 @@ while( <TAB_FH> ) {
     # true_profile_id_key_column as the first data column, then in the
     # data rows we get the data by subtracting that number of columns
     # from the end...
+    # 
+    # Note that when there is only one true profile, the column is
+    # omitted from the output.
+    $true_profile_id_key_column = 0;
     for( my $column_i; $column_i <= $#column_headers; $column_i++ ) {
+      if( $column_headers[ $column_i ] eq 'expected_insertion_length_as_profile_length_fraction' ) {
+        ## This saves us if there is only one true profile (and thus no colunmn called 'true_profile_id').
+        $true_profile_id_key_column = $column_i;
+        next;
+      }
       if( $column_headers[ $column_i ] eq 'true_profile_id' ) {
         $true_profile_id_key_column = $column_i;
+        $only_one_true_profile = 0; # There must be more than one.
         next;
       }
       if( $column_headers[ $column_i ] =~ m/true_/ ) {
@@ -221,11 +238,18 @@ while( <TAB_FH> ) {
     $true_profile_id_line_column =
       ( $#line_values - ( $#column_headers - $true_profile_id_key_column ) );
   }
-  $true_profile_id = $line_values[ $true_profile_id_line_column ];
-  if( $DEBUG ) {
-    print "TRUE PROFILE ID: $true_profile_id\n(parsed from element $true_profile_id_line_column of: (", join( ",", @line_values ), ")\n";
-  }
 
+  if( $only_one_true_profile ) {
+    $true_profile_id = 0;
+    if( $DEBUG ) {
+      print "TRUE PROFILE ID: 0\n(there's only one true profile per settings combination in the tab file)\n";
+    }
+  } else {
+    $true_profile_id = $line_values[ $true_profile_id_line_column ];
+    if( $DEBUG ) {
+      print "TRUE PROFILE ID: $true_profile_id\n(parsed from element $true_profile_id_line_column of: (", join( ",", @line_values ), ")\n";
+    }
+  }
   # We store separately the test descriptors corresponding to each set
   # of test parameters, which is *all* of the text in the columns up
   # to (but not including) the $true_profile_id_line_column, with the
@@ -244,6 +268,16 @@ while( <TAB_FH> ) {
   # contain the test results (again as an array reference).
   if( $test_descriptor ne $last_test_descriptor ) {
     push( @data, [] );
+    $starting_profile_index = 0;
+  } else {
+    $starting_profile_index += 1;
+  }
+
+  if( defined( $use_starting_profile_indices_low ) && ( $starting_profile_index < $use_starting_profile_indices_low ) ) {
+    next;
+  }
+  if( defined( $use_starting_profile_indices_high ) && ( $starting_profile_index > $use_starting_profile_indices_high ) ) {
+    next;
   }
 
   if( !$diffs_to_true && ( $show_PPAlign_scores && $show_SKL_divergences && $show_profile_lengths && $show_training_iters && $show_viterbi_scores && $show_forward_scores && $show_training_scores && $show_testing_scores ) ) {

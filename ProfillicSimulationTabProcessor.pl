@@ -147,6 +147,9 @@ my ( $true_profile_id, $true_value, $log10_value );
 my @line_values;
 my @filtered_values;
 my $only_one_true_profile = 1; # True until we see the column 'true_profile_id'
+my @true_column_i_for_test_column_i;
+my %true_data_columns;
+my ( $true_line_value_i, $true_column_i );
 my $starting_profile_index = 0;
 while( <TAB_FH> ) {
 
@@ -185,10 +188,12 @@ while( <TAB_FH> ) {
         $only_one_true_profile = 0; # There must be more than one.
         next;
       }
-      if( $column_headers[ $column_i ] =~ m/true_/ ) {
+      if( $column_headers[ $column_i ] =~ m/^true_(.+)$/ ) {
         # The @data_column_is_true array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_true[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
+        ## Set up the map between test columns and their corresponding true columns.
+        $true_data_columns{ $_ } = $column_i;
       }
 
       ## Note that we assume that the 'true_profile_id' column comes
@@ -222,12 +227,15 @@ while( <TAB_FH> ) {
         # The @data_column_is_training array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_training[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
-      } elsif( $column_headers[ $column_i ] =~ m/test/ ) {
+      } elsif( $column_headers[ $column_i ] =~ m/^test_(.+)$/ ) {
         # The @data_column_is_testing array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_testing[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
+        ## Set up the map between test columns and their corresponding true columns.
+        $true_column_i_for_test_column_i[ $column_i ] = $true_data_columns{ $_ };
       }
     } # End foreach header column_i...
+
     next;
   }
 
@@ -366,15 +374,28 @@ while( <TAB_FH> ) {
           $log10_value = naturalLogToLogBase10( $line_values[ $line_value_i ] );
         }
         if( $diffs_to_true ) {
-          # Handily, the most recent "true_value" is always the relevant one.
           if( $data_column_is_true[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] ) {
             $true_value = $log10_value;
             ## TODO: REMOVE
             #print( "true: $true_value\n" );
           } else {
+            # The relevant true column is this colname with "test" replaced by "true".
+            $true_column_i =
+              $true_column_i_for_test_column_i[ $line_value_i - ( $true_profile_id_line_column + 1 ) ];
+            $true_line_value_i = $true_column_i + ( $true_profile_id_line_column + 1 );
+            if( 1 || $DEBUG ) {
+              print( "for $column_headers[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] we use true column $column_headers[ $true_line_value_i - ( $true_profile_id_line_column + 1 ) ]\n" );
+            }
+            # Convert to log base 10.
+            if( !$output_is_LogDouble ) {
+              # Then the number is in scientific notation.
+              $log10_true_value = scientificNotationToLogBase10( $line_values[ $true_line_value_i ] );
+            } else {
+              $log10_true_value = naturalLogToLogBase10( $line_values[ $true_line_value_i ] );
+            }
             ## TODO: REMOVE
             #print( "from: $log10_value\t" );
-            $log10_value -= $true_value;
+            $log10_value -= $log10_true_value;
             ## TODO: REMOVE
             #print( "to: $log10_value\n" );
           }

@@ -147,9 +147,9 @@ my ( $true_profile_id, $log10_true_value, $log10_value );
 my @line_values;
 my @filtered_values;
 my $only_one_true_profile = 1; # True until we see the column 'true_profile_id'
-my @true_column_i_for_test_column_i;
+my @true_column_i_for_result_column_i;
 my %true_data_columns;
-my ( $true_line_value_i, $true_column_i, $newkey );
+my ( $true_column_i, $newkey );
 my $starting_profile_index = 0;
 while( <TAB_FH> ) {
 
@@ -177,7 +177,7 @@ while( <TAB_FH> ) {
     # Note that when there is only one true profile, the column is
     # omitted from the output.
     $true_profile_id_key_column = 0;
-    for( my $column_i; $column_i <= $#column_headers; $column_i++ ) {
+    for( my $column_i = 0; $column_i <= $#column_headers; $column_i++ ) {
       if( $column_headers[ $column_i ] eq 'expected_insertion_length_as_profile_length_fraction' ) {
         ## This saves us if there is only one true profile (and thus no colunmn called 'true_profile_id').
         $true_profile_id_key_column = $column_i;
@@ -195,7 +195,7 @@ while( <TAB_FH> ) {
         ## Set up the map between test columns and their corresponding true columns.
         $newkey = $column_headers[ $column_i ];
         $newkey =~ s/_true_/_/;
-        if( 0 && $DEBUG ) {
+        if( $DEBUG ) {
           print( "SETTING UP MAPPING FOR column $column_i ($column_headers[ $column_i ]): key is $newkey\n" );
         }
         $true_data_columns{ $newkey } = $column_i;
@@ -237,15 +237,15 @@ while( <TAB_FH> ) {
         # column after the $true_profile_id_key_column.
         $data_column_is_testing[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
       }
-      if( !$data_column_is_true[ $column_i ] ) {
+      #if( !$data_column_is_true[ $column_i ] ) {
         ## Set up the map between other columns and their corresponding true columns.
         $newkey = $column_headers[ $column_i ];
-        $newkey =~ s/_(?:un)?(?:conditional|starting)[^_]*_/_/;
-        if( 0 && $DEBUG ) {
+        $newkey =~ s/_(?:un)?(?:true|conditional|starting)[^_]*_/_/;
+        if( $DEBUG ) {
           print( "KEY IS $newkey .. TRUE COL FOR $column_headers[ $column_i ] IS $true_data_columns{ $newkey }\n" );
         }
-        $true_column_i_for_test_column_i[ $column_i ] = $true_data_columns{ $newkey };
-      }
+        $true_column_i_for_result_column_i[ $column_i ] = $true_data_columns{ $newkey };
+      #}
     } # End foreach header column_i...
 
     next;
@@ -388,25 +388,31 @@ while( <TAB_FH> ) {
         if( $diffs_to_true ) {
           if( $data_column_is_true[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] ) {
             $log10_true_value = $log10_value;
-            ## TODO: REMOVE
-            #print( "true: $log10_true_value\n" );
-          } else {
+            if( $DEBUG ) {
+              print( "for $column_headers[ $line_value_i ]: TRUE: $log10_true_value\n" );
+            }
+          }
             # The relevant true column is this colname with the method replaced by "true".
             $true_column_i =
-              $true_column_i_for_test_column_i[ $line_value_i - ( $true_profile_id_line_column + 1 ) ];
-            $true_line_value_i = $true_column_i + ( $true_profile_id_line_column + 1 );
+              $true_column_i_for_result_column_i[ $line_value_i ];
             ## Those without a corresponding true value will map to 'conservation_rate' and should not be modified.
-            if( $column_headers[ $true_line_value_i - ( $true_profile_id_line_column + 1 ) ] ne 'conservation_rate' ) {
+            if( $column_headers[ $true_column_i ] ne 'conservation_rate' ) {
               if( $DEBUG ) {
-                print( "for $column_headers[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] we use true column $column_headers[ $true_line_value_i - ( $true_profile_id_line_column + 1 ) ]\n" );
+                print( "for $column_headers[ $line_value_i ] we use true column $column_headers[ $true_column_i ]\n" );
               }
               # Convert to log base 10.
+              if( $DEBUG ) {
+                print( "HAVE \$log10_true_value = $log10_true_value by carryforward;\n" );
+              }
               if( !$output_is_LogDouble ) {
                 # Then the number is in scientific notation.
-                $log10_true_value = scientificNotationToLogBase10( $line_values[ $true_line_value_i ] );
+                $log10_true_value = scientificNotationToLogBase10( $line_values[ $true_column_i ] );
               } else {
-                $log10_true_value = naturalLogToLogBase10( $line_values[ $true_line_value_i ] );
+                $log10_true_value = naturalLogToLogBase10( $line_values[ $true_column_i ] );
               }
+              if( $DEBUG ) {
+                print( "SAME NOW? \$log10_true_value = $log10_true_value by recalc;\n" );
+                }
               ## TODO: REMOVE
               #print( "from: $log10_value\t" );
               $log10_value -= $log10_true_value;
@@ -414,7 +420,6 @@ while( <TAB_FH> ) {
               #print( "to: $log10_value\n" );
             } # End if there is a true column corresponding to this column.
           }
-        }
         push( @filtered_values, $log10_value );
       }
     } # End foreach $line_value_i

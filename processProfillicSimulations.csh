@@ -2,21 +2,21 @@
 ls results/DNA*/*/*.tab > results/DNA_tabfiles.list
 
 foreach tabfilename ( "`cat results/DNA_tabfiles.list`" )
-    echo $tabfilename
-    perl ProfillicSimulationTabProcessor.pl -sSziV -O "${tabfilename}.processed.alltogether.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziVt -O "${tabfilename}.processed.alltogether.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziV -x 0 -X 0 -O "${tabfilename}.processed.evenstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziVt -x 0 -X 0 -O "${tabfilename}.processed.evenstart.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziV -x 1 -X 4 -O "${tabfilename}.processed.priorstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziVt -x 1 -X 4 -O "${tabfilename}.processed.priorstart.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziV -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSziVt -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.truesseparated.out" "$tabfilename"
+    #echo $tabfilename
+    perl ProfillicSimulationTabProcessor.pl -sSzif -O "${tabfilename}.processed.alltogether.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzift -O "${tabfilename}.processed.alltogether.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzif -x 0 -X 0 -O "${tabfilename}.processed.evenstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzift -x 0 -X 0 -O "${tabfilename}.processed.evenstart.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzif -x 1 -X 4 -O "${tabfilename}.processed.priorstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzift -x 1 -X 4 -O "${tabfilename}.processed.priorstart.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzif -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzift -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.truesseparated.out" "$tabfilename"
 end
 
 ## Put all of the DNA results tabs together, by tab processing option (but skip the header in all but the first).
 set started = 0
 foreach tabfilename ( "`cat results/DNA_tabfiles.list`" )
-    echo $tabfilename
+    #echo $tabfilename
     if ( $started == 0 ) then
         cat "${tabfilename}.processed.alltogether.out" > "results/DNA.processed.alltogether.out"
         cat "${tabfilename}.processed.alltogether.truesseparated.out" > "results/DNA.processed.alltogether.truesseparated.out"

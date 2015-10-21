@@ -1,2 +1,4 @@
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 100
+./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .75 30 100
 ./runSimForConservationAndMaxItersAndTrainingSeqs_AA_allIters.csh .5 30 100
+./runSimForConservationAndMaxItersAndTrainingSeqs_AA_allIters.csh .75 30 100

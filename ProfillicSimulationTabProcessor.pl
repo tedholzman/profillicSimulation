@@ -153,7 +153,7 @@ while( <TAB_FH> ) {
   # Chop and Chomp won't remove ^Ms or leading ws.
   ( $_ ) = ( $_ =~ /^\s*(.+?)\s*$/ );
 
-  if( $DEBUG ) {
+  if( 0 && $DEBUG ) {
     print "TAB LINE: $_\n";
   }
 
@@ -235,8 +235,15 @@ while( <TAB_FH> ) {
 
   unless( defined $true_profile_id_line_column ) {
     ## See note above, where we set the $true_profile_id_key_column.
+    if( 0 && $DEBUG ) {
+      print( "There are ", scalar( @line_values ), " line values: ", join( ",", @line_values ) );
+      print( "There are ", scalar( @column_headers ), " column headers: ", join( ",", @column_headers ) );
+    }
     $true_profile_id_line_column =
       ( $#line_values - ( $#column_headers - $true_profile_id_key_column ) );
+    if( 0 && $DEBUG ) {
+      print( "So \$true_profile_id_line_column is $true_profile_id_line_column\n" );
+    }
   }
 
   if( $only_one_true_profile ) {
@@ -246,7 +253,7 @@ while( <TAB_FH> ) {
     }
   } else {
     $true_profile_id = $line_values[ $true_profile_id_line_column ];
-    if( $DEBUG ) {
+    if( 0 && $DEBUG ) {
       print "TRUE PROFILE ID: $true_profile_id\n(parsed from element $true_profile_id_line_column of: (", join( ",", @line_values ), ")\n";
     }
   }
@@ -256,6 +263,9 @@ while( <TAB_FH> ) {
   # tabs put back.
   $test_descriptor =
     join( "\t", @line_values[ 0 .. ( $true_profile_id_line_column - 1 ) ] );
+  if( 0 && $DEBUG ) {
+    print "TEST DESCRIPTOR: $test_descriptor\n";
+  }
   if( $test_descriptor ne $last_test_descriptor ) {
     push( @test_descriptors, $test_descriptor );
   }
@@ -374,6 +384,9 @@ while( <TAB_FH> ) {
     } # End foreach $line_value_i
   } # End unless( we should filter the data ) .. else ..
 
+  if( 0 && $DEBUG ) {
+    print( "filtered, this is: ", join( ",", @filtered_values ), "\n" );
+  }
   push( @{ $data[ $#data ]->[ $true_profile_id ] }, [ @filtered_values ] );
 
 } # End while( <TAB_FH> )

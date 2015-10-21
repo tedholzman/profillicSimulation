@@ -59,8 +59,8 @@ my $show_standard_errors = $opt_S;
 
 my $diffs_to_true = $opt_z;
 
-my $use_starting_profile_indices_low = $opt_x || undef;
-my $use_starting_profile_indices_high = $opt_X || undef;
+my $use_starting_profile_indices_low = $opt_x;
+my $use_starting_profile_indices_high = $opt_X;
 
 ## By default we show both forward and viterbi scores.
 unless( $show_forward_scores || $show_viterbi_scores ) {
@@ -272,14 +272,20 @@ while( <TAB_FH> ) {
   } else {
     $starting_profile_index += 1;
   }
+  $last_test_descriptor = $test_descriptor;
 
   if( defined( $use_starting_profile_indices_low ) && ( $starting_profile_index < $use_starting_profile_indices_low ) ) {
+    ## TODO: REMOVE
+#print( "skipping $starting_profile_index < $use_starting_profile_indices_low\n" );
     next;
   }
   if( defined( $use_starting_profile_indices_high ) && ( $starting_profile_index > $use_starting_profile_indices_high ) ) {
+    ## TODO: REMOVE
+#print( "skipping $starting_profile_index > $use_starting_profile_indices_high\n" );
     next;
   }
-
+## TODO: REMOVE
+#  print( "starting_profile_index: $starting_profile_index\n" );
   if( !$diffs_to_true && ( $show_PPAlign_scores && $show_SKL_divergences && $show_profile_lengths && $show_training_iters && $show_viterbi_scores && $show_forward_scores && $show_training_scores && $show_testing_scores ) ) {
     ## Not filtered..
     @filtered_values =
@@ -370,7 +376,6 @@ while( <TAB_FH> ) {
 
   push( @{ $data[ $#data ]->[ $true_profile_id ] }, [ @filtered_values ] );
 
-  $last_test_descriptor = $test_descriptor;
 } # End while( <TAB_FH> )
 
 if( $VERBOSE ) { print ".done.\n"; }
@@ -518,7 +523,9 @@ if( $show_standard_deviations || $show_standard_errors ) {
               $true_profile_stderrs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] =
                 $true_profile_stdevs[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] / ( scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) ** .5 );
             }
-            if( $true_profile_i == $#{ $data[ $test_descriptor_i ] } ) {
+            if( ( $true_profile_i == $#{ $data[ $test_descriptor_i ] } ) &&
+                ( ( scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) *
+                    scalar( @{ $data[ $test_descriptor_i ] } ) ) > 1 ) ) {
               $test_descriptor_stdevs[ $test_descriptor_i ]->[ $test_result_i ] /=
                 (
                  ## Note that we're assuming that there's the same

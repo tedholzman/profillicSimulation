@@ -1,12 +1,12 @@
 # DNA
-DNA.alltogether.results <- as.matrix( read.table( "results/DNA.processed.algother.out", header = T ) );
-DNA.alltogether.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.algother.truesseparated.out", header = T ) );
-DNA.evenstart.results <- as.matrix( read.table( "results/DNA.processed.algother.out", header = T ) );
-DNA.evenstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.algother.truesseparated.out", header = T ) );
-DNA.priorstart.results <- as.matrix( read.table( "results/DNA.processed.algother.out", header = T ) );
-DNA.priorstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.algother.truesseparated.out", header = T ) );
-DNA.uniformstart.results <- as.matrix( read.table( "results/DNA.processed.algother.out", header = T ) );
-DNA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.algother.truesseparated.out", header = T ) );
+DNA.alltogether.results <- as.matrix( read.table( "results/DNA.processed.alltogether.out", header = T ) );
+DNA.alltogether.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.alltogether.truesseparated.out", header = T ) );
+DNA.evenstart.results <- as.matrix( read.table( "results/DNA.processed.evenstart.out", header = T ) );
+DNA.evenstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.evenstart.truesseparated.out", header = T ) );
+DNA.priorstart.results <- as.matrix( read.table( "results/DNA.processed.priorstart.out", header = T ) );
+DNA.priorstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.priorstart.truesseparated.out", header = T ) );
+DNA.uniformstart.results <- as.matrix( read.table( "results/DNA.processed.uniformstart.out", header = T ) );
+DNA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/DNA.processed.uniformstart.truesseparated.out", header = T ) );
 
 library( "plotrix" ) # for "plotCI"
 plotIt <- function( .the.results, .profile.length, .conservation.rate, .training.seqs, plot.x.CI = FALSE, plot.y.CI = FALSE, include.legend = TRUE ) {

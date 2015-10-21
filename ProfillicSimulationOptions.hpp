@@ -90,17 +90,6 @@ GALOSH_DEF_OPT(numTestingSequencesPerProfile,uint32_t,20,"Number of test sequenc
 GALOSH_DEF_OPT(sharedPositionRate,double,1.0,"Fraction of positions of each child to be shared with the parent");
 
  /**
-  * The preAlignInsertion value of the true profile.
-  */
-GALOSH_DEF_OPT(preAlignInsertion,double,.01,"The preAlignInsertion value of the true profile");
-
- /**
-  * The postAlignInsertion value of the true profile.
-  */
-GALOSH_DEF_OPT(postAlignInsertion,double,.01,"The postAlignInsertion value of the true profile");
-
-
- /**
   * Additionally report the overall mean of all chains found while
   * performing Gibbs sampling?  The best profile is always reported, which
   * may be the overall mean, the mode, or the mean of one of the chains.

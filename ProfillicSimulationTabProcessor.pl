@@ -143,13 +143,13 @@ my @data_column_is_testing; # true if column corresponds to a test score
 my ( $true_profile_id_key_column, $true_profile_id_line_column );
 my @data;
 my ( @test_descriptors, $test_descriptor, $last_test_descriptor );
-my ( $true_profile_id, $true_value, $log10_value );
+my ( $true_profile_id, $log10_true_value, $log10_value );
 my @line_values;
 my @filtered_values;
 my $only_one_true_profile = 1; # True until we see the column 'true_profile_id'
 my @true_column_i_for_test_column_i;
 my %true_data_columns;
-my ( $true_line_value_i, $true_column_i );
+my ( $true_line_value_i, $true_column_i, $newkey );
 my $starting_profile_index = 0;
 while( <TAB_FH> ) {
 
@@ -188,12 +188,15 @@ while( <TAB_FH> ) {
         $only_one_true_profile = 0; # There must be more than one.
         next;
       }
-      if( $column_headers[ $column_i ] =~ m/^true_(.+)$/ ) {
+      if( $column_headers[ $column_i ] =~ m/_true_/ ) {
         # The @data_column_is_true array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_true[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
         ## Set up the map between test columns and their corresponding true columns.
-        $true_data_columns{ $_ } = $column_i;
+        $newkey = $column_headers[ $column_i ];
+        $newkey =~ s/_true_/_/;
+        print( "SETTING UP MAPPING FOR column $column_i ($column_headers[ $column_i ]): key is $newkey\n" );
+        $true_data_columns{ $newkey } = $column_i;
       }
 
       ## Note that we assume that the 'true_profile_id' column comes
@@ -227,12 +230,18 @@ while( <TAB_FH> ) {
         # The @data_column_is_training array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_training[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
-      } elsif( $column_headers[ $column_i ] =~ m/^test_(.+)$/ ) {
+      } elsif( $column_headers[ $column_i ] =~ m/test_/ ) {
         # The @data_column_is_testing array is indexed from the first
         # column after the $true_profile_id_key_column.
         $data_column_is_testing[ $column_i - ( $true_profile_id_key_column + 1 ) ] = 1;
-        ## Set up the map between test columns and their corresponding true columns.
-        $true_column_i_for_test_column_i[ $column_i ] = $true_data_columns{ $_ };
+      }
+      if( !$data_column_is_true[ $column_i ] ) {
+        ## Set up the map between other columns and their corresponding true columns.
+        $newkey = $column_headers[ $column_i ];
+        $newkey =~ s/_(?:un)?(?:conditional|starting)[^_]*_/_/;
+##TODO: REMOVE
+        print( "KEY IS $newkey .. TRUE COL FOR $column_headers[ $column_i ] IS $true_data_columns{ $newkey }\n" );
+        $true_column_i_for_test_column_i[ $column_i ] = $true_data_columns{ $newkey };
       }
     } # End foreach header column_i...
 
@@ -375,15 +384,15 @@ while( <TAB_FH> ) {
         }
         if( $diffs_to_true ) {
           if( $data_column_is_true[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] ) {
-            $true_value = $log10_value;
+            $log10_true_value = $log10_value;
             ## TODO: REMOVE
-            #print( "true: $true_value\n" );
+            #print( "true: $log10_true_value\n" );
           } else {
             # The relevant true column is this colname with "test" replaced by "true".
             $true_column_i =
               $true_column_i_for_test_column_i[ $line_value_i - ( $true_profile_id_line_column + 1 ) ];
             $true_line_value_i = $true_column_i + ( $true_profile_id_line_column + 1 );
-            if( 1 || $DEBUG ) {
+            if( 0 && $DEBUG ) {
               print( "for $column_headers[ $line_value_i - ( $true_profile_id_line_column + 1 ) ] we use true column $column_headers[ $true_line_value_i - ( $true_profile_id_line_column + 1 ) ]\n" );
             }
             # Convert to log base 10.

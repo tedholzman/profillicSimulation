@@ -195,7 +195,7 @@ while( <TAB_FH> ) {
         ## Set up the map between test columns and their corresponding true columns.
         $newkey = $column_headers[ $column_i ];
         $newkey =~ s/_true_/_/;
-        print( "SETTING UP MAPPING FOR column $column_i ($column_headers[ $column_i ]): key is $newkey\n" );
+##        print( "SETTING UP MAPPING FOR column $column_i ($column_headers[ $column_i ]): key is $newkey\n" );
         $true_data_columns{ $newkey } = $column_i;
       }
 
@@ -240,7 +240,7 @@ while( <TAB_FH> ) {
         $newkey = $column_headers[ $column_i ];
         $newkey =~ s/_(?:un)?(?:conditional|starting)[^_]*_/_/;
 ##TODO: REMOVE
-        print( "KEY IS $newkey .. TRUE COL FOR $column_headers[ $column_i ] IS $true_data_columns{ $newkey }\n" );
+##        print( "KEY IS $newkey .. TRUE COL FOR $column_headers[ $column_i ] IS $true_data_columns{ $newkey }\n" );
         $true_column_i_for_test_column_i[ $column_i ] = $true_data_columns{ $newkey };
       }
     } # End foreach header column_i...

@@ -20,7 +20,7 @@
 #include "ProfileTrainer.hpp"
 #include "ProfileTreeTrainer.hpp"
 ///\#include "ProfileGibbs.hpp" // \todo Add tests for gibbs...
-#include "ProfuseTest.hpp"
+#include "ProfillicSimulation.hpp"
 #include "AminoAcid20.hpp"
 
 #include <iostream>
@@ -32,7 +32,7 @@
 #include <seqan/basic.h>
 #include <seqan/sequence.h>
 #include <seqan/file.h>
-#include <seqan/find_motif.h>
+//#include <seqan/find_motif.h>
 
 #ifdef __HAVE_MUSCLE
 #include "muscle/distfunc.h"

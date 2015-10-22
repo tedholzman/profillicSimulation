@@ -1,7 +1,7 @@
 #!/bin/tcsh
-ls results_revised/DNA*/*/*.tab > results_revised/DNA_tabfiles.list
+ls results/DNA*/*/*.tab > results/DNA_tabfiles.list
 
-foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
+foreach tabfilename ( "`cat results/DNA_tabfiles.list`" )
     #echo $tabfilename
     perl ProfillicSimulationTabProcessor.pl -sSzi -O "${tabfilename}.processed.alltogether.out" "$tabfilename"
     perl ProfillicSimulationTabProcessor.pl -sSzit -O "${tabfilename}.processed.alltogether.truesseparated.out" "$tabfilename"
@@ -15,17 +15,17 @@ end
 
 ## Put all of the DNA results tabs together, by tab processing option (but skip the header in all but the first).
 set started = 0
-foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
+foreach tabfilename ( "`cat results/DNA_tabfiles.list`" )
     #echo $tabfilename
     if ( $started == 0 ) then
-        cat "${tabfilename}.processed.alltogether.out" > "results_revised/DNA.processed.alltogether.out"
-        cat "${tabfilename}.processed.alltogether.truesseparated.out" > "results_revised/DNA.processed.alltogether.truesseparated.out"
-        cat "${tabfilename}.processed.evenstart.out" > "results_revised/DNA.processed.evenstart.out"
-        cat "${tabfilename}.processed.evenstart.truesseparated.out" > "results_revised/DNA.processed.evenstart.truesseparated.out"
-        cat "${tabfilename}.processed.priorstart.out" > "results_revised/DNA.processed.priorstart.out"
-        cat "${tabfilename}.processed.priorstart.truesseparated.out" > "results_revised/DNA.processed.priorstart.truesseparated.out"
-        cat "${tabfilename}.processed.uniformstart.out" > "results_revised/DNA.processed.uniformstart.out"
-        cat "${tabfilename}.processed.uniformstart.truesseparated.out" > "results_revised/DNA.processed.uniformstart.truesseparated.out"
+        cat "${tabfilename}.processed.alltogether.out" > "results/DNA.processed.alltogether.out"
+        cat "${tabfilename}.processed.alltogether.truesseparated.out" > "results/DNA.processed.alltogether.truesseparated.out"
+        cat "${tabfilename}.processed.evenstart.out" > "results/DNA.processed.evenstart.out"
+        cat "${tabfilename}.processed.evenstart.truesseparated.out" > "results/DNA.processed.evenstart.truesseparated.out"
+        cat "${tabfilename}.processed.priorstart.out" > "results/DNA.processed.priorstart.out"
+        cat "${tabfilename}.processed.priorstart.truesseparated.out" > "results/DNA.processed.priorstart.truesseparated.out"
+        cat "${tabfilename}.processed.uniformstart.out" > "results/DNA.processed.uniformstart.out"
+        cat "${tabfilename}.processed.uniformstart.truesseparated.out" > "results/DNA.processed.uniformstart.truesseparated.out"
         set started = 1
     else
       ## alltogether
@@ -34,7 +34,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.alltogether.out
+          echo "$line" >> results/DNA.processed.alltogether.out
         endif
       end
       ## alltogether.truesseparated
@@ -43,7 +43,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.alltogether.truesseparated.out
+          echo "$line" >> results/DNA.processed.alltogether.truesseparated.out
         endif
       end
 
@@ -53,7 +53,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.evenstart.out
+          echo "$line" >> results/DNA.processed.evenstart.out
         endif
       end
       ## evenstart.truesseparated
@@ -62,7 +62,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.evenstart.truesseparated.out
+          echo "$line" >> results/DNA.processed.evenstart.truesseparated.out
         endif
       end
 
@@ -72,7 +72,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.priorstart.out
+          echo "$line" >> results/DNA.processed.priorstart.out
         endif
       end
       ## priorstart.truesseparated
@@ -81,7 +81,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.priorstart.truesseparated.out
+          echo "$line" >> results/DNA.processed.priorstart.truesseparated.out
         endif
       end
 
@@ -92,7 +92,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.uniformstart.out
+          echo "$line" >> results/DNA.processed.uniformstart.out
         endif
       end
       ## uniformstart.truesseparated
@@ -101,7 +101,7 @@ foreach tabfilename ( "`cat results_revised/DNA_tabfiles.list`" )
         if ( $inheader > 0 ) then
           set inheader = 0
         else
-          echo "$line" >> results_revised/DNA.processed.uniformstart.truesseparated.out
+          echo "$line" >> results/DNA.processed.uniformstart.truesseparated.out
         endif
       end
     endif

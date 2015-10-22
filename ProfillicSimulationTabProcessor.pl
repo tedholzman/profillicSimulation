@@ -19,7 +19,7 @@ use vars qw( $VERSION $DEBUG $VERBOSE
              $opt_s $opt_S $opt_z $opt_x $opt_X );
 $VERSION = '1.2';
 
-# This means -D, -o, -O, and -V are ok, but nothin' else.
+# This means -D, -o, -O, -V, etc are ok, but nothin' else.
 # opt_D means print debugging output.
 # opt_o is an optional filename to put the output.  Otherwise, STDOUT.
 # opt_O is just like opt_o except it'll overwrite the file if it exists.
@@ -252,6 +252,10 @@ while( <TAB_FH> ) {
   }
 
   @line_values = split( "\t", $_ );
+  die if( scalar( @line_values ) > scalar( @column_headers ) );
+  if( scalar( @line_values ) < scalar( @column_headers ) ) {
+    warn( "Skipping line for incomplete result in tabfile \"$tabfile\"\nSkipped line is: $_\n" );
+  }
 
   unless( defined $true_profile_id_line_column ) {
     ## See note above, where we set the $true_profile_id_key_column.

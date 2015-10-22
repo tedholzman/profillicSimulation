@@ -3,14 +3,14 @@ ls results_revised/AA*/*/*.tab > results_revised/AA_tabfiles.list
 
 foreach tabfilename ( "`cat results_revised/AA_tabfiles.list`" )
     #echo $tabfilename
-    perl ProfillicSimulationTabProcessor.pl -sSi -O "${tabfilename}.processed.alltogether.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSit -O "${tabfilename}.processed.alltogether.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSi -x 0 -X 0 -O "${tabfilename}.processed.evenstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSit -x 0 -X 0 -O "${tabfilename}.processed.evenstart.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSi -x 1 -X 4 -O "${tabfilename}.processed.priorstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSit -x 1 -X 4 -O "${tabfilename}.processed.priorstart.truesseparated.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSi -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.out" "$tabfilename"
-    perl ProfillicSimulationTabProcessor.pl -sSit -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzi -O "${tabfilename}.processed.alltogether.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzit -O "${tabfilename}.processed.alltogether.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzi -x 0 -X 0 -O "${tabfilename}.processed.evenstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzit -x 0 -X 0 -O "${tabfilename}.processed.evenstart.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzi -x 1 -X 4 -O "${tabfilename}.processed.priorstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzit -x 1 -X 4 -O "${tabfilename}.processed.priorstart.truesseparated.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzi -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.out" "$tabfilename"
+    perl ProfillicSimulationTabProcessor.pl -sSzit -x 5 -X 8 -O "${tabfilename}.processed.uniformstart.truesseparated.out" "$tabfilename"
 end
 
 ## Put all of the AA results tabs together, by tab processing option (but skip the header in all but the first).

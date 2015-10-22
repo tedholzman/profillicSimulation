@@ -351,9 +351,9 @@ template <class ResidueType,
       m_profileProfileAlignments(), // see restart()
       m_totalIterations( 0 )
     {
-      if( m_parameters.debug >= DEBUG_All ) {
+      #ifdef DEBUG
         cout << "[debug] ProfileTreeTrainer::<init>( vector<SequenceType> const &, ProfileTree<ResidueType, ProbabilityType, InternalNodeType> & )" << endl;
-      } // End if DEBUG_All
+      #endif
       // Do nothing else
     } // <init>( vector<SequenceType> const &, ProfileTree<ResidueType, ProbabilityType, InternalNodeType> & )
 
@@ -374,9 +374,9 @@ template <class ResidueType,
       m_profileProfileAlignments(), // see restart()
       m_totalIterations( 0 )
     {
-      if( m_parameters.debug >= DEBUG_All ) {
+      #ifdef DEBUG
         cout << "[debug] ProfileTreeTrainer::<init>( vector<SequenceType> const &, uint32_t const &, ProfileTree<ResidueType, ProbabilityType, InternalNodeType> & )" << endl;
-      } // End if DEBUG_All
+      #endif
       // Do nothing else
     } // <init>( vector<SequenceType> const &, uint32_t const &, ProfileTree<ResidueType, ProbabilityType, InternalNodeType> & )
 
@@ -1812,9 +1812,9 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::Parameters::
       Parameters ( const AnyParameters & copy_from )
       {
-        if( copy_from.debug >= DEBUG_All ) {
+        #ifdef DEBUG
           cout << "[debug] ProfileTreeTrainer::Parameters::<init>( copy_from )" << endl;
-        } // End if DEBUG_All
+        #endif
         copyFromNonVirtual( copy_from );
       } // <init>( AnyParameters const & )
 
@@ -1955,9 +1955,9 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       ParametersModifierTemplate ()
       {
-        if( base_parameters_modifier_t::parameters.debug >= DEBUG_All ) {
+        #ifdef DEBUG
           cout << "[debug] ProfileTreeTrainer::ParametersModifierTemplate::<init>()" << endl;
-        } // End if DEBUG_All
+        #endif
         isModified_reset();
       } // <init>()
 
@@ -1973,9 +1973,9 @@ template <class ResidueType,
   ProfileTreeTrainer<ResidueType, ProbabilityType, ScoreType, MatrixValueType, SequenceResidueType>::ParametersModifierTemplate<ParametersType>::
       ParametersModifierTemplate ( const AnyParametersModifierTemplate & copy_from )
       {
-        if( copy_from.parameters.debug >= DEBUG_All ) {
+        #ifdef DEBUG
           cout << "[debug] ProfileTreeTrainer::ParametersModifierTemplate::<init>( copy_from )" << endl;
-        } // End if DEBUG_All
+        #endif
         copyFromNonVirtual( copy_from );
       } // <init>( AnyParametersModifierTemplate const & )
 

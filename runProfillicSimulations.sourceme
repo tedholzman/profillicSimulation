@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-mkdir results_revised
-=======
 mkdir results
->>>>>>> a82551800d90ea9d1566d048bfa39d339dc6e62a
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 100
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 300
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 500

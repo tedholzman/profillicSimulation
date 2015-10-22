@@ -34,10 +34,10 @@ main ( int argc, char **argv )
 {
 #ifdef __PROFUSE_USE_AMINOS
   typedef seqan::AminoAcid20 ResidueType;
-  typedef seqan::AminoAcid SequenceResidueType;
+  typedef seqan::AminoAcid20 SequenceResidueType;
 #else // __PROFUSE_USE_AMINOS .. else
   typedef seqan::Dna ResidueType;
-  typedef seqan::Iupac SequenceResidueType;
+  typedef seqan::Dna SequenceResidueType;
 #endif // __PROFUSE_USE_AMINOS .. else ..
 
 

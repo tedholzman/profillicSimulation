@@ -254,7 +254,7 @@ while( <TAB_FH> ) {
   @line_values = split( "\t", $_ );
   die if( scalar( @line_values ) > scalar( @column_headers ) );
   if( scalar( @line_values ) < scalar( @column_headers ) ) {
-    warn( "Skipping line for incomplete result in tabfile \"$tabfile\"\nSkipped line is: $_\n" );
+    warn( "Skipping line for incomplete result in tabfile \"$tab_file\"\nSkipped line is: $_\n" );
   }
 
   unless( defined $true_profile_id_line_column ) {

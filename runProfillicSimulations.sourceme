@@ -1,3 +1,4 @@
+mkdir results
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 100
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 300
 ./runSimForConservationAndMaxItersAndTrainingSeqs_DNA_allIters.csh .5 30 500

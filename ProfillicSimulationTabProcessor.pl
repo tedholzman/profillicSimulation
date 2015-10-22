@@ -522,7 +522,7 @@ for( my $test_descriptor_i = 0; $test_descriptor_i <= $#test_descriptors; $test_
           $data[ $test_descriptor_i ]->[ $true_profile_i ]->[ $starting_profile_i ]->[ $test_result_i ];
   
         if( $starting_profile_i == $#{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } ) {
-          # If it is the last of the values to be averaged, divide by the total
+          # If it is the last of the values to be averaged, divide by the total number of starting profiles
           $true_profile_averages[ $test_descriptor_i ][ $true_profile_i ][ $test_result_i ] /=
             scalar( @{ $data[ $test_descriptor_i ]->[ $true_profile_i ] } );
         }

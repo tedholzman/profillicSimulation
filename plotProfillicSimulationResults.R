@@ -1,28 +1,28 @@
 # DNA
-DNA.alltogether.results <- as.matrix( read.table( "results/results_revised/DNA.processed.alltogether.out", header = T ) );
-DNA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.alltogether.truesseparated.out", header = T ) );
-DNA.evenstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.evenstart.out", header = T, fill = T ) );
-DNA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.evenstart.truesseparated.out", header = T ) );
-DNA.priorstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.priorstart.out", header = T, fill = T ) );
-DNA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.priorstart.truesseparated.out", header = T ) );
-DNA.uniformstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.uniformstart.out", header = T, fill = T ) );
-DNA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.uniformstart.truesseparated.out", header = T ) );
+DNA.alltogether.results <- as.matrix( read.table( "results/results/DNA.processed.alltogether.out", header = T ) );
+DNA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results/DNA.processed.alltogether.truesseparated.out", header = T ) );
+DNA.evenstart.results <- as.matrix( read.table( "results/results/DNA.processed.evenstart.out", header = T, fill = T ) );
+DNA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results/DNA.processed.evenstart.truesseparated.out", header = T ) );
+DNA.priorstart.results <- as.matrix( read.table( "results/results/DNA.processed.priorstart.out", header = T, fill = T ) );
+DNA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results/DNA.processed.priorstart.truesseparated.out", header = T ) );
+DNA.uniformstart.results <- as.matrix( read.table( "results/results/DNA.processed.uniformstart.out", header = T, fill = T ) );
+DNA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results/DNA.processed.uniformstart.truesseparated.out", header = T ) );
 
 # AA
-AA.alltogether.results <- as.matrix( read.table( "results/results_revised/AA.processed.alltogether.out", header = T ) );
-AA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.alltogether.truesseparated.out", header = T ) );
-AA.evenstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.evenstart.out", header = T ) );
-AA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.evenstart.truesseparated.out", header = T ) );
-AA.priorstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.priorstart.out", header = T, fill = T ) );
-AA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.priorstart.truesseparated.out", header = T ) );
-AA.uniformstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.uniformstart.out", header = T ) );
-AA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.uniformstart.truesseparated.out", header = T ) );
+AA.alltogether.results <- as.matrix( read.table( "results/results/AA.processed.alltogether.out", header = T ) );
+AA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results/AA.processed.alltogether.truesseparated.out", header = T ) );
+AA.evenstart.results <- as.matrix( read.table( "results/results/AA.processed.evenstart.out", header = T ) );
+AA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results/AA.processed.evenstart.truesseparated.out", header = T ) );
+AA.priorstart.results <- as.matrix( read.table( "results/results/AA.processed.priorstart.out", header = T, fill = T ) );
+AA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results/AA.processed.priorstart.truesseparated.out", header = T ) );
+AA.uniformstart.results <- as.matrix( read.table( "results/results/AA.processed.uniformstart.out", header = T ) );
+AA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results/AA.processed.uniformstart.truesseparated.out", header = T ) );
 
 library( "plotrix" ) # for "plotCI"
 plotIt <- function( .the.results, .profile.length, .conservation.rate, .training.seqs, plot.x.CI = FALSE, plot.y.CI = FALSE, include.legend = TRUE ) {
   .title <- paste( c( paste( "Conservation rate", .conservation.rate, "with", .training.seqs, "training sequences" ), paste( "For profile length", .profile.length ), collapse = "\n" ) );
-  .xlim <- c( min( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "training_conditional_forward", "training_unconditional_forward", "training_conditionalBaldiSiegel_forward", "training_unconditionalBaldiSiegel_forward" ) ] ), max( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "training_conditional_forward", "training_unconditional_forward", "training_conditionalBaldiSiegel_forward", "training_unconditionalBaldiSiegel_forward" ) ] ) );
-  .ylim <- c( min( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "test_conditional_forward", "test_unconditional_forward", "test_conditionalBaldiSiegel_forward", "test_unconditionalBaldiSiegel_forward" ) ] ), max( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "test_conditional_forward", "test_unconditional_forward", "test_conditionalBaldiSiegel_forward", "test_unconditionalBaldiSiegel_forward" ) ] ) );
+  .xlim <- c( min( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "training_starting_forward", "training_conditional_forward", "training_unconditional_forward", "training_conditionalBaldiSiegel_forward", "training_unconditionalBaldiSiegel_forward" ) ] ), max( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "training_starting_forward", "training_conditional_forward", "training_unconditional_forward", "training_conditionalBaldiSiegel_forward", "training_unconditionalBaldiSiegel_forward" ) ] ) );
+  .ylim <- c( min( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "test_starting_forward", "test_conditional_forward", "test_unconditional_forward", "test_conditionalBaldiSiegel_forward", "test_unconditionalBaldiSiegel_forward" ) ] ), max( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "test_starting_forward", "test_conditional_forward", "test_unconditional_forward", "test_conditionalBaldiSiegel_forward", "test_unconditionalBaldiSiegel_forward" ) ] ) );
   # Make sure to include (0,0)
   if( .xlim[ 2 ] < 0 ) {
     .xlim[ 2 ] <- 0;
@@ -46,7 +46,7 @@ plotIt <- function( .the.results, .profile.length, .conservation.rate, .training
     .the.method <- the.methods[ .method.i ];
     .training.method.forward <- paste( "training", .the.method, "forward", sep = "_" );
     .test.method.forward <- paste( "test", .the.method, "forward", sep = "_" );
-    points( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( .training.method.forward, .test.method.forward ) ], pch = the.methods.characters[ .method.i ], col = the.methods.colors[ .method.i ] );
+    points( rbind( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( "training_starting_forward", "test_starting_forward" ) ][ 1, , drop = FALSE ], .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), c( .training.method.forward, .test.method.forward ) ] ), pch = the.methods.characters[ .method.i ], col = the.methods.colors[ .method.i ] );
     if( plot.x.CI ) {
       # x bars
       plotCI( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), .training.method.forward ], .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), .training.method.forward ], err="x", uiw = ( 1.96 * ( .the.results[ ( .the.results[ , "profile_length" ] == .profile.length ) & ( .the.results[ , "num_training_sequences_per_profile" ] == .training.seqs ) & ( .the.results[ , "conservation_rate" ] == .conservation.rate ), paste( "sd", .training.method.forward, sep = "." ) ] / sqrt( se.n ) ) ), pch = the.methods.characters[ .method.i ], col = the.methods.colors[ .method.i ], add = TRUE )

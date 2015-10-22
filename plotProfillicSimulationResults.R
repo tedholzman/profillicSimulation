@@ -1,11 +1,11 @@
 # DNA
 DNA.alltogether.results <- as.matrix( read.table( "results/results_revised/DNA.processed.alltogether.out", header = T ) );
 DNA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.alltogether.truesseparated.out", header = T ) );
-DNA.evenstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.evenstart.out", header = T ) );
+DNA.evenstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.evenstart.out", header = T, fill = T ) );
 DNA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.evenstart.truesseparated.out", header = T ) );
-DNA.priorstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.priorstart.out", header = T ) );
+DNA.priorstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.priorstart.out", header = T, fill = T ) );
 DNA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.priorstart.truesseparated.out", header = T ) );
-DNA.uniformstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.uniformstart.out", header = T ) );
+DNA.uniformstart.results <- as.matrix( read.table( "results/results_revised/DNA.processed.uniformstart.out", header = T, fill = T ) );
 DNA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/DNA.processed.uniformstart.truesseparated.out", header = T ) );
 
 # AA
@@ -13,7 +13,7 @@ AA.alltogether.results <- as.matrix( read.table( "results/results_revised/AA.pro
 AA.alltogether.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.alltogether.truesseparated.out", header = T ) );
 AA.evenstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.evenstart.out", header = T ) );
 AA.evenstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.evenstart.truesseparated.out", header = T ) );
-AA.priorstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.priorstart.out", header = T ) );
+AA.priorstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.priorstart.out", header = T, fill = T ) );
 AA.priorstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.priorstart.truesseparated.out", header = T ) );
 AA.uniformstart.results <- as.matrix( read.table( "results/results_revised/AA.processed.uniformstart.out", header = T ) );
 AA.uniformstart.truesseparated.results <- as.matrix( read.table( "results/results_revised/AA.processed.uniformstart.truesseparated.out", header = T ) );

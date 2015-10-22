@@ -2747,10 +2747,10 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                             true_root[ pos_i ][ Emission::Match ].zero();
                           }
                           true_root[ pos_i ][ Emission::Match ][ pattern_sequences[ 0 ][ pos_i ] ] = pattern_trick_value;
+                      
                           if( conservation_rate != 1.0 ) {
                             true_root[ pos_i ][ Emission::Match ].normalize( 0 );
                           }
-                      
                           // Now modify the children
                           for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
                             if( pattern_sequences[ which_profile ][ pos_i ] ==
@@ -2773,16 +2773,16 @@ public ProfileTreeTrainer<ResidueType,ProbabilityType,ScoreType,MatrixValueType,
                           } // End foreach which_profile...
                         } // End foreach position, set it up according to the pattern and conservation_rate.
 
-              
-                      if( be_verbose ) {
-                        // TODO: REMOVE?
-                        cout << "> " << pattern_sequences.m_descriptions[ 0 ] << endl;
-                        cout << true_root << endl;
-                        for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
-                          cout << "> " << pattern_sequences.m_descriptions[ which_profile ] << endl;
-                          cout << testProfileTree[ TEST_ID_true ].getChild( 0, which_profile ) << endl;
-                        } // End foreach which_profile ..
-                      } // End if be_verbose
+
+                        if( be_verbose ) {
+                          // TODO: REMOVE?
+                          cout << "> " << pattern_sequences.m_descriptions[ 0 ] << endl;
+                          cout << true_root << endl;
+                          for( which_profile = 1; which_profile < m_parameters.numProfiles; which_profile++ ) {
+                            cout << "> " << pattern_sequences.m_descriptions[ which_profile ] << endl;
+                            cout << testProfileTree[ TEST_ID_true ].getChild( 0, which_profile ) << endl;
+                          } // End foreach which_profile ..
+                        } // End if be_verbose
                     
                       if( m_parameters.saveResultsToFile && m_parameters.saveTrueProfileTrees ) {
                         fs::path true_profile_tree_filename =

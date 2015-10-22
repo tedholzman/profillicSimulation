@@ -15,7 +15,6 @@ exe profillicSimulation_DNA
     : [ obj ProfillicSimulation_obj : ProfillicSimulation.cpp
         : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
 
-
 alias profillicSimulation : profillicSimulation_AA profillicSimulation_DNA ;
 
 alias progs : profillicSimulation ;
@@ -25,6 +24,15 @@ install dist : progs : <location>dist ;
 alias install : dist ;
 
 explicit install dist ;
+
+
+exe NewSeqanTests_DNA
+    : [ obj NewSeqanTests_obj : NewSeqanTests.cpp
+        : <include>./prolific <include>./profillic <include>./boost-include <include>./seqan-trunk/include <define>ALLOW_BOLTZMANN_GIBBS ] boost_serialization boost_system boost_graph boost_program_options boost_filesystem : ;
+
+alias NewSeqanTests : NewSeqanTests_DNA ;
+
+
 
 ## If you are on a multithreaded system, see below
 # lib boost_serialization : : <file>./boost-lib/libboost_serialization.a ;

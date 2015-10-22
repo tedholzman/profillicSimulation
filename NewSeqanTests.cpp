@@ -61,6 +61,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/output_test_stream.hpp>
 using boost::test_tools::output_test_stream;
+using boost::debug::const_string;
 
 /**
  * \var g_argc
